@@ -24,7 +24,7 @@ import {
   type DPayToken,
   type DPayTransaction,
 } from '@/lib/api/dpay';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { LiquidGlassBubble } from '@/components/ui/liquid-glass-bubble';
 import { SEOHead } from '@/components/SEOHead';
 import { format } from 'date-fns';

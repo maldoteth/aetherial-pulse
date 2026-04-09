@@ -20,7 +20,7 @@ import { AlertCircle, Clock, ArrowLeft, Sparkles, MoreVertical, ListPlus, Flag, 
 import { useTranslation as useI18n } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { getNFTInfo, getLiveStream, type DeHubNFT } from '@/lib/api/dehub';
 import { useStreamLiveStatus } from '@/hooks/use-stream-live-status';
 

@@ -83,7 +83,7 @@ import { useAnimations } from '@/contexts/AnimationsContext';
 import { useBrowserNotifications, requestNotificationPermission } from '@/hooks/use-browser-notifications';
 import { WalletMenuContent } from '@/components/app/CoinBalanceMenu';
 import { FollowRequestsDrawer } from '@/components/app/profile/FollowRequestsDrawer';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import settingsIcon from '@/assets/icons/settings-icon.png';
 import { useUserLanguage } from '@/hooks/use-user-language';
 import { SUPPORTED_LANGUAGES } from '@/i18n';

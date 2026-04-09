@@ -15,7 +15,7 @@ import { DHB_TOKEN, BASE_CHAIN_ID } from '@/lib/contracts/dhb-token';
 import { useRecordTrade } from '@/hooks/use-fraction-marketplace';
 import { useAuth } from '@/contexts/AuthContext';
 import type { FractionListing } from '@/hooks/use-fraction-marketplace';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import type { ChainId } from '@/components/app/ChainSelector';
 
 interface BuyFractionDrawerProps {

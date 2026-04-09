@@ -12,7 +12,7 @@ import {
   Send, Loader2, ExternalLink, ChevronUp, Target, Handshake,
   Globe, TrendingUp, Megaphone, Heart, Sparkles, CheckCircle2,
 } from 'lucide-react';
-import dehubLogo from '@/assets/dehub-logo-white.png';
+import dehubLogo from '@/assets/fansite-logo.png';
 
 interface BDMFormData {
   name: string;

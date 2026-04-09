@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { type SubscriptionPlan } from '@/lib/api/dehub';
 import { useBuyPlan } from '@/hooks/use-subscriptions';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 interface PlanCardProps {
   plan: SubscriptionPlan;

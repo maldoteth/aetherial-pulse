@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { getDHBBalance } from '@/lib/contracts/stream-controller';
 import { fromWei } from '@/lib/contracts/dhb-token';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import usdcLogo from '@/assets/usdc-logo.png';
 import { createLogger } from '@/lib/logger';
 import type { LiveStream } from '@/types/feed.types';

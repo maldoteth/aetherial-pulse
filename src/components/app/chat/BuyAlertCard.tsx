@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { Minus } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/feed-utils';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { LiquidGlassBubble } from '@/components/ui/liquid-glass-bubble';
 
 export interface BuyAlertData {

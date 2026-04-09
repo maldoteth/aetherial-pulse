@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Loader2, AudioLines, AlertCircle, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import dhbCoinImage from '@/assets/dehub-coin.png';
+import dhbCoinImage from '@/assets/fansite-logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeHubProfile } from '@/hooks/use-dehub-profile';
 import { toast } from 'sonner';

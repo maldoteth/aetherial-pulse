@@ -10,7 +10,7 @@ import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SEOHead } from '@/components/SEOHead';
 import glossaryIcon from '@/assets/glossary-icon.png';
-import dhbCoinIcon from '@/assets/dehub-coin.png';
+import dhbCoinIcon from '@/assets/fansite-logo.png';
 import { BADGE_LEVELS, getBadgeUrl } from '@/lib/staking-badges';
 import medal1 from '@/assets/medal-1.png';
 import medal2 from '@/assets/medal-2.png';

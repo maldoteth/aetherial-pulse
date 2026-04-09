@@ -2,7 +2,7 @@
  * Helpers for rendering DHB amounts with the gold coin icon in toast messages.
  * Usage: toast.success(dhbToast`Tip of ${amount} sent!`)
  */
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 /** Renders an inline coin icon + amount, replacing "DHB" text in toasts */
 export const DhbInline = ({ amount }: { amount: string | number }) => (

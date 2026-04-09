@@ -20,7 +20,7 @@ import { BadgeIcon } from '@/components/app/BadgeIcon';
 import { useDMRealtime } from '@/hooks/use-dm-realtime';
 import chatBubbleIcon from '@/assets/icons/chat-bubble.png';
 import messagesBubbleIcon from '@/assets/icons/messages-3d-icon.png';
-import dehubLogo from '@/assets/dehub-logo.png';
+import dehubLogo from '@/assets/fansite-logo.png';
 import { SEOHead } from '@/components/SEOHead';
 
 function ConversationBadge({ badgeBalance }: { badgeBalance?: number }) {

@@ -26,7 +26,7 @@ import { BASE_CHAIN_ID, BNB_CHAIN_ID, ETH_CHAIN_ID, CHAIN_CONFIGS } from '@/lib/
 import { switchChain } from '@/lib/contracts/aa-utils';
 import type { ChainId } from '@/components/app/ChainSelector';
 import { toast } from 'sonner';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import bnbLogo from '@/assets/bnb-logo.png';
 import { SEOHead } from '@/components/SEOHead';
 import ethLogo from '@/assets/eth-logo.png';

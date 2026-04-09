@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { AiToolModel, AiToolCategory, getToolCostUsd, getToolCostDhb, getToolsByCategory, CATEGORY_LABELS } from '@/constants/ai-tools.constants';
 import { supabase } from '@/integrations/supabase/client';
-import dhbCoinImage from '@/assets/dehub-coin.png';
+import dhbCoinImage from '@/assets/fansite-logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeHubProfile } from '@/hooks/use-dehub-profile';
 import { toast } from 'sonner';

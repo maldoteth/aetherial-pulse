@@ -10,7 +10,7 @@ import { getDPayTransactions, getDPayTotal, type DPayTransaction } from '@/lib/a
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { subHours, subDays, subWeeks, subMonths } from 'date-fns';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 const timeFilters = ['1h', '1d', '1w', '1m', 'Max'];
 

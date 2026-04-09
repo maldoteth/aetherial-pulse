@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FundActions } from './FundActions';
 import { useTranslation } from 'react-i18next';
 import { useMemo } from 'react';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import btcLogo from '@/assets/btc-logo.png';
 import usdtLogo from '@/assets/usdt-logo.png';
 import ethLogo from '@/assets/eth-logo.png';

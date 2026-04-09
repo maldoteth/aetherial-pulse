@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMySubscriptions, useCreatorPlans } from '@/hooks/use-subscriptions';
 import { getMediaUrl, type Subscription } from '@/lib/api/dehub';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { format, isPast, differenceInDays } from 'date-fns';
 
 function formatDuration(days: number): string {

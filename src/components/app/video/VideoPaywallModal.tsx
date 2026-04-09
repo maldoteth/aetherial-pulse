@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Video, AlertCircle, ChevronDown, Volume2 } from 'lucide-react';
 import { VideoModel, VideoModelKey, VIDEO_MODELS, VIDEO_MODEL_OPTIONS, getVideoCostUsd, getVideoCostDhb } from '@/constants/video-models.constants';
 import { supabase } from '@/integrations/supabase/client';
-import dhbCoinImage from '@/assets/dehub-coin.png';
+import dhbCoinImage from '@/assets/fansite-logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeHubProfile } from '@/hooks/use-dehub-profile';
 import { toast } from 'sonner';

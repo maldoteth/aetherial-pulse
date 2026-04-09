@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { MapPin, Users, Flame, Calendar, Lock } from 'lucide-react';
 import type { CommunityEvent } from '@/hooks/use-events';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { cn } from '@/lib/utils';
 import { FriendsAtEvent } from './FriendsAtEvent';
 

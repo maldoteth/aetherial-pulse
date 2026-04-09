@@ -11,7 +11,7 @@ import { Loader2, HandCoins } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateOffer } from '@/hooks/use-fraction-marketplace';
 import { useAuth } from '@/contexts/AuthContext';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 interface MakeOfferDrawerProps {
   tokenId: string;

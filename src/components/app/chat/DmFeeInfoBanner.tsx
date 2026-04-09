@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import padlockImg from '@/assets/padlock.png';
 import { Input } from '@/components/ui/input';
 

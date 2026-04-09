@@ -25,7 +25,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 import { useProfilePage } from '@/hooks/use-profile-page';
 import { useProfileFollow } from '@/hooks/use-profile-follow';

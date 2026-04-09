@@ -9,7 +9,7 @@ import { motion, useAnimation } from 'framer-motion';
 import { useNebulaPrefetch } from '@/hooks/use-nebula-prefetch';
 import { cn } from '@/lib/utils';
 
-import dehubLogoCenter from '@/assets/dehub-logo-center.png';
+import dehubLogoCenter from '@/assets/fansite-logo.png';
 
 // Shared modules
 import { useGlitchEffect } from '@/hooks/use-glitch-effect';
