@@ -1,114 +1,66 @@
 
 
-## Plan: Build Working Fractions Marketplace
+# Plan: Build Core Social Layer on Lovable Cloud + R2
 
-### Summary
-Make the fractions system functional — users can list fractions for sale, make buy offers, accept/reject offers, and execute on-chain transfers. All marketplace state lives in database tables; actual fraction transfers happen on-chain via ERC-1155 `safeTransferFrom`.
+## Current State
+- **54 database tables** already exist for communities, events, governance, stories, stages, AI, etc. — these all work.
+- **Core social features are stubbed** — posts, likes, follows, comments, profiles, bookmarks, search all return empty data because they relied on the DeHub API.
+- **105 files** import from `@/lib/api/dehub` — these need to be progressively rewired.
+- **R2 secrets** are configured and ready.
 
-### Current State
-- Posts are ERC-1155 tokens with 1000 fractions each (contract: `0x9f8012074d27F8596C0E5038477ACB52057BC934` on Base)
-- `getTokenHolders()` already queries on-chain balances
-- `PostInfoPage.tsx` has placeholder UI for listings/offers tabs with "coming soon" toasts
-- `ListFractionsDrawer` exists but doesn't persist anything
-- No database tables for listings or offers yet
+## What's Broken (Priority Order)
 
-### Architecture
+| Feature | Status | What's needed |
+|---------|--------|---------------|
+| User Profiles | Stubbed | `profiles` table + CRUD |
+| Posts/Feed | Stubbed | `posts` table + feed queries |
+| Likes/Votes | Stubbed | `post_likes` table |
+| Comments | Stubbed | `post_comments` table |
+| Follows | Stubbed | `follows` table |
+| Bookmarks | Stubbed | `bookmarks` table |
+| Media Upload | Stubbed | R2 edge function |
+| Search | Stubbed | Full-text search on posts/profiles |
+| Notifications (social) | Stubbed | Already have `custom_notifications` table |
+| DMs | Stubbed | Needs `dm_conversations` + `dm_messages` tables |
 
-```text
-┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
-│  Seller UI  │───▶│  fraction_listings│◀───│  Buyer UI   │
-│ (list/delist)│    │  fraction_offers  │    │(offer/buy)  │
-└─────────────┘    └──────────────────┘    └─────────────┘
-                           │
-                    On accept/buy:
-                           ▼
-                   ┌───────────────┐
-                   │ ERC-1155      │
-                   │safeTransferFrom│
-                   │ + DHB payment │
-                   └───────────────┘
-```
+## Phased Approach
 
-### Step 1: Create Database Tables
+Given the scale (~105 files, ~20 API modules), this must be done in phases. Each phase produces a working app.
 
-**`fraction_listings`** — seller lists fractions at a fixed price:
-- `id`, `token_id` (NFT), `chain_id`, `seller_address`, `quantity`, `price_per_fraction` (DHB), `status` (active/sold/cancelled), `created_at`
-- RLS: anyone can SELECT; seller can INSERT/UPDATE/DELETE their own
+### Phase 1: Foundation Tables + Profiles + R2 Upload
+**Database migrations:**
+- `profiles` — wallet_address (PK-like unique), username, display_name, bio, avatar_url, cover_url, is_verified, is_private, follower_count, following_count, post_count, created_at
+- `posts` — id, creator_wallet_address, title, description, media_url, thumbnail_url, media_type (video/image/audio), category, view_count, like_count, comment_count, visibility, created_at
+- `post_likes` — post_id + wallet_address (unique), created_at
+- `post_comments` — id, post_id, wallet_address, content, parent_id (for replies), created_at
+- `follows` — follower_address + following_address (unique), status (accepted/pending), created_at
+- `bookmarks` — post_id + wallet_address (unique), created_at
 
-**`fraction_offers`** — buyer makes an offer on a token's fractions:
-- `id`, `token_id`, `chain_id`, `buyer_address`, `quantity`, `price_per_fraction` (DHB), `status` (pending/accepted/rejected/cancelled/completed), `target_seller` (optional — can target a specific listing/holder or be open), `tx_hash`, `created_at`
-- RLS: anyone can SELECT; buyer can INSERT their own; seller (holder) can UPDATE status
+**RLS policies** using existing `get_request_wallet_address()` function (already used by 156 policies).
 
-**`fraction_trades`** — completed trade log:
-- `id`, `token_id`, `chain_id`, `seller_address`, `buyer_address`, `quantity`, `price_per_fraction`, `total_dhb`, `tx_hash`, `created_at`
-- RLS: anyone can SELECT; INSERT via service or open
+**R2 upload edge function** — accepts file via multipart form, uploads to R2 bucket, returns public URL.
 
-### Step 2: On-Chain Transfer Logic
+**Rewire API modules:** Replace stubs in `core.ts`, `users.ts`, `feed.ts`, `social.ts`, `comments.ts` with Supabase queries.
 
-Create `src/lib/contracts/fraction-transfer.ts`:
+### Phase 2: Feed, Hooks & UI Wiring
+- Update `use-unified-feed`, `use-dehub-feed`, `use-dehub-profile` hooks to query new tables
+- Wire up ActionBar (like/bookmark/repost), CommentsSection, ProfileHeader
+- Post creation flow → R2 upload + insert into `posts` table
 
-1. **`transferFractions(tokenId, from, to, amount, chainId)`** — calls `safeTransferFrom` on the ERC-1155 contract via `writeContractAA`
-2. **Buy flow**: Buyer sends DHB to seller (`sendERC20Token`), then seller's fractions are transferred. Since we can't do atomic swaps without an escrow contract, the flow will be:
-   - Buyer pays DHB to seller → tx confirmed
-   - Fraction transfer is initiated (seller must approve or it's done via the listing acceptance flow)
+### Phase 3: Remaining Features
+- Search (Postgres full-text on posts + profiles)
+- DM tables + rewire messaging
+- Notification triggers for likes/comments/follows
+- Leaderboard integration with new tables
 
-**Practical approach without escrow**: Use a "claim" model:
-- **Direct buy from listing**: Buyer pays DHB to seller, then calls `safeTransferFrom` (seller must have set approval on the marketplace or we use the seller's session)
-- **Offer model**: Seller accepts offer → triggers DHB transfer from buyer (buyer pre-approves) + fraction transfer from seller
+## Technical Details
 
-Given the AA wallet architecture, the simplest working approach:
-- Listings: seller pre-approves the contract. Buyer pays DHB + fractions auto-transfer via edge function with platform key (custodial settlement), OR
-- **Simpler v1**: Both parties must be online. Seller lists → buyer buys → two sequential transactions (DHB payment + fraction claim) with status tracked in DB
+- All tables use `wallet_address` as the identity key (matching existing 54 tables)
+- RLS uses existing `get_request_wallet_address()` security definer function
+- R2 edge function uses `@aws-sdk/client-s3` with the configured secrets
+- `DeHubNFT` type maps to new `posts` table; `DeHubUser` maps to `profiles` table
+- Existing barrel export at `@/lib/api/dehub/index.ts` stays — internal implementations change from stubs to Supabase calls
 
-**Recommended v1**: Seller lists fractions. Buyer clicks "Buy" → sends DHB to seller → records trade in DB → seller sees "Pending Transfer" → seller confirms transfer of fractions. If seller doesn't transfer within 48h, DHB is refundable (tracked in DB, manual resolution).
-
-### Step 3: Update PostInfoPage UI
-
-**Listings tab**:
-- Show active listings with seller address, quantity, price/fraction, total cost
-- "Buy" button on each listing → opens drawer to confirm purchase
-- "List Your Fractions" button for holders → existing drawer, now persists to `fraction_listings`
-- "Cancel Listing" for your own listings
-
-**Offers tab**:
-- Show pending offers with buyer address, quantity, offered price
-- "Make Offer" button → drawer with quantity + price inputs → saves to `fraction_offers`
-- For holders: "Accept" / "Reject" buttons on incoming offers
-- "Cancel Offer" for your own pending offers
-
-**Buy flow (from listing)**:
-1. Buyer clicks "Buy" on a listing
-2. Confirmation drawer shows total DHB cost
-3. Buyer sends DHB to seller via `sendERC20Token`
-4. DB updates listing status, creates trade record
-5. Toast: "Payment sent! Seller will transfer fractions."
-6. Seller sees notification to transfer fractions
-
-**Offer flow**:
-1. Buyer submits offer (saved to DB)
-2. Holder sees offer in "Offers" tab
-3. Holder clicks "Accept" → triggers buyer's DHB transfer (buyer must have pre-approved) + holder sends fractions
-4. Trade recorded
-
-### Step 4: Real-time Updates
-
-Enable realtime on `fraction_listings` and `fraction_offers` tables so the marketplace updates live when new listings/offers appear.
-
-### Step 5: Notifications
-
-Insert into `custom_notifications` when:
-- Someone makes an offer on your fractions
-- Your offer is accepted/rejected
-- Someone buys your listing
-
-### Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create 3 tables + RLS policies |
-| `src/lib/contracts/fraction-transfer.ts` | New — ERC-1155 safeTransferFrom wrapper |
-| `src/hooks/use-fraction-marketplace.ts` | New — queries/mutations for listings & offers |
-| `src/pages/app/PostInfoPage.tsx` | Update — wire up real data, buy/sell flows |
-| `src/components/app/fractions/BuyFractionDrawer.tsx` | New — confirm purchase UI |
-| `src/components/app/fractions/MakeOfferDrawer.tsx` | New — submit offer UI |
+## Shall I proceed?
+This is a large migration. I recommend starting with **Phase 1** (tables + R2 + core API rewiring) which will make posts, profiles, likes, follows, comments, and bookmarks functional. Phases 2-3 follow in subsequent messages.
 
