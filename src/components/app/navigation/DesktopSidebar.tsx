@@ -13,7 +13,8 @@ import { useStage } from '@/contexts/StageContext';
 
 import { useUnreadNotificationCount } from '@/hooks/use-notifications';
 import { useCustomUnreadCount } from '@/hooks/use-custom-notifications';
-import dehubLogoCompact from '@/assets/fansite-logo.png';
+import fansiteLogoFull from '@/assets/fansite-logo-full.png';
+import fansiteIcon from '@/assets/fansite-icon.png';
 import { cn } from '@/lib/utils';
 import { buildAvatarUrl } from '@/lib/media-url';
 import { useSidebarCollapse } from '@/contexts/SidebarCollapseContext';
