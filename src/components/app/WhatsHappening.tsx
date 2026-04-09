@@ -241,7 +241,7 @@ export const WhatsHappening = memo(function WhatsHappening({ showCountrySelector
         {/* Globe country selector moved to bottom */}
       </div>
 
-      <div className="p-4 pt-0">
+      <div className="p-4 pt-2">
 
       {/* Tab content */}
       <div style={{ height: 320 }} className="relative overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
