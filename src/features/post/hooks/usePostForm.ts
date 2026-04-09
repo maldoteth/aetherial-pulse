@@ -1339,9 +1339,9 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
         errorMsg.toLowerCase().includes('insufficient balance') ||
         errorMsg.toLowerCase().includes('gas required exceeds allowance');
 
-      if (isGasFunds && connectionSource === 'wagmi') {
+      if (isGasFunds) {
         toast.error('Post failed: Insufficient Base ETH for gas fees. Please add ETH to your wallet on Base network and try again.');
-      } else if (isWalletGone && connectionSource === 'wagmi') {
+      } else if (isWalletGone) {
         // Wallet connection dropped mid-session. The silent reconnect effect in AuthContext
         // will have already triggered a logout with a toast. Just silently swallow this error
         // to avoid showing a second confusing toast on top of the logout one.
@@ -1358,7 +1358,7 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
     isWatch2Earn, w2eViews, w2eComments, w2eTotal,
     isTokenGated, tokenAmount, liveMode, scheduledDate,
     hasVideo, hasImage, hasAudio, isPosting, resetForm, onClose, navigate, addOptimisticPost, user,
-    showTitle, titleText, connectionSource
+    showTitle, titleText
   ]);
 
   return {
