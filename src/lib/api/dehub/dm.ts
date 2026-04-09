@@ -278,24 +278,8 @@ export async function getContacts(
   const myAddress = address.toLowerCase();
 
   let dehubItems: DeHubConversation[] = [];
-  try {
-    const response = await apiCall<unknown>(`/api/dm/contacts/${address}`, {
-      params: { page, limit },
-      requiresAuth: true,
-    });
-    console.log('[DM API] getContacts raw response:', response);
-
-    let items: unknown[] = [];
-    const r = response as Record<string, unknown>;
-    if (Array.isArray(response)) items = response;
-    else if (Array.isArray(r?.result)) items = r.result as unknown[];
-    else if (r?.result && Array.isArray((r.result as Record<string, unknown>)?.items)) items = ((r.result as Record<string, unknown>).items as unknown[]) || [];
-    else if (Array.isArray(r?.items)) items = r.items as unknown[];
-
-    dehubItems = items.map((item: unknown) => mapApiConversationToDeHub(item as Record<string, unknown>, myAddress));
-  } catch (err) {
-    console.warn('[DM API] getContacts DeHub failed (will use Supabase):', err);
-  }
+  // DM contacts — stub until migrated to Lovable Cloud
+  console.log('[DM API] getContacts — not yet migrated, returning empty');
 
 
   // Enrich DeHub conversations with profile data (displayName, badgeBalance) when missing
