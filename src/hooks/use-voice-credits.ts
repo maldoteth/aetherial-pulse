@@ -88,7 +88,7 @@ export function useVoiceCredits(walletAddress: string | null) {
   return { credits, hasCredits, addCredits, deductCredit };
 }
 
-export function getBundleCostDhb(bundle: VoiceBundle, dhbPriceUsd: number): number {
-  if (dhbPriceUsd <= 0) return 0;
-  return bundle.totalUsd / dhbPriceUsd;
+export function getBundleCostEth(bundle: VoiceBundle, ethPriceUsd: number): number {
+  if (ethPriceUsd <= 0) return 0;
+  return bundle.totalUsd / ethPriceUsd;
 }

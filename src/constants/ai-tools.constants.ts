@@ -1,6 +1,6 @@
 /**
  * fal.ai AI Tools Configuration
- * All tools use DHB pay-per-use with 100% markup
+ * All tools use ETH pay-per-use with 100% markup
  */
 
 export interface AiToolModel {
@@ -30,9 +30,9 @@ export const getToolCostUsd = (model: AiToolModel): number => {
   return model.baseCostUsd * (1 + AI_TOOLS_MARKUP);
 };
 
-export const getToolCostDhb = (model: AiToolModel, dhbPriceUsd: number): number => {
-  if (dhbPriceUsd <= 0) return 0;
-  return getToolCostUsd(model) / dhbPriceUsd;
+export const getToolCostEth = (model: AiToolModel, ethPriceUsd: number): number => {
+  if (ethPriceUsd <= 0) return 0;
+  return getToolCostUsd(model) / ethPriceUsd;
 };
 
 export const AI_TOOL_MODELS: Record<string, AiToolModel> = {
