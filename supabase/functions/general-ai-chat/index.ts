@@ -817,10 +817,18 @@ serve(async (req) => {
     if (isAuthenticated && hasSwapIntent(userQuery)) {
       console.log('[Swap] Detected swap intent, extracting params...');
       try {
-        const swapExtractionResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        const swapNovitaKey = Deno.env.get('NOVITA_API_KEY');
+        const swapLovableKey = Deno.env.get('LOVABLE_API_KEY');
+        const swapApiKey = swapNovitaKey || swapLovableKey;
+        const swapEndpoint = swapNovitaKey 
+          ? 'https://api.novita.ai/v3/openai/chat/completions'
+          : 'https://ai.gateway.lovable.dev/v1/chat/completions';
+        const swapModel = swapNovitaKey ? 'dolphin-mixtral-8x22b' : 'google/gemini-2.5-flash';
+
+        const swapExtractionResponse = await fetch(swapEndpoint, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${lovableApiKey}`,
+            'Authorization': `Bearer ${swapApiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
