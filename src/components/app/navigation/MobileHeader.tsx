@@ -1,0 +1,141 @@
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Bell } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { CoinBalanceMenu } from '../CoinBalanceMenu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+
+import { useUnreadNotificationCount } from '@/hooks/use-notifications';
+import { useCustomUnreadCount } from '@/hooks/use-custom-notifications';
+import { buildAvatarUrl } from '@/lib/media-url';
+import { useCallback, useRef, memo } from 'react';
+
+const HeaderLogo = memo(function HeaderLogo({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button onClick={onClick} className="block cursor-pointer">
+      <img
+        src="/dehub-header-logo.png"
+        alt="dehub"
+        className="h-7 md:h-7 w-auto"
+        loading="eager"
+        decoding="async"
+        fetchPriority="high"
+        width={93}
+        height={28}
+      />
+    </button>
+  );
+});
+
+interface MobileHeaderProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}
+
+export function MobileHeader({ isOpen, onToggle, children }: MobileHeaderProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, openLoginModal } = useAuth();
+  
+  const { data: unreadCount } = useUnreadNotificationCount();
+  const { data: customUnread } = useCustomUnreadCount();
+  const totalNotifUnread = (unreadCount?.total ?? 0) + (customUnread ?? 0);
+
+  // Coin balance
+  const coinBalance = 0; // TODO: Get from user wallet
+
+  // Use ref for pathname so handleLogoClick is stable across renders
+  const pathnameRef = useRef(location.pathname);
+  pathnameRef.current = location.pathname;
+
+  const handleLogoClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (pathnameRef.current === '/app') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/app');
+    }
+  }, [navigate]);
+
+  const isNotificationsActive = location.pathname === '/app/notifications';
+  const handleMenuClick = useCallback(() => {
+    if (!isAuthenticated) {
+      openLoginModal();
+    }
+  }, [isAuthenticated, openLoginModal]);
+
+  return (
+    <header className="lg:hidden fixed top-0 left-0 right-0 z-[60] bg-black px-4 h-11 flex items-center justify-between">
+      <div className="flex items-center gap-3 ml-[-8px]">
+        <HeaderLogo onClick={handleLogoClick} />
+      </div>
+      
+      <div className="flex items-center gap-3">
+        
+        {/* Notifications Button - only visible when logged in */}
+        {isAuthenticated && (
+          <button
+            onClick={() => navigate('/app/notifications')}
+            className={`relative flex items-center justify-center transition-colors ${isNotificationsActive ? 'text-white' : 'text-zinc-400'}`}
+            aria-label="Notifications"
+          >
+            <Bell className="w-[26px] h-[26px]" />
+            {totalNotifUnread > 0 && (
+              <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-[4px] bg-red-500 text-white text-[10px] font-bold rounded-md flex items-center justify-center leading-none">
+                {totalNotifUnread > 99 ? '99+' : totalNotifUnread}
+              </span>
+            )}
+          </button>
+        )}
+        
+        {/* Menu Button - Avatar drawer when authenticated, login prompt when not */}
+        {isAuthenticated ? (
+          <Drawer open={isOpen} onOpenChange={onToggle}>
+            <DrawerTrigger asChild>
+              {user ? (
+                <button
+                  className="hover:opacity-80 transition-opacity"
+                  aria-label="Toggle menu"
+                >
+                  <Avatar className="w-[27px] h-[27px]">
+                    {user.avatarImageUrl && user.address && (
+                      <AvatarImage
+                        src={buildAvatarUrl(user.address, user.avatarImageUrl)}
+                        alt={`${user.displayName || user.username}'s avatar`}
+                        className="object-cover"
+                      />
+                    )}
+                    <AvatarFallback className="bg-zinc-700 text-white text-xs font-medium">
+                      {(user.displayName || user.username)?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              ) : (
+                <button
+                  className="p-2 rounded-full transition-colors mr-[-16.5px]"
+                  aria-label="Toggle menu"
+                >
+                  <Menu className="w-[31px] h-[31px] text-white" />
+                </button>
+              )}
+            </DrawerTrigger>
+            <DrawerContent glass className="max-h-[85vh]">
+              <div className="p-4 pb-8 overflow-y-auto">
+                {children}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <button
+            onClick={handleMenuClick}
+            className="p-2 rounded-full transition-colors mr-[-16.5px]"
+            aria-label="Log in"
+          >
+            <Menu className="w-[31px] h-[31px] text-white" />
+          </button>
+        )}
+      </div>
+    </header>
+  );
+}

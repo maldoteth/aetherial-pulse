@@ -1,0 +1,235 @@
+"use client";
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import * as THREE from 'three';
+import { X } from 'lucide-react';
+import { motion, useAnimation } from 'framer-motion';
+import { useNebulaPrefetch } from '@/hooks/use-nebula-prefetch';
+import { cn } from '@/lib/utils';
+
+import dehubLogoCenter from '@/assets/dehub-logo-center.png';
+
+// Shared modules
+import { useGlitchEffect } from '@/hooks/use-glitch-effect';
+import { TIMING } from '@/config/hero-config';
+import { createScene, createLighting, createResizeHandler, setupMouseInteraction } from '@/lib/three/scene-helpers';
+import { createNebula, animateNebula, disposeNebula, loadEasterEggs } from '@/lib/three/nebula';
+import { createShootingStars, spawnShootingStars, animateShootingStars, disposeShootingStars } from '@/lib/three/shooting-stars';
+import { loadBuzzwords, animateBuzzwords, triggerBuzzwordGlitch, disposeBuzzwords, BuzzwordSystem } from '@/lib/three/buzzwords';
+import { createArtifact, animateArtifact, triggerArtifactGlitch, disposeArtifact } from '@/lib/three/artifact';
+
+// UI Components
+import { HeroTitle } from '@/components/hero/HeroTitle';
+import { AppStoreButtons } from '@/components/hero/AppStoreButtons';
+import { SocialLinks } from '@/components/hero/SocialLinks';
+import { PixelCorruption } from '@/components/hero/PixelCorruption';
+
+// cursor is now handled via .cursor-square CSS class in index.css
+
+const SKIP_LANDING_KEY = "dehub_skip_landing";
+
+export const FuturisticAlienHero = () => {
+  const mountRef = useRef<HTMLCanvasElement>(null);
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const heroTitle = t('hero.title', 'Welcome To');
+  const heroSubtitle = t('hero.subtitle', 'Our World');
+  const { masterGlitch, corruptedTitle, corruptedSubtitle, showPixelCorruption } = useGlitchEffect(heroTitle, heroSubtitle);
+  const [isCloseButtonGlitching, setIsCloseButtonGlitching] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const controls = useAnimation();
+  
+  // Prefetch app data on first user interaction (mousemove/touch/scroll)
+  useNebulaPrefetch();
+
+  const handleEnterApp = useCallback(() => {
+    if (isExiting) return;
+    setIsExiting(true);
+    localStorage.setItem(SKIP_LANDING_KEY, "true");
+    controls.start({
+      y: '100%',
+      opacity: 0,
+      transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
+    }).then(() => {
+      navigate('/app');
+    });
+  }, [isExiting, controls, navigate]);
+  
+  // Close button glitch effect - triggers every 4-6 seconds
+  useEffect(() => {
+    const triggerGlitch = () => {
+      setIsCloseButtonGlitching(true);
+      setTimeout(() => setIsCloseButtonGlitching(false), 400);
+    };
+    
+    // Initial glitch after 2 seconds
+    const initialTimer = setTimeout(triggerGlitch, 2000);
+    
+    // Recurring glitch every 4-6 seconds
+    const interval = setInterval(() => {
+      triggerGlitch();
+    }, 4000 + Math.random() * 2000);
+    
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+
+    // Scene setup
+    const { scene, camera, renderer } = createScene(mountRef.current);
+    createLighting(scene);
+
+    // Create systems
+    const shootingStarsSystem = createShootingStars(scene);
+    const lastShootingStarTime = { value: 0 };
+
+    const artifactSystem = createArtifact(scene, dehubLogoCenter);
+    const nebulaSystem = createNebula(scene);
+
+    const buzzwordSystem: BuzzwordSystem = { 
+      sprites: [], types: [], loaded: false,
+      timers: [], intervals: [], isDisposed: false 
+    };
+
+    // Mouse interaction
+    const mouseInteraction = setupMouseInteraction();
+    mouseInteraction.addListeners();
+
+    // Window resize
+    const handleResize = createResizeHandler(camera, renderer);
+    window.addEventListener('resize', handleResize);
+
+    // Track the load delay timeout
+    const loadDelayTimer = setTimeout(() => {
+      loadBuzzwords(scene, buzzwordSystem);
+      loadEasterEggs(nebulaSystem);
+    }, TIMING.BUZZWORD_LOAD_DELAY);
+
+    // Animation state
+    const clock = new THREE.Clock();
+    let animationFrameId: number;
+    let previousTime = 0;
+    let artifactGlitchTime = 0;
+    let buzzwordGlitchTime = 0;
+    let isArtifactGlitching = false;
+    let isBuzzwordGlitching = false;
+    let isDisposed = false;
+    const artifactOriginalPosition = { x: 0, y: 0, z: 0 };
+    const glitchTimers: NodeJS.Timeout[] = [];
+
+    const animate = () => {
+      if (isDisposed) return;
+      
+      animationFrameId = requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
+      const delta = elapsedTime - previousTime;
+      previousTime = elapsedTime;
+
+      // Camera follows mouse — only update every 2nd frame to halve GPU draw calls
+      if (Math.round(elapsedTime * 60) % 2 === 0) {
+        const { mouseX, mouseY } = mouseInteraction.getMousePosition();
+        camera.position.x += (mouseX - camera.position.x) * 0.05;
+        camera.position.y += (-mouseY - camera.position.y) * 0.05;
+        camera.lookAt(scene.position);
+      }
+
+      // Animate systems
+      animateArtifact(artifactSystem, elapsedTime);
+      animateNebula(nebulaSystem);
+      spawnShootingStars(shootingStarsSystem, elapsedTime, lastShootingStarTime);
+      animateShootingStars(shootingStarsSystem, delta);
+      animateBuzzwords(buzzwordSystem, elapsedTime);
+
+      // Buzzword glitch (every 5-10 seconds)
+      if (!isBuzzwordGlitching && elapsedTime - buzzwordGlitchTime > 5 + Math.random() * 5) {
+        buzzwordGlitchTime = elapsedTime;
+        isBuzzwordGlitching = true;
+        triggerBuzzwordGlitch(buzzwordSystem);
+        const timer = setTimeout(() => { isBuzzwordGlitching = false; }, 300);
+        glitchTimers.push(timer);
+      }
+
+      // Artifact glitch (every 10-20 seconds)
+      if (!isArtifactGlitching && elapsedTime - artifactGlitchTime > 10 + Math.random() * 10) {
+        artifactGlitchTime = elapsedTime;
+        isArtifactGlitching = true;
+        triggerArtifactGlitch(artifactSystem, artifactOriginalPosition);
+        const timer = setTimeout(() => { isArtifactGlitching = false; }, 300);
+        glitchTimers.push(timer);
+      }
+
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    // Cleanup
+    return () => {
+      isDisposed = true;
+      
+      // Clear all local timers
+      clearTimeout(loadDelayTimer);
+      glitchTimers.forEach(timer => clearTimeout(timer));
+      
+      window.removeEventListener('resize', handleResize);
+      mouseInteraction.removeListeners();
+      cancelAnimationFrame(animationFrameId);
+      
+      // Dispose systems (each handles its own timer cleanup)
+      disposeArtifact(artifactSystem);
+      disposeNebula(nebulaSystem);
+      disposeShootingStars(shootingStarsSystem);
+      disposeBuzzwords(buzzwordSystem);
+      
+      renderer.dispose();
+    };
+  }, []);
+
+  return (
+    <motion.div 
+      className="relative h-screen w-full overflow-hidden bg-black scanline-overlay fixed inset-0 touch-none cursor-square"
+      animate={controls}
+      initial={{ y: 0, opacity: 1 }}
+    >
+      <PixelCorruption visible={showPixelCorruption} />
+      <canvas ref={mountRef} className="absolute top-0 left-0 w-full h-full z-0" />
+      
+      {/* Close/Enter App Button */}
+      <button
+        onClick={handleEnterApp}
+        className={cn(
+          "absolute top-4 right-4 z-20 p-2 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-200 group",
+          isCloseButtonGlitching && "animate-close-button-glitch"
+        )}
+        aria-label="Enter App"
+        style={isCloseButtonGlitching ? {
+          boxShadow: '0 0 20px rgba(255, 255, 255, 0.6), 0 0 40px rgba(139, 92, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2)',
+          borderColor: 'rgba(255, 255, 255, 0.5)',
+        } : undefined}
+      >
+        <X className={cn(
+          "w-6 h-6 text-white/70 group-hover:text-white transition-colors",
+          isCloseButtonGlitching && "text-white"
+        )} />
+      </button>
+      
+      <section className="relative h-screen flex items-center justify-center overflow-hidden z-10">
+        <div className="text-center p-4 -translate-y-[70px] sm:-translate-y-[80px] md:translate-y-0">
+          <HeroTitle
+            masterGlitch={masterGlitch}
+            corruptedTitle={corruptedTitle}
+            corruptedSubtitle={corruptedSubtitle}
+            className="mt-[25px] md:mt-0"
+          />
+          <AppStoreButtons onEnterApp={handleEnterApp} />
+          <SocialLinks />
+        </div>
+      </section>
+    </motion.div>
+  );
+};
