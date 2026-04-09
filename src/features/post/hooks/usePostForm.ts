@@ -188,7 +188,7 @@ interface UsePostFormReturn {
 export function usePostForm(onClose: () => void): UsePostFormReturn {
   const navigate = useNavigate();
   const { addOptimisticPost } = useOptimisticPosts();
-  const { user, connectionSource } = useAuth();
+  const { user } = useAuth();
   
   // Restore active draft from localStorage
   const savedDraft = useRef(loadActiveDraft());
