@@ -832,7 +832,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
+            model: swapModel,
             messages: [
               { role: 'system', content: 'You are a swap intent parser. Extract token swap parameters from the user message. Known tokens: ETH (native, address 0x0), WETH (0x4200000000000000000000000000000000000006), DHB (0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c), USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913). If the user says "buy DHB" or "buy $DHB", tokenOut is DHB. Default tokenIn is ETH if not specified. Default amountType is "output" when buying a specific amount of a token, "input" when swapping a specific amount of input token.' },
               { role: 'user', content: userQuery }
