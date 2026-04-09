@@ -18,7 +18,7 @@ const Index = () => {
               description: 'Open source, user owned and censorship resistant media.',
               potentialAction: {
                 '@type': 'SearchAction',
-                target: 'https://fansite.app/app/explore?q={search_term_string}',
+                target: 'https://fansite.app/explore?q={search_term_string}',
                 'query-input': 'required name=search_term_string',
               },
             },

@@ -613,7 +613,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <SEOHead title="DeHub - Home Feed" description="Censorship resistant and chronological, with no shady algorithm. Your feed on DeHub — the open source, user owned social media platform." url="https://fansite.app/app" jsonLd={{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'DeHub Home Feed', url: 'https://fansite.app/app', description: 'Censorship resistant, chronological social media feed with no algorithm.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
+      <SEOHead title="DeHub - Home Feed" description="Censorship resistant and chronological, with no shady algorithm. Your feed on DeHub — the open source, user owned social media platform." url="https://fansite.app/" jsonLd={{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'DeHub Home Feed', url: 'https://fansite.app/app', description: 'Censorship resistant, chronological social media feed with no algorithm.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
       <h1 className="sr-only">DeHub Home — Decentralised Social Media Feed, Censorship Resistant & Freedom of Speech</h1>
       {/* Tab Navigation */}
       <div

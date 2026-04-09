@@ -1703,7 +1703,7 @@ export default function AssistantPage() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <SEOHead title="AI Assistant — Chat, Generate Images & Video" description="Chat with DeHub's AI assistant. Generate images, create videos, get web search results, and explore AI capabilities — all in one place." url="https://fansite.app/app/assistant" jsonLd={{ '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'DeHub AI Assistant', url: 'https://fansite.app/app/assistant', applicationCategory: 'UtilitiesApplication', description: 'AI assistant for chat, image generation, video creation and web search.', operatingSystem: 'Web', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } }} />
+      <SEOHead title="AI Assistant — Chat, Generate Images & Video" description="Chat with DeHub's AI assistant. Generate images, create videos, get web search results, and explore AI capabilities — all in one place." url="https://fansite.app/assistant" jsonLd={{ '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'DeHub AI Assistant', url: 'https://fansite.app/assistant', applicationCategory: 'UtilitiesApplication', description: 'AI assistant for chat, image generation, video creation and web search.', operatingSystem: 'Web', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } }} />
       <h1 className="sr-only">DeHub AI Assistant — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Drag overlay */}
       <AnimatePresence>

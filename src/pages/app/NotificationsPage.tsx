@@ -1373,7 +1373,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen">
-      <SEOHead title="Notifications — Stay Updated" description="Stay on top of likes, comments, follows, tips, mentions and more on DeHub. Never miss an interaction from your community." url="https://fansite.app/app/notifications" />
+      <SEOHead title="Notifications — Stay Updated" description="Stay on top of likes, comments, follows, tips, mentions and more on DeHub. Never miss an interaction from your community." url="https://fansite.app/notifications" />
       <h1 className="sr-only">DeHub Notifications — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <div className="sticky top-11 lg:top-0 bg-black z-50 px-2 pt-1 pb-0 sm:px-3 sm:pt-1 sm:pb-0 lg:pt-2">

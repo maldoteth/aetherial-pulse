@@ -273,7 +273,7 @@ export function GoLiveModal({ isOpen, onClose }: GoLiveModalProps) {
         streamId,
         streamKey,
         ingestUrl,
-        playbackUrl: playbackUrl || `https://fansite.app/app/post/${tokenId}`,
+        playbackUrl: playbackUrl || `https://fansite.app/post/${tokenId}`,
         hlsUrl,
       };
 
