@@ -176,7 +176,7 @@ export async function mintNFT(data: {
     description: post.description || '',
     imageUrl: post.media_type === 'image' ? post.media_url : post.thumbnail_url || '',
     videoUrl: post.media_type === 'video' ? post.media_url : undefined,
-    postType: post.media_type || 'text',
+    postType: (post.media_type as 'video' | 'image' | 'audio' | 'text') || 'text',
     minter: post.creator_wallet_address,
     createdAt: post.created_at,
     likes: 0,
