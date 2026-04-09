@@ -1,52 +1,180 @@
 /**
- * Fansite Feed — Stub
+ * Fansite Feed — Live Supabase Implementation
  */
-import { apiCall, getAuthToken } from './core';
+import { supabase } from '@/integrations/supabase/client';
+import { withWalletHeader } from '@/lib/supabase-wallet-client';
 import type {
-  DeHubNFT,
-  DeHubUser,
-  DeHubCategory,
-  PaginatedResponse,
-  SearchNFTsParams,
-  UniversalSearchParams,
-  UniversalSearchResponse,
-  SearchSuggestionsParams,
-  SearchSuggestion,
-  SearchLogParams,
+  DeHubNFT, DeHubCategory, PaginatedResponse,
+  SearchNFTsParams, UniversalSearchParams, UniversalSearchResponse,
+  SearchSuggestionsParams, SearchSuggestion, SearchLogParams,
 } from './types';
 
+function postToNFT(p: any): DeHubNFT {
+  return {
+    tokenId: p.token_id,
+    name: p.title || '',
+    description: p.description || '',
+    imageUrl: p.media_type === 'image' ? p.media_url : p.thumbnail_url || '',
+    videoUrl: p.media_type === 'video' ? p.media_url : undefined,
+    audioUrl: p.media_type === 'audio' ? p.media_url : undefined,
+    postType: p.media_type || 'text',
+    minter: p.creator_wallet_address,
+    createdAt: p.created_at,
+    likes: p.like_count,
+    views: p.view_count,
+    commentCount: p.comment_count,
+    category: p.category,
+  };
+}
+
+function getWallet(): string | null {
+  return localStorage.getItem('dehub_wallet');
+}
+
 export async function searchNFTs(params: SearchNFTsParams = {}): Promise<PaginatedResponse<DeHubNFT>> {
-  return { data: [], total: 0, page: 0, limit: 20, has_more: false };
+  const page = params.page || 0;
+  const limit = (params as any).limit || params.unit || 20;
+  const from = page * limit;
+
+  let query = supabase.from('posts').select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, from + limit - 1);
+
+  if (params.category) query = query.ilike('category', `%${params.category}%`);
+  if (params.postType) query = query.eq('media_type', params.postType);
+  if (params.address) query = query.eq('creator_wallet_address', params.address.toLowerCase());
+  if (params.search) query = query.textSearch('search_vector', params.search);
+
+  const { data, count } = await query;
+  return {
+    data: (data || []).map(postToNFT),
+    total: count || 0,
+    page,
+    limit,
+    has_more: (count || 0) > (page + 1) * limit,
+  };
 }
 
 export async function universalSearch(params: UniversalSearchParams): Promise<UniversalSearchResponse> {
-  return { accounts: [], videos: [], livestreams: [], total: 0, has_more: false };
+  // Search posts
+  const { data: posts } = await supabase.from('posts').select('*')
+    .textSearch('search_vector', params.q || '')
+    .limit(20);
+
+  // Search profiles
+  const { data: profiles } = await supabase.from('profiles').select('*')
+    .or(`username.ilike.%${params.q}%,display_name.ilike.%${params.q}%`)
+    .limit(10);
+
+  return {
+    accounts: (profiles || []).map((p: any) => ({
+      id: p.id,
+      address: p.wallet_address,
+      username: p.username || '',
+      displayName: p.display_name,
+      avatarImageUrl: p.avatar_url,
+    })),
+    videos: (posts || []).filter((p: any) => p.media_type === 'video').map(postToNFT),
+    livestreams: [],
+    total: (posts?.length || 0) + (profiles?.length || 0),
+    has_more: false,
+  };
 }
 
 export async function getSearchSuggestions(params: SearchSuggestionsParams): Promise<SearchSuggestion[]> {
-  return [];
+  const { data } = await supabase.from('profiles').select('username, display_name, avatar_url, wallet_address')
+    .or(`username.ilike.%${params.q}%,display_name.ilike.%${params.q}%`)
+    .limit(5);
+  return (data || []).map((p: any) => ({
+    type: 'account' as const,
+    text: p.username || p.display_name || p.wallet_address,
+    address: p.wallet_address,
+    avatarUrl: p.avatar_url,
+  }));
 }
 
 export async function logSearchAnalytics(params: SearchLogParams): Promise<void> {}
 
 export async function getNFTInfo(tokenId: string): Promise<DeHubNFT> {
+  const { data } = await supabase.from('posts').select('*').eq('token_id', Number(tokenId)).maybeSingle();
+  if (data) return postToNFT(data);
   return { tokenId: Number(tokenId), name: '', imageUrl: '', postType: 'image', minter: '', createdAt: '' };
 }
 
-export async function recordView(tokenId: string): Promise<void> {}
-export async function recordListen(tokenId: string): Promise<void> {}
+export async function recordView(tokenId: string): Promise<void> {
+  // Increment view count
+  const { data: post } = await supabase.from('posts').select('id, view_count').eq('token_id', Number(tokenId)).maybeSingle();
+  if (post) {
+    await supabase.from('posts').update({ view_count: (post.view_count || 0) + 1 }).eq('id', post.id);
+  }
+}
+
+export async function recordListen(tokenId: string): Promise<void> {
+  return recordView(tokenId);
+}
 
 export interface SavePostResponse { result: boolean; saved: boolean; message?: string; }
+
 export async function toggleSavePost(tokenId: string | number): Promise<SavePostResponse> {
-  return { result: true, saved: true };
+  const wallet = getWallet();
+  if (!wallet) return { result: false, saved: false };
+
+  const { data: post } = await supabase.from('posts').select('id').eq('token_id', Number(tokenId)).maybeSingle();
+  if (!post) return { result: false, saved: false };
+
+  // Check if already bookmarked
+  const { data: existing } = await withWalletHeader(
+    supabase.from('bookmarks').select('id').eq('post_id', post.id).eq('wallet_address', wallet.toLowerCase()),
+    wallet
+  );
+
+  if (existing && existing.length > 0) {
+    await withWalletHeader(
+      supabase.from('bookmarks').delete().eq('post_id', post.id).eq('wallet_address', wallet.toLowerCase()),
+      wallet
+    );
+    return { result: true, saved: false };
+  } else {
+    await withWalletHeader(
+      supabase.from('bookmarks').insert({ post_id: post.id, wallet_address: wallet.toLowerCase() }),
+      wallet
+    );
+    return { result: true, saved: true };
+  }
 }
 
 export async function getSavedPosts(page?: number, limit?: number, address?: string): Promise<{ result: DeHubNFT[]; pagination?: any }> {
-  return { result: [] };
+  const wallet = address || getWallet();
+  if (!wallet) return { result: [] };
+
+  const p = page || 0;
+  const l = limit || 20;
+
+  const { data } = await withWalletHeader(
+    supabase.from('bookmarks').select('post_id, posts(*)').eq('wallet_address', wallet.toLowerCase())
+      .order('created_at', { ascending: false }).range(p * l, p * l + l - 1),
+    wallet
+  );
+
+  const nfts = (data || []).map((b: any) => b.posts ? postToNFT(b.posts) : null).filter(Boolean);
+  return { result: nfts };
 }
 
 export async function getLikedPosts(page?: number | string, limit?: number): Promise<{ result: DeHubNFT[]; pagination?: any }> {
-  return { result: [] };
+  const wallet = getWallet();
+  if (!wallet) return { result: [] };
+
+  const p = typeof page === 'string' ? parseInt(page) : (page || 0);
+  const l = limit || 20;
+
+  const { data } = await withWalletHeader(
+    supabase.from('post_likes').select('post_id, posts(*)').eq('wallet_address', wallet.toLowerCase())
+      .order('created_at', { ascending: false }).range(p * l, p * l + l - 1),
+    wallet
+  );
+
+  const nfts = (data || []).map((b: any) => b.posts ? postToNFT(b.posts) : null).filter(Boolean);
+  return { result: nfts };
 }
 
 export async function getWatchHistory(page?: number, limit?: number, address?: string): Promise<{ result: DeHubNFT[]; pagination?: any }> {
@@ -54,7 +182,8 @@ export async function getWatchHistory(page?: number, limit?: number, address?: s
 }
 
 export async function getCategories(): Promise<DeHubCategory[]> {
-  return [];
+  const { data } = await supabase.from('trending_categories').select('*').order('post_count', { ascending: false }).limit(20);
+  return (data || []).map((c: any) => ({ id: c.id, name: c.name, slug: c.name.toLowerCase().replace(/\s+/g, '-'), nft_count: c.post_count }));
 }
 
 export async function getServerTime(): Promise<{ time: string }> {
@@ -74,5 +203,18 @@ export async function recordBatchViews(tokenIds: number[]): Promise<{ result: bo
 }
 
 export async function getMyPosts(params?: any): Promise<PaginatedResponse<DeHubNFT> & { result?: DeHubNFT[] }> {
-  return { data: [], result: [], total: 0, page: 0, limit: 20, has_more: false };
+  const wallet = getWallet();
+  if (!wallet) return { data: [], result: [], total: 0, page: 0, limit: 20, has_more: false };
+
+  const page = params?.page || 0;
+  const limit = params?.limit || 20;
+  const from = page * limit;
+
+  const { data, count } = await supabase.from('posts').select('*', { count: 'exact' })
+    .eq('creator_wallet_address', wallet.toLowerCase())
+    .order('created_at', { ascending: false })
+    .range(from, from + limit - 1);
+
+  const nfts = (data || []).map(postToNFT);
+  return { data: nfts, result: nfts, total: count || 0, page, limit, has_more: (count || 0) > (page + 1) * limit };
 }

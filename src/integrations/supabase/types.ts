@@ -237,6 +237,35 @@ export type Database = {
         }
         Relationships: []
       }
+      bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmarks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buy_bot_state: {
         Row: {
           id: string
@@ -969,6 +998,30 @@ export type Database = {
         }
         Relationships: []
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_address: string
+          following_address: string
+          id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          follower_address: string
+          following_address: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          follower_address?: string
+          following_address?: string
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       fraction_listings: {
         Row: {
           chain_id: number
@@ -1406,6 +1459,60 @@ export type Database = {
           },
         ]
       }
+      post_comments: {
+        Row: {
+          avatar_url: string | null
+          content: string
+          created_at: string
+          id: string
+          like_count: number
+          parent_id: string | null
+          post_id: string
+          updated_at: string
+          username: string | null
+          wallet_address: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          like_count?: number
+          parent_id?: string | null
+          post_id: string
+          updated_at?: string
+          username?: string | null
+          wallet_address: string
+        }
+        Update: {
+          avatar_url?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          like_count?: number
+          parent_id?: string | null
+          post_id?: string
+          updated_at?: string
+          username?: string | null
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_drafts: {
         Row: {
           created_at: string
@@ -1448,6 +1555,122 @@ export type Database = {
         }
         Relationships: []
       }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          audio_url: string | null
+          category: string | null
+          comment_count: number
+          created_at: string
+          creator_wallet_address: string
+          description: string | null
+          duration: number | null
+          id: string
+          is_music_video: boolean
+          is_ppv: boolean
+          is_short: boolean
+          is_subscribers_only: boolean
+          like_count: number
+          media_type: string
+          media_url: string | null
+          metadata: Json | null
+          ppv_amount: number | null
+          ppv_currency: string | null
+          repost_count: number
+          search_vector: unknown
+          thumbnail_url: string | null
+          title: string
+          token_id: number
+          updated_at: string
+          view_count: number
+          visibility: string
+        }
+        Insert: {
+          audio_url?: string | null
+          category?: string | null
+          comment_count?: number
+          created_at?: string
+          creator_wallet_address: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_music_video?: boolean
+          is_ppv?: boolean
+          is_short?: boolean
+          is_subscribers_only?: boolean
+          like_count?: number
+          media_type?: string
+          media_url?: string | null
+          metadata?: Json | null
+          ppv_amount?: number | null
+          ppv_currency?: string | null
+          repost_count?: number
+          search_vector?: unknown
+          thumbnail_url?: string | null
+          title?: string
+          token_id?: number
+          updated_at?: string
+          view_count?: number
+          visibility?: string
+        }
+        Update: {
+          audio_url?: string | null
+          category?: string | null
+          comment_count?: number
+          created_at?: string
+          creator_wallet_address?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_music_video?: boolean
+          is_ppv?: boolean
+          is_short?: boolean
+          is_subscribers_only?: boolean
+          like_count?: number
+          media_type?: string
+          media_url?: string | null
+          metadata?: Json | null
+          ppv_amount?: number | null
+          ppv_currency?: string | null
+          repost_count?: number
+          search_vector?: unknown
+          thumbnail_url?: string | null
+          title?: string
+          token_id?: number
+          updated_at?: string
+          view_count?: number
+          visibility?: string
+        }
+        Relationships: []
+      }
       ppv_purchases: {
         Row: {
           amount: number
@@ -1481,6 +1704,93 @@ export type Database = {
           id?: string
           token_id?: string
           tx_hash?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          about_me: string | null
+          avatar_url: string | null
+          bio: string | null
+          cover_url: string | null
+          created_at: string
+          customs: Json | null
+          discord_link: string | null
+          display_name: string | null
+          dm_settings: Json | null
+          facebook_link: string | null
+          follower_count: number
+          following_count: number
+          id: string
+          instagram_link: string | null
+          is_private: boolean
+          is_verified: boolean
+          like_count: number
+          post_count: number
+          subscriber_count: number
+          telegram_link: string | null
+          tiktok_link: string | null
+          twitter_link: string | null
+          updated_at: string
+          username: string | null
+          wallet_address: string
+          youtube_link: string | null
+        }
+        Insert: {
+          about_me?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          cover_url?: string | null
+          created_at?: string
+          customs?: Json | null
+          discord_link?: string | null
+          display_name?: string | null
+          dm_settings?: Json | null
+          facebook_link?: string | null
+          follower_count?: number
+          following_count?: number
+          id?: string
+          instagram_link?: string | null
+          is_private?: boolean
+          is_verified?: boolean
+          like_count?: number
+          post_count?: number
+          subscriber_count?: number
+          telegram_link?: string | null
+          tiktok_link?: string | null
+          twitter_link?: string | null
+          updated_at?: string
+          username?: string | null
+          wallet_address: string
+          youtube_link?: string | null
+        }
+        Update: {
+          about_me?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          cover_url?: string | null
+          created_at?: string
+          customs?: Json | null
+          discord_link?: string | null
+          display_name?: string | null
+          dm_settings?: Json | null
+          facebook_link?: string | null
+          follower_count?: number
+          following_count?: number
+          id?: string
+          instagram_link?: string | null
+          is_private?: boolean
+          is_verified?: boolean
+          like_count?: number
+          post_count?: number
+          subscriber_count?: number
+          telegram_link?: string | null
+          tiktok_link?: string | null
+          twitter_link?: string | null
+          updated_at?: string
+          username?: string | null
+          wallet_address?: string
+          youtube_link?: string | null
         }
         Relationships: []
       }
