@@ -70,7 +70,7 @@ import BlueWhaleBadge from '@/assets/badges/Blue Whale.webp';
 import MeglodonBadge from '@/assets/badges/Meglodon.webp';
 
 // ── Coin / currency logos (Command Centre wallet) ──
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import bnbLogo from '@/assets/bnb-logo.png';
 import usdtLogo from '@/assets/usdt-logo.png';
 import ethLogo from '@/assets/eth-logo.png';

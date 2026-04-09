@@ -20,7 +20,7 @@ import { BadgeIcon } from '@/components/app/BadgeIcon';
 import { useDMRealtime } from '@/hooks/use-dm-realtime';
 import chatBubbleIcon from '@/assets/icons/chat-bubble.png';
 import messagesBubbleIcon from '@/assets/icons/messages-3d-icon.png';
-import dehubLogo from '@/assets/dehub-logo.png';
+import dehubLogo from '@/assets/fansite-logo.png';
 import { SEOHead } from '@/components/SEOHead';
 
 function ConversationBadge({ badgeBalance }: { badgeBalance?: number }) {
@@ -304,7 +304,7 @@ export default function MessagesPage() {
 
   return (
     <div className="h-full px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2 overflow-hidden">
-      <SEOHead title="Messages — Direct & Group Chat" description="Send direct messages, create group chats, and connect with other users privately on DeHub. End-to-end encrypted, decentralized messaging." url="https://dehub.io/app/messages" />
+      <SEOHead title="Messages — Direct & Group Chat" description="Send direct messages, create group chats, and connect with other users privately on DeHub. End-to-end encrypted, decentralized messaging." url="https://fansite.app/app/messages" />
       <h1 className="sr-only">DeHub Messages — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       <div className="h-[calc(100dvh-120px)] lg:h-[calc(100dvh-32px)] max-h-full">
         {/* Full Width Messages Panel */}

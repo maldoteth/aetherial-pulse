@@ -25,7 +25,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 import { useProfilePage } from '@/hooks/use-profile-page';
 import { useProfileFollow } from '@/hooks/use-profile-follow';
@@ -230,7 +230,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-white">{t('profile.usernameAvailable')}</h2>
               <p className="text-zinc-400 max-w-md">
-                {t('profile.signUpToClaim')} <span className="text-white font-medium">dehub.io/{displayUsername}</span>
+                {t('profile.signUpToClaim')} <span className="text-white font-medium">fansite.app/{displayUsername}</span>
               </p>
             </div>
             <Button
@@ -275,15 +275,15 @@ export default function ProfilePage() {
       <SEOHead
         title={data.profile?.name || data.profile?.handle || 'Profile'}
         description={data.profile?.bio || `View ${data.profile?.name || data.profile?.handle || 'this profile'} on DeHub`}
-        url={`https://dehub.io/${data.profile?.handle || ''}`}
+        url={`https://fansite.app/${data.profile?.handle || ''}`}
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Person',
           name: data.profile?.name || data.profile?.handle || 'DeHub User',
-          url: `https://dehub.io/${data.profile?.handle || ''}`,
+          url: `https://fansite.app/${data.profile?.handle || ''}`,
           ...(data.profile?.bio && { description: data.profile.bio }),
           ...(data.profile?.avatarUrl && { image: data.profile.avatarUrl }),
-          sameAs: `https://dehub.io/${data.profile?.handle || ''}`,
+          sameAs: `https://fansite.app/${data.profile?.handle || ''}`,
         }}
       />
       {/* Pull-to-refresh indicator */}

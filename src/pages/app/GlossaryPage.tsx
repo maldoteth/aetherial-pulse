@@ -10,7 +10,7 @@ import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SEOHead } from '@/components/SEOHead';
 import glossaryIcon from '@/assets/glossary-icon.png';
-import dhbCoinIcon from '@/assets/dehub-coin.png';
+import dhbCoinIcon from '@/assets/fansite-logo.png';
 import { BADGE_LEVELS, getBadgeUrl } from '@/lib/staking-badges';
 import medal1 from '@/assets/medal-1.png';
 import medal2 from '@/assets/medal-2.png';
@@ -251,7 +251,7 @@ export default function GlossaryPage() {
 
   return (
     <div className="px-2 pt-1 pb-6 sm:px-3 sm:pt-1 sm:pb-6 lg:pt-2 min-h-screen">
-      <SEOHead title="Glossary — Icons, Features & Web3 Terms" description="Learn what every icon, button and feature means on DeHub. A complete guide to the platform's UI, Web3 terms, staking badges and more." url="https://dehub.io/app/glossary" jsonLd={{ '@context': 'https://schema.org', '@type': 'DefinedTermSet', name: 'DeHub Glossary', url: 'https://dehub.io/app/glossary', description: 'Complete guide to DeHub icons, features and Web3 terms.' }} />
+      <SEOHead title="Glossary — Icons, Features & Web3 Terms" description="Learn what every icon, button and feature means on DeHub. A complete guide to the platform's UI, Web3 terms, staking badges and more." url="https://fansite.app/app/glossary" jsonLd={{ '@context': 'https://schema.org', '@type': 'DefinedTermSet', name: 'DeHub Glossary', url: 'https://fansite.app/app/glossary', description: 'Complete guide to DeHub icons, features and Web3 terms.' }} />
       <h1 className="sr-only">DeHub Glossary — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FundActions } from './FundActions';
 import { useTranslation } from 'react-i18next';
 import { useMemo } from 'react';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import btcLogo from '@/assets/btc-logo.png';
 import usdtLogo from '@/assets/usdt-logo.png';
 import ethLogo from '@/assets/eth-logo.png';
@@ -69,7 +69,7 @@ export function BalanceCard() {
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mt-1">
-          <img src={dehubCoin} alt="DeHub" className="w-8 h-8 sm:w-9 sm:h-9" />
+          <img src={dehubCoin} alt="fansite" className="w-8 h-8 sm:w-9 sm:h-9" />
           {isLoading ? (
             <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
           ) : (

@@ -19,10 +19,10 @@ import { Eye, MoreVertical, ListPlus, Clock, Flag, Download, Ban, Sparkles, Play
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import ppvTicketIcon from '@/assets/ppv-ticket-icon.png';
 
-import dehubCoinSmall from '@/assets/dehub-coin.png';
+import dehubCoinSmall from '@/assets/fansite-logo.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CardHeader } from './CardHeader';
 import { ActionBar } from './ActionBar';

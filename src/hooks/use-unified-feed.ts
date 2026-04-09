@@ -16,7 +16,7 @@ import type { VideoItem, ImagePost, TextPost } from '@/types/feed.types';
 import { BLOCKED_POST_IDS } from '@/constants/post.constants';
 import { useAuth } from '@/contexts/AuthContext';
 
-const DEHUB_API_BASE = "https://api.dehub.io";
+const DEHUB_API_BASE = "https://fansite.app/api";
 
 // ===========================================================================
 // TYPES

@@ -1051,7 +1051,7 @@ export function CommentsSection({ tokenId, onClose, initialTab, embedded = false
                 {repostersData.items.map((user) => {
                   const displayName = user.displayName || user.username || user.address?.slice(0, 8) || 'Unknown';
                   const avatarUrl = user.avatarImageUrl
-                    ? (user.avatarImageUrl.startsWith('http') ? user.avatarImageUrl : `https://api.dehub.io/${user.avatarImageUrl}`)
+                    ? (user.avatarImageUrl.startsWith('http') ? user.avatarImageUrl : `https://fansite.app/api/${user.avatarImageUrl}`)
                     : undefined;
                   return (
                     <button

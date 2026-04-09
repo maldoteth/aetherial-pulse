@@ -51,7 +51,7 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: Briefcase, label: 'Careers', path: '/app/jobs' },
   { icon: Scroll, label: 'Glossary', path: '/app/glossary' },
   { icon: Map, label: 'Guide', path: '/guide' },
-  { icon: BookOpen, label: 'Docs', path: 'https://dehub.io/docs', external: true },
+  { icon: BookOpen, label: 'Docs', path: 'https://fansite.app/docs', external: true },
   { icon: FileText, label: 'Blog', path: '/docs/blog' },
   { icon: Home, label: 'Home', path: '/app' },
 ];

@@ -19,7 +19,7 @@ import { useAllChainsTokens } from '@/hooks/use-wallet-tokens';
 import { BASE_CHAIN_ID } from '@/lib/contracts/dhb-token';
 import { toast } from 'sonner';
 import { dhbText } from '@/lib/dhb-toast';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import ethLogo from '@/assets/eth-logo.png';
 import bnbLogo from '@/assets/bnb-logo.png';
 import usdtLogo from '@/assets/usdt-logo.png';

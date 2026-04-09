@@ -24,7 +24,7 @@ import {
   type DPayToken,
   type DPayTransaction,
 } from '@/lib/api/dpay';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { LiquidGlassBubble } from '@/components/ui/liquid-glass-bubble';
 import { SEOHead } from '@/components/SEOHead';
 import { format } from 'date-fns';
@@ -273,7 +273,7 @@ export default function BuyCoinsPage() {
 
   return (
     <div className="min-h-screen p-3 sm:p-4">
-      <SEOHead title="Buy — Purchase Crypto on DeHub" description="Buy DHB and other cryptocurrencies directly on DeHub with your credit card. Fast checkout, multiple chains supported." url="https://dehub.io/app/buy" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Buy Crypto on DeHub', url: 'https://dehub.io/app/buy', description: 'Purchase DHB and other cryptocurrencies with credit card on DeHub.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://dehub.io' } }} />
+      <SEOHead title="Buy — Purchase Crypto on DeHub" description="Buy DHB and other cryptocurrencies directly on DeHub with your credit card. Fast checkout, multiple chains supported." url="https://fansite.app/app/buy" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Buy Crypto on DeHub', url: 'https://fansite.app/app/buy', description: 'Purchase DHB and other cryptocurrencies with credit card on DeHub.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
       <h1 className="sr-only">DeHub Buy Crypto — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       <div className="max-w-lg mx-auto space-y-4">
         {/* Header */}

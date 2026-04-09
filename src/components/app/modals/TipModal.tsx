@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Gem, Loader2 } from 'lucide-react';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 

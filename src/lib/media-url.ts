@@ -87,18 +87,18 @@ export function buildAvatarUrl(address: string, apiAvatarPath: string | undefine
     return `${apiAvatarPath}${apiAvatarPath.includes('?') ? '&' : '?'}v=${cacheBust}`;
   }
 
-  // api.dehub.io/statics/... — strip statics/ prefix and route to CDN
-  // e.g. "https://api.dehub.io/statics/avatars/0x.png" → "https://dehubcdn.../avatars/0x.png"
-  if (apiAvatarPath.includes('api.dehub.io') && apiAvatarPath.includes('/statics/')) {
+  // api.fansite.app/statics/... — strip statics/ prefix and route to CDN
+  // e.g. "https://fansite.app/api/statics/avatars/0x.png" → "https://dehubcdn.../avatars/0x.png"
+  if (apiAvatarPath.includes('api.fansite.app') && apiAvatarPath.includes('/statics/')) {
     const match = apiAvatarPath.match(/statics\/([^?]+)/);
     if (match) {
       return `${DEHUB_CDN_BASE}${match[1]}?v=${cacheBust}`;
     }
   }
 
-  // Any other api.dehub.io URL — extract path and route to CDN
-  // api.dehub.io does NOT serve avatar files directly (returns 404); CDN is the source of truth
-  if (apiAvatarPath.includes('api.dehub.io')) {
+  // Any other api.fansite.app URL — extract path and route to CDN
+  // api.fansite.app does NOT serve avatar files directly (returns 404); CDN is the source of truth
+  if (apiAvatarPath.includes('api.fansite.app')) {
     const match = apiAvatarPath.match(/api\.dehub\.io\/([^?]+)/);
     if (match) {
       return `${DEHUB_CDN_BASE}${match[1]}?v=${cacheBust}`;

@@ -17,8 +17,8 @@ import { Eye, MoreVertical, Download, Flag, Ban, EyeOff, Sparkles, ChevronDown, 
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
-import dehubCoinSmall from '@/assets/dehub-coin.png';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoinSmall from '@/assets/fansite-logo.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { CardHeader } from './CardHeader';
 import { ActionBar } from './ActionBar';
 import { CommentsWrapper } from './CommentsWrapper';

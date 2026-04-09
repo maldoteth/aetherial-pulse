@@ -17,7 +17,7 @@ import { EventAttendeesDrawer } from './EventAttendeesDrawer';
 import { BadgeIcon } from '@/components/app/BadgeIcon';
 import { buildAvatarUrl } from '@/lib/media-url';
 import { useNavigate } from 'react-router-dom';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { FriendsAtEvent } from './FriendsAtEvent';
 import { EditEventDrawer } from './EditEventDrawer';
 import { useGlobalDropZone } from '@/hooks/use-global-drop-zone';

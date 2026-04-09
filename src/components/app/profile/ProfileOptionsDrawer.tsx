@@ -37,7 +37,7 @@ export function ProfileOptionsContent({
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const handleCopyProfileUrl = () => {
-    navigator.clipboard.writeText(`https://dehub.io/${profile.handle.replace('@', '')}`);
+    navigator.clipboard.writeText(`https://fansite.app/${profile.handle.replace('@', '')}`);
     toast.success(t('profileOptions.profileUrlCopied'));
     setShareSheetOpen(false);
   };

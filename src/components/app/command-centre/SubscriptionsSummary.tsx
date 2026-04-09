@@ -1,7 +1,7 @@
 import { TrendingUp, Loader2, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMySubscriptions, useCreatorPlans } from '@/hooks/use-subscriptions';
 import { isPast } from 'date-fns';

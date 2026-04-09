@@ -15,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GLASS_STYLES } from '@/constants/app.constants';
 import { useTranslation } from 'react-i18next';
 import { Switch } from '@/components/ui/switch';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 interface CreateEventDrawerProps {
   open: boolean;

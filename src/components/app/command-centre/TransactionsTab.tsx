@@ -10,7 +10,7 @@ import { getDPayTransactions, getDPayTotal, type DPayTransaction } from '@/lib/a
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { subHours, subDays, subWeeks, subMonths } from 'date-fns';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 const timeFilters = ['1h', '1d', '1w', '1m', 'Max'];
 
@@ -173,7 +173,7 @@ export function TransactionsTab() {
                 <span className="text-3xl sm:text-4xl font-bold text-white">
                   {totalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
-                <img src={dehubCoin} alt="DeHub" className="w-5 h-5" />
+                <img src={dehubCoin} alt="fansite" className="w-5 h-5" />
               </div>
             </div>
             <div className="flex items-center gap-2">

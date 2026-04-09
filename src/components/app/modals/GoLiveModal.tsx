@@ -273,7 +273,7 @@ export function GoLiveModal({ isOpen, onClose }: GoLiveModalProps) {
         streamId,
         streamKey,
         ingestUrl,
-        playbackUrl: playbackUrl || `https://dehub.io/app/post/${tokenId}`,
+        playbackUrl: playbackUrl || `https://fansite.app/app/post/${tokenId}`,
         hlsUrl,
       };
 
@@ -282,7 +282,7 @@ export function GoLiveModal({ isOpen, onClose }: GoLiveModalProps) {
       logger.info('Stream setup ready', { streamId, tokenId });
       toast.success('Live stream is ready!');
 
-      // Mark stream as live in Supabase (api.dehub.io /start fails with 404)
+      // Mark stream as live in Supabase (api.fansite.app /start fails with 404)
       const token = getAuthToken();
       const addr = walletAddress || minterAddress;
       if (token && addr) {

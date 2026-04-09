@@ -23,7 +23,7 @@ import { LiquidGlassBubble2 } from '@/components/ui/liquid-glass-bubble-2';
 import { useAllChainsTokens } from '@/hooks/use-wallet-tokens';
 import { useTranslation } from 'react-i18next';
 import { SEOHead } from '@/components/SEOHead';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 const BRIDGE_ADDRESS = '0x11D79aE9a0F8a8f9Fcf5BE71e403ed203EC2394d';
 
@@ -188,7 +188,7 @@ export default function BridgePage() {
 
   return (
     <div className={cn("min-h-screen pb-24 px-3 sm:px-4 max-w-5xl mx-auto", isCollapsed && "pt-16 md:pt-0")}>
-      <SEOHead title="Bridge — Transfer DHB Cross-Chain" description="Bridge your DHB tokens between Base and BNB Chain seamlessly on DeHub. Fast, secure cross-chain transfers with live transaction tracking." url="https://dehub.io/app/bridge" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'DeHub Token Bridge', url: 'https://dehub.io/app/bridge', applicationCategory: 'FinanceApplication', description: 'Bridge DHB tokens between Base and BNB Chain.', operatingSystem: 'Web' }} />
+      <SEOHead title="Bridge — Transfer DHB Cross-Chain" description="Bridge your DHB tokens between Base and BNB Chain seamlessly on DeHub. Fast, secure cross-chain transfers with live transaction tracking." url="https://fansite.app/app/bridge" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'DeHub Token Bridge', url: 'https://fansite.app/app/bridge', applicationCategory: 'FinanceApplication', description: 'Bridge DHB tokens between Base and BNB Chain.', operatingSystem: 'Web' }} />
       <h1 className="sr-only">DeHub Bridge — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <motion.div

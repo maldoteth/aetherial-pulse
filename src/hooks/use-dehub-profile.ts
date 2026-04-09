@@ -13,7 +13,7 @@ import { buildAvatarUrl, buildCoverUrl } from '@/lib/media-url';
 import { mapToVideoItem, mapToImagePost, mapToTextPost, type UnifiedFeedItem } from './use-unified-feed';
 import type { VideoItem, ImagePost, TextPost } from '@/types/feed.types';
 
-const DEHUB_API_BASE = "https://api.dehub.io";
+const DEHUB_API_BASE = "https://fansite.app/api";
 
 export interface ProfileData {
   id: string;

@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useCreatePlan } from '@/hooks/use-subscriptions';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 interface CreatePlanModalProps {
   open: boolean;

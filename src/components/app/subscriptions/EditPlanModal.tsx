@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useUpdatePlan } from '@/hooks/use-subscriptions';
 import { type SubscriptionPlan } from '@/lib/api/dehub';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 interface EditPlanModalProps {
   open: boolean;

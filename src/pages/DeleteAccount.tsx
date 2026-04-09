@@ -30,7 +30,7 @@ const DeleteAccount = () => {
           <h2 className="text-base font-semibold mb-2">How to submit a deletion request</h2>
           <ol className="list-decimal list-inside space-y-1 text-xs text-white/80">
             <li>
-              Send an email to <a href="mailto:dev@dehub.io" className="text-white hover:underline">dev@dehub.io</a> from
+              Send an email to <a href="mailto:dev@fansite.app" className="text-white hover:underline">dev@fansite.app</a> from
               the email address linked to your DeHub account. If your account is wallet-based, include your wallet address as shown in the app.
             </li>
             <li>
@@ -109,7 +109,7 @@ const DeleteAccount = () => {
           <div className="mb-2">
             <h3 className="text-sm font-medium mb-1">Account deletion</h3>
             <div className="bg-white/10 p-2 rounded-lg font-mono text-[10px] text-white/90">
-              <p className="mb-2"><strong>To:</strong> dev@dehub.io</p>
+              <p className="mb-2"><strong>To:</strong> dev@fansite.app</p>
               <p className="mb-4"><strong>Subject:</strong> Account deletion</p>
               <p className="mb-2">Hello DeHub team,</p>
               <p className="mb-4">Please delete my DeHub account and associated data.</p>
@@ -125,7 +125,7 @@ const DeleteAccount = () => {
           <div>
             <h3 className="text-sm font-medium mb-1">Data deletion (keep account)</h3>
             <div className="bg-white/10 p-2 rounded-lg font-mono text-[10px] text-white/90">
-              <p className="mb-2"><strong>To:</strong> dev@dehub.io</p>
+              <p className="mb-2"><strong>To:</strong> dev@fansite.app</p>
               <p className="mb-4"><strong>Subject:</strong> Data deletion</p>
               <p className="mb-2">Hello DeHub team,</p>
               <p className="mb-4">Please delete the following data from my account while keeping my account active:</p>
@@ -142,7 +142,7 @@ const DeleteAccount = () => {
         <section className="mb-3">
           <h2 className="text-base font-semibold mb-2">Contact</h2>
           <p className="text-xs text-white/80">
-            Email: <a href="mailto:dev@dehub.io" className="text-white hover:underline">dev@dehub.io</a>
+            Email: <a href="mailto:dev@fansite.app" className="text-white hover:underline">dev@fansite.app</a>
           </p>
         </section>
 

@@ -17,7 +17,7 @@ export function HomeScreen() {
   return (
     <div className="min-h-full bg-black flex flex-col">
       <MobileStatusBar />
-      <MobileTopBar title="DeHub" />
+      <MobileTopBar title="fansite" />
 
       {/* Stories row */}
       <div className="flex gap-3 px-4 py-3 overflow-x-auto scrollbar-hide">

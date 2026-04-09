@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 import padlockImg from '@/assets/padlock.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

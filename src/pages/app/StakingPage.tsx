@@ -24,7 +24,7 @@ import { LiquidGlassBubble2 } from '@/components/ui/liquid-glass-bubble-2';
 import { useTranslation } from 'react-i18next';
 import { SEOHead } from '@/components/SEOHead';
 
-import dehubCoin from '@/assets/dehub-coin.png';
+import dehubCoin from '@/assets/fansite-logo.png';
 
 const UNSTAKE_COOLDOWN_DAYS = 12;
 const UNSTAKE_COOLDOWN_MS = UNSTAKE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
@@ -535,7 +535,7 @@ export default function StakingPage() {
 
   return (
     <div className={cn("min-h-screen pb-24 px-3 sm:px-4 max-w-5xl mx-auto", isCollapsed && "pt-16 md:pt-0")}>
-      <SEOHead title="Stake DHB — Earn Rewards & Unlock Badges" description="Stake your DHB tokens on DeHub to earn BNB rewards, unlock staking badges, and gain governance voting weight. 12-day cooldown on unstaking." url="https://dehub.io/app/stake" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'DHB Staking', url: 'https://dehub.io/app/stake', description: 'Stake DHB tokens to earn BNB rewards and unlock badges on DeHub.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://dehub.io' } }} />
+      <SEOHead title="Stake DHB — Earn Rewards & Unlock Badges" description="Stake your DHB tokens on DeHub to earn BNB rewards, unlock staking badges, and gain governance voting weight. 12-day cooldown on unstaking." url="https://fansite.app/app/stake" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'DHB Staking', url: 'https://fansite.app/app/stake', description: 'Stake DHB tokens to earn BNB rewards and unlock badges on DeHub.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
       <h1 className="sr-only">DeHub Staking — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <motion.div

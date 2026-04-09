@@ -12,7 +12,7 @@ import {
   Send, Loader2, ExternalLink, ChevronUp, Target, Handshake,
   Globe, TrendingUp, Megaphone, Heart, Sparkles, CheckCircle2,
 } from 'lucide-react';
-import dehubLogo from '@/assets/dehub-logo-white.png';
+import dehubLogo from '@/assets/fansite-logo.png';
 
 interface BDMFormData {
   name: string;
@@ -90,7 +90,7 @@ export default function JobsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      <SEOHead title="Careers" description="Join the DeHub team — open positions in business development, marketing and more." url="https://dehub.io/jobs" />
+      <SEOHead title="Careers" description="Join the DeHub team — open positions in business development, marketing and more." url="https://fansite.app/jobs" />
       {/* Background particles */}
       <div className="absolute inset-0 pointer-events-none">
         {Array.from({ length: 60 }).map((_, i) => (
@@ -429,8 +429,8 @@ export default function JobsPage() {
         <div className="mt-10 text-center space-y-2">
           <p className="text-zinc-500 text-xs">
             Don't see a role that fits? Reach out to us on{' '}
-            <a href="mailto:dev@dehub.io" className="text-zinc-300 underline underline-offset-2 hover:text-white transition-colors">
-              dev@dehub.io
+            <a href="mailto:dev@fansite.app" className="text-zinc-300 underline underline-offset-2 hover:text-white transition-colors">
+              dev@fansite.app
             </a>{' '}
             — we're always looking for talented people.
           </p>
