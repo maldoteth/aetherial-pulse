@@ -16,26 +16,14 @@ export const CHAT_MODEL_OPTIONS: ChatModelOption[] = [
   {
     id: 'auto',
     name: 'Auto',
-    description: 'DeHub trained model',
+    description: 'Fansite trained model',
     emoji: '✨'
   },
   {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini Flash',
-    description: 'Fast & free',
-    emoji: '⚡'
-  },
-  {
-    id: 'gemini-2.5-pro',
-    name: 'Gemini Pro',
-    description: 'Best reasoning $$',
-    emoji: '💎'
-  },
-  {
-    id: 'gpt-5-mini',
-    name: 'GPT-5 Mini',
-    description: 'OpenAI $',
-    emoji: '🧠'
+    id: 'dolphin-mixtral',
+    name: 'Dolphin',
+    description: 'Uncensored & free',
+    emoji: '🐬'
   },
   {
     id: 'grok-4',
