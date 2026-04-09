@@ -38,7 +38,7 @@ export function BadgeIcon({ badgeBalance, username, src, className = 'w-[9px] h-
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
-            navigate('/app/glossary#badges');
+            navigate('/glossary#badges');
           }}
         />
       </TooltipTrigger>

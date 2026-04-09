@@ -54,7 +54,7 @@ export default function CommunityPage() {
     return (
       <div className="max-w-2xl mx-auto px-3 py-12 text-center">
         <p className="text-zinc-500">{t('communities.communityNotFound')}</p>
-        <Button variant="outline" size="sm" className="mt-3 rounded-xl border-white/10 text-white" onClick={() => navigate('/app/communities')}>
+        <Button variant="outline" size="sm" className="mt-3 rounded-xl border-white/10 text-white" onClick={() => navigate('/communities')}>
           {t('communities.backButton')}
         </Button>
       </div>
@@ -85,7 +85,7 @@ export default function CommunityPage() {
       />
 
       <button
-        onClick={() => navigate('/app/communities')}
+        onClick={() => navigate('/communities')}
         className="flex items-center gap-1.5 px-3 pt-3 text-sm text-zinc-500 hover:text-white transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />

@@ -105,7 +105,7 @@ export function BalanceCard() {
         <Button
           variant="glass"
           className="flex-1 h-9 rounded-xl flex items-center justify-center"
-          onClick={() => navigate('/app/wallet', { state: { from: 'command-centre' } })}
+          onClick={() => navigate('/wallet', { state: { from: 'command-centre' } })}
         >
           <Wallet className="w-4 h-4" />
         </Button>

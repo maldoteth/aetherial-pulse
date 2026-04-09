@@ -1815,7 +1815,7 @@ function AssetsSettings() {
       {/* Wallet */}
       <div>
         <button
-          onClick={() => navigate('/app/wallet')}
+          onClick={() => navigate('/wallet')}
           className="w-full flex items-center justify-between p-4 bg-zinc-800 rounded-xl hover:bg-zinc-750 transition-colors group"
         >
           <div className="flex items-center gap-3">

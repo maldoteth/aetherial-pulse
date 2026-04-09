@@ -47,8 +47,8 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
   }, []);
   
   // Track if we're on a post overlay route
-  const postMatch = useMatch('/app/post/:postId');
-  const videoMatch = useMatch('/app/video/:tokenId');
+  const postMatch = useMatch('/post/:postId');
+  const videoMatch = useMatch('/video/:tokenId');
   const isPostRoute = !!(postMatch || videoMatch);
   
   // Track if we came from home page (for overlay behavior)

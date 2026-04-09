@@ -586,11 +586,11 @@ function getNavigationLink(notification: DeHubNotification): string | null {
         ? `/${notification.actorAddress}` 
         : notification.actorUsername 
           ? `/${notification.actorUsername}` 
-          : '/app/command-centre';
+          : '/command-centre';
     case 'livestream_start':
       return notification.tokenId ? `/app/post/${notification.tokenId}` : null;
     case 'video_removal':
-      return '/app/settings';
+      return '/settings';
     default:
       return null;
   }

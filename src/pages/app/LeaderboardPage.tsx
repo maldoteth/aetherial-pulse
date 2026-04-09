@@ -334,7 +334,7 @@ export default function LeaderboardPage() {
           <GlassFilterRow
             items={[...categories.map((cat) => ({ key: cat.id, label: <span className="flex items-center gap-1.5"><cat.icon className="w-4 h-4" />{t(cat.labelKey)}</span> })), { key: 'assets' as any, label: <span className="flex items-center gap-1.5"><TrendingUp className="w-4 h-4" />Assets</span> }]}
             activeKey={category}
-            onSelect={(key) => { if (key === 'assets') { navigate('/app/top-100'); return; } setCategory(key as CategoryType); setSortDirection('desc'); }}
+            onSelect={(key) => { if (key === 'assets') { navigate('/top-100'); return; } setCategory(key as CategoryType); setSortDirection('desc'); }}
             borderRadius="0.75rem"
             buttonClassName="px-3 py-2 rounded-xl text-sm"
           />

@@ -497,7 +497,7 @@ export default function BuyCoinsPage() {
                   className="mt-2"
                   onClick={() => {
                     setPurchaseStatus('idle');
-                    navigate('/app/wallet');
+                    navigate('/wallet');
                   }}
                 >
                   View Wallet

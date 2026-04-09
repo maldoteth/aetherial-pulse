@@ -243,7 +243,7 @@ export function ProfileHeader({
                   variant="glass" 
                   size="sm" 
                   className="rounded-xl gap-2"
-                  onClick={() => navigate('/app/settings')}
+                  onClick={() => navigate('/settings')}
                 >
                   <Pencil className="w-4 h-4" />
                   Edit Profile

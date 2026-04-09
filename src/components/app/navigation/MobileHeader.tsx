@@ -58,7 +58,7 @@ export function MobileHeader({ isOpen, onToggle, children }: MobileHeaderProps) 
     }
   }, [navigate]);
 
-  const isNotificationsActive = location.pathname === '/app/notifications';
+  const isNotificationsActive = location.pathname === '/notifications';
   const handleMenuClick = useCallback(() => {
     if (!isAuthenticated) {
       openLoginModal();
@@ -76,7 +76,7 @@ export function MobileHeader({ isOpen, onToggle, children }: MobileHeaderProps) 
         {/* Notifications Button - only visible when logged in */}
         {isAuthenticated && (
           <button
-            onClick={() => navigate('/app/notifications')}
+            onClick={() => navigate('/notifications')}
             className={`relative flex items-center justify-center transition-colors ${isNotificationsActive ? 'text-white' : 'text-zinc-400'}`}
             aria-label="Notifications"
           >

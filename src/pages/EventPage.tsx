@@ -37,7 +37,7 @@ export default function EventPage() {
       event={event ?? null}
       open={!!event}
       onOpenChange={(open) => {
-        if (!open) navigate('/app/events');
+        if (!open) navigate('/events');
       }}
     />
   );

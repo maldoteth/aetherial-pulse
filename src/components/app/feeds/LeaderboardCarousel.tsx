@@ -120,7 +120,7 @@ export const LeaderboardCarousel = memo(function LeaderboardCarousel() {
           Leaderboard
         </h3>
         <button
-          onClick={() => navigate('/app/leaderboard')}
+          onClick={() => navigate('/leaderboard')}
           className="text-zinc-400 text-sm hover:text-white flex items-center gap-1"
         >
           See all <ChevronRight className="w-4 h-4" />
