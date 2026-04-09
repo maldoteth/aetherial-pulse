@@ -34,12 +34,13 @@ export interface SearchUsersParams {
 }
 
 export interface UserCommentsResponse {
-  result: Array<{ id: string; content: string; tokenId: number; createdAt: string }>;
-  data?: Array<{ id: string; content: string; tokenId: number; createdAt: string }>;
+  result: ApiCommentResponse[];
+  data?: ApiCommentResponse[];
   total?: number;
   page?: number;
   has_more?: boolean;
   pagination?: { page: number; limit: number; totalCount: number; totalPages: number; hasMore: boolean };
+}
 }
 
 export interface SuggestedAccount {

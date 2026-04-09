@@ -73,6 +73,6 @@ export async function recordBatchViews(tokenIds: number[]): Promise<{ result: bo
   return { result: true };
 }
 
-export async function getMyPosts(params?: any): Promise<PaginatedResponse<DeHubNFT>> {
-  return { data: [], total: 0, page: 0, limit: 20, has_more: false };
+export async function getMyPosts(params?: any): Promise<PaginatedResponse<DeHubNFT> & { result?: DeHubNFT[] }> {
+  return { data: [], result: [], total: 0, page: 0, limit: 20, has_more: false };
 }
