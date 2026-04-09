@@ -1441,7 +1441,7 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
       {/* Friends on Stage notification */}
       <FriendsOnStageBar />
 
-          {items.length === 0 && !pinnedItem && optimisticPosts.length === 0 && !hasQueryData ? (
+          {items.length === 0 && !pinnedItem && optimisticPosts.length === 0 ? (
             <EmptyState />
           ) : (
             <div key={`${selectedSort.value}-${selectedDate.value}-${selectedPostType}`}>

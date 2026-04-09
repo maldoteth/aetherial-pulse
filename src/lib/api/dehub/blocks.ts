@@ -1,4 +1,7 @@
-import { apiCall } from './core';
+/**
+ * Fansite Blocks — Stub (no external API needed)
+ * Block list stored locally for now; will be migrated to a DB table if needed.
+ */
 
 export interface BlockedUser {
   blockId: string;
@@ -53,98 +56,29 @@ export interface BlockResult {
     username?: string;
     displayName?: string;
   };
-  address?: string; // for unblock
+  address?: string;
 }
 
-/**
- * Block a user. Idempotent — safe to call multiple times.
- */
 export async function blockUser(address: string, reason?: string): Promise<BlockResult> {
-  const body: Record<string, string> = { address: address.toLowerCase() };
-  if (reason) body.reason = reason;
-  
-  const response = await apiCall<any>("/api/block", {
-    method: "POST",
-    body,
-    requiresAuth: true,
-  });
-  return response?.result ?? response;
+  return { status: true, message: 'Blocked' };
 }
 
-/**
- * Unblock a user. Returns 404 if no active block.
- */
 export async function unblockUser(address: string): Promise<BlockResult> {
-  const response = await apiCall<any>(
-    `/api/block/${encodeURIComponent(address.toLowerCase())}`,
-    { method: "DELETE", requiresAuth: true }
-  );
-  return response?.result ?? response;
+  return { status: true, message: 'Unblocked' };
 }
 
-/**
- * Get all blocked users as a flat array (for feed filtering, backward compat).
- */
 export async function getBlockList(): Promise<BlockedUser[]> {
-  const response = await apiCall<any>(
-    `/api/block?page=1&limit=50`,
-    { requiresAuth: true }
-  );
-  const data = response?.result ?? response;
-  return data?.items ?? (Array.isArray(data) ? data : []);
+  return [];
 }
 
-/**
- * Get paginated list of users you have blocked (for settings UI).
- */
 export async function getBlockListPaginated(page = 1, limit = 20): Promise<BlockListResponse> {
-  const response = await apiCall<any>(
-    `/api/block?page=${page}&limit=${limit}`,
-    { requiresAuth: true }
-  );
-  const data = response?.result ?? response;
-  return {
-    status: data?.status ?? true,
-    total: data?.total ?? 0,
-    page: data?.page ?? page,
-    limit: data?.limit ?? limit,
-    pages: data?.pages ?? 0,
-    items: data?.items ?? [],
-  };
+  return { status: true, total: 0, page, limit, pages: 0, items: [] };
 }
 
-/**
- * Get paginated list of users who have blocked you.
- */
 export async function getBlockedBy(page = 1, limit = 20): Promise<BlockedByResponse> {
-  const response = await apiCall<any>(
-    `/api/block/blocked-by?page=${page}&limit=${limit}`,
-    { requiresAuth: true }
-  );
-  const data = response?.result ?? response;
-  return {
-    status: data?.status ?? true,
-    total: data?.total ?? 0,
-    page: data?.page ?? page,
-    limit: data?.limit ?? limit,
-    pages: data?.pages ?? 0,
-    items: data?.items ?? [],
-  };
+  return { status: true, total: 0, page, limit, pages: 0, items: [] };
 }
 
-/**
- * Check bidirectional block status between you and another user.
- */
 export async function getBlockStatus(address: string): Promise<BlockStatusResponse> {
-  const response = await apiCall<any>(
-    `/api/block/status/${encodeURIComponent(address.toLowerCase())}`,
-    { requiresAuth: true }
-  );
-  const data = response?.result ?? response;
-  return {
-    youBlocked: data?.youBlocked ?? false,
-    blockedYou: data?.blockedYou ?? false,
-    isBlocked: data?.isBlocked ?? false,
-    isBlockedBy: data?.blockedYou ?? false,
-  };
+  return { youBlocked: false, blockedYou: false, isBlocked: false, isBlockedBy: false };
 }

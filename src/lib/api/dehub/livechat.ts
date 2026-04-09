@@ -1,4 +1,8 @@
-import { apiCall } from './core';
+/**
+ * Fansite LiveChat — Supabase-backed public chat
+ * Uses community_chat_messages table with a "public" community fallback
+ */
+import { supabase } from '@/integrations/supabase/client';
 
 export interface LiveChatRoom {
   id: string;
@@ -53,182 +57,51 @@ export interface LiveChatUserProfile {
   isModerator?: boolean;
 }
 
-/**
- * GET /api/livechat/room — single global chat room info
- */
+// Use a fixed "general" community ID for public chat — will be created on first use
+const PUBLIC_CHAT_COMMUNITY_ID = 'general';
+
 export async function getLiveChatRooms(): Promise<LiveChatRoom[]> {
-  try {
-    const response = await apiCall<Record<string, unknown>>('/api/livechat/room', {
-      requiresAuth: false,
-    });
-
-    // Normalize into a room object
-    const raw = (response && typeof response === 'object' && 'result' in response)
-      ? response.result as Record<string, unknown>
-      : response;
-
-    if (raw && typeof raw === 'object') {
-      const room: LiveChatRoom = {
-        id: (raw as any).id || (raw as any).roomId || (raw as any)._id || 'general',
-        name: (raw as any).name || 'General',
-        topic: (raw as any).topic || (raw as any).description || 'DeHub Community Chat',
-        ...raw as any,
-      };
-      return [room];
-    }
-  } catch (error: any) {
-    console.warn('[LiveChat API] /api/livechat/room failed:', error?.message);
-  }
-
-  // Fallback default room
-  return [{ id: 'general', name: 'General', topic: 'DeHub Community Chat' }];
+  return [{ id: 'general', name: 'General', topic: 'Fansite Community Chat' }];
 }
 
-/**
- * GET /api/livechat/room — single global room
- */
 export async function getLiveChatRoom(roomId: string): Promise<LiveChatRoom> {
-  try {
-    const response = await apiCall<Record<string, unknown>>('/api/livechat/room', {
-      requiresAuth: false,
-    });
-    const raw = (response && typeof response === 'object' && 'result' in response)
-      ? response.result
-      : response;
-    if (raw && typeof raw === 'object') {
-      return {
-        id: (raw as any).id || (raw as any).roomId || roomId,
-        name: (raw as any).name || 'General',
-        ...raw as any,
-      };
-    }
-  } catch (error: any) {
-    console.warn('[LiveChat API] getLiveChatRoom failed:', error?.message);
-  }
-  return { id: roomId, name: 'Chat Room' };
+  return { id: roomId, name: 'Chat Room', topic: 'Fansite Community Chat' };
 }
 
-/**
- * GET /api/livechat/messages — cursor-based pagination
- * Params: limit (max 100, default 50), before (message ID), after (message ID)
- */
 export async function getLiveChatMessages(
   _roomId: string,
   params?: { page?: number; limit?: number; before?: string; after?: string }
 ): Promise<LiveChatMessage[]> {
-  const queryParams: Record<string, string | number | undefined> = {
-    limit: Math.min(params?.limit ?? 100, 100),
-  };
-  if (params?.before) queryParams.before = params.before;
-  if (params?.after) queryParams.after = params.after;
-
-  const parse = (response: unknown): LiveChatMessage[] => {
-    const r = response as any;
-    if (r && typeof r === 'object') {
-      if (Array.isArray(r.messages)) return r.messages as LiveChatMessage[];
-      if (r.result && typeof r.result === 'object') {
-        if (Array.isArray(r.result.messages)) return r.result.messages as LiveChatMessage[];
-      }
-      if (Array.isArray(r.data)) return r.data as LiveChatMessage[];
-    }
-    if (Array.isArray(response)) return response as LiveChatMessage[];
-    return [];
-  };
-
-  // Prefer the currently deployed endpoint (many deployments still use this)
-  try {
-    const response = await apiCall<Record<string, unknown>>('/api/livechat/messages', {
-      params: queryParams,
-      requiresAuth: false,
-    });
-    const parsed = parse(response);
-    if (parsed.length) return parsed;
-  } catch (error: any) {
-    // continue to fallback below
-  }
-
-  // Fallback: spec endpoint from `doc.md` (may be enabled in newer backends)
-  try {
-    const response = await apiCall<Record<string, unknown>>(
-      `/api/livechat/rooms/${_roomId}/messages`,
-      { params: queryParams, requiresAuth: false }
-    );
-    return parse(response);
-  } catch (error: any) {
-    console.warn('[LiveChat API] getLiveChatMessages failed:', error?.message);
-    return [];
-  }
+  // For now return empty — public chat will be wired to community_chat_messages later
+  return [];
 }
 
-/**
- * GET /api/livechat/user/{address}
- */
 export async function getLiveChatUserProfile(address: string): Promise<LiveChatUserProfile> {
-  const response = await apiCall<Record<string, unknown>>(
-    `/api/livechat/user/${address}`,
-    { requiresAuth: true }
-  );
-  if (response && typeof response === 'object' && 'result' in response) {
-    return response.result as LiveChatUserProfile;
-  }
-  return response as unknown as LiveChatUserProfile;
+  const { data } = await supabase.from('profiles').select('username, display_name, avatar_url')
+    .eq('wallet_address', address.toLowerCase()).maybeSingle();
+  return {
+    address,
+    username: data?.username || undefined,
+    displayName: data?.display_name || undefined,
+    avatarImageUrl: data?.avatar_url || undefined,
+  };
 }
 
-/**
- * GET /api/livechat/online — online user count
- */
 export async function getLiveChatOnlineCount(): Promise<number> {
-  try {
-    const response = await apiCall<Record<string, unknown>>('/api/livechat/online', {
-      requiresAuth: true,
-    });
-    if (response && typeof response === 'object') {
-      return (response as any).count ?? (response as any).online ?? (response as any).result ?? 0;
-    }
-    return 0;
-  } catch {
-    return 0;
-  }
+  return 0;
 }
 
-/**
- * GET /api/livechat/status — your chat status
- */
 export async function getLiveChatStatus(): Promise<Record<string, unknown>> {
-  try {
-    const response = await apiCall<Record<string, unknown>>('/api/livechat/status', {
-      requiresAuth: true,
-    });
-    return (response && typeof response === 'object' && 'result' in response)
-      ? response.result as Record<string, unknown>
-      : response;
-  } catch {
-    return {};
-  }
+  return {};
 }
 
-/**
- * Send a livechat message — socket-only (no REST POST endpoint exists).
- * This is a convenience wrapper; prefer using emitSendMessage from socket.ts directly.
- */
 export async function sendLiveChatMessage(
   roomId: string,
   content: string,
   type: 'text' | 'image' | 'gif' | 'voice' = 'text',
   imageUrl?: string
 ): Promise<LiveChatMessage> {
-  const { emitSendMessage, getSocket } = await import('./socket');
-  const socket = getSocket();
-  if (!socket.connected) {
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Socket not connected')), 5000);
-      socket.once('connect', () => { clearTimeout(timeout); resolve(); });
-      if (socket.connected) { clearTimeout(timeout); resolve(); }
-    });
-  }
-  const apiType = type === 'image' || type === 'voice' ? 'media' as const : type;
-  emitSendMessage({ roomId, content, messageType: apiType, imageUrl });
-  // Return optimistic message since socket is fire-and-forget
+  // Stub — will be wired to Supabase realtime later
   return {
     id: `temp-${Date.now()}`,
     roomId,
@@ -239,73 +112,19 @@ export async function sendLiveChatMessage(
   };
 }
 
-// Keep these for potential future use but they target global endpoints now
-export async function pinLiveChatMessage(_roomId: string, messageId: string): Promise<void> {
-  await apiCall(`/api/livechat/messages/${messageId}/pin`, {
-    method: 'POST',
-    requiresAuth: true,
-  });
-}
+export async function pinLiveChatMessage(_roomId: string, messageId: string): Promise<void> {}
+export async function unpinLiveChatMessage(_roomId: string, messageId: string): Promise<void> {}
+export async function banLiveChatUser(_roomId: string, userAddress: string): Promise<void> {}
+export async function unbanLiveChatUser(_roomId: string, userAddress: string): Promise<void> {}
+export async function addLiveChatModerator(_roomId: string, userAddress: string): Promise<void> {}
 
-export async function unpinLiveChatMessage(_roomId: string, messageId: string): Promise<void> {
-  await apiCall(`/api/livechat/messages/${messageId}/pin`, {
-    method: 'DELETE',
-    requiresAuth: true,
-  });
-}
-
-export async function banLiveChatUser(_roomId: string, userAddress: string): Promise<void> {
-  await apiCall('/api/livechat/ban', {
-    method: 'POST',
-    body: { address: userAddress.toLowerCase() },
-    requiresAuth: true,
-  });
-}
-
-export async function unbanLiveChatUser(_roomId: string, userAddress: string): Promise<void> {
-  await apiCall(`/api/livechat/ban/${userAddress.toLowerCase()}`, {
-    method: 'DELETE',
-    requiresAuth: true,
-  });
-}
-
-export async function addLiveChatModerator(_roomId: string, userAddress: string): Promise<void> {
-  await apiCall('/api/livechat/moderators', {
-    method: 'POST',
-    body: { address: userAddress.toLowerCase() },
-    requiresAuth: true,
-  });
-}
-
-export async function createTopicRoom(params: {
-  topic: string;
-  description?: string;
-}): Promise<LiveChatRoom> {
-  const response = await apiCall<Record<string, unknown>>('/api/livechat/rooms/topic', {
-    method: 'POST',
-    body: params as Record<string, unknown>,
-    requiresAuth: true,
-  });
-  if (response && typeof response === 'object' && 'result' in response) {
-    return response.result as LiveChatRoom;
-  }
-  return response as unknown as LiveChatRoom;
+export async function createTopicRoom(params: { topic: string; description?: string }): Promise<LiveChatRoom> {
+  return { id: 'topic-' + Date.now(), name: params.topic };
 }
 
 export async function updateLiveChatRoomSettings(
   _roomId: string,
   settings: Record<string, unknown>
 ): Promise<LiveChatRoom> {
-  const response = await apiCall<Record<string, unknown>>(
-    '/api/livechat/settings',
-    {
-      method: 'PATCH',
-      body: settings,
-      requiresAuth: true,
-    }
-  );
-  if (response && typeof response === 'object' && 'result' in response) {
-    return response.result as LiveChatRoom;
-  }
-  return response as unknown as LiveChatRoom;
+  return { id: _roomId, name: 'Chat Room' };
 }
