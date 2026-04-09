@@ -332,11 +332,12 @@ export function useCreateAndStart() {
       const conv = await createConversation(userId);
       return {
         _id: conv.id,
-        participants: [],
+        participants: [] as any[],
         lastMessageAt: conv.updatedAt,
         unreadCount: 0,
-        messages: [],
-        tips: [],
+        messages: [] as any[],
+        tips: [] as any[],
+        dmFee: conv.dmFee || undefined,
       };
     },
   });
