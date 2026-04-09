@@ -51,8 +51,8 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
       <nav className="space-y-1">
         {NAV_ITEMS.map((item) => {
           const isActive =
-            item.path === '/app'
-              ? location.pathname === '/app'
+            item.path === '/'
+              ? location.pathname === '/'
               : !item.external && !item.action && location.pathname.startsWith(item.path);
 
           return (
@@ -60,7 +60,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
               key={item.label}
               item={item}
               isActive={isActive}
-              isHome={item.path === '/app'}
+              isHome={item.path === '/'}
               currentPath={location.pathname}
               onNavigate={onToggle}
               onClick={item.action === 'open-stages' ? () => { onToggle(); openStagesModal(); } : undefined}

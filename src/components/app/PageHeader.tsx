@@ -17,7 +17,7 @@ export function PageHeader({
   subtitle, 
   showBack = true, 
   className,
-  fallbackRoute = '/app'
+  fallbackRoute = '/'
 }: PageHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();

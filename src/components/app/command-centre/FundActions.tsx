@@ -24,7 +24,7 @@ export function FundActions() {
 
   const handleBuy = () => {
     setAddFundsOpen(false);
-    navigate('/app/buy');
+    navigate('/buy');
   };
 
   const handleCopyAddress = () => {

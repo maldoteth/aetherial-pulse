@@ -273,7 +273,7 @@ export default function BuyCoinsPage() {
 
   return (
     <div className="min-h-screen p-3 sm:p-4">
-      <SEOHead title="Buy — Purchase Crypto on DeHub" description="Buy DHB and other cryptocurrencies directly on DeHub with your credit card. Fast checkout, multiple chains supported." url="https://fansite.app/app/buy" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Buy Crypto on DeHub', url: 'https://fansite.app/app/buy', description: 'Purchase DHB and other cryptocurrencies with credit card on DeHub.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
+      <SEOHead title="Buy — Purchase Crypto on DeHub" description="Buy DHB and other cryptocurrencies directly on DeHub with your credit card. Fast checkout, multiple chains supported." url="https://fansite.app/buy" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Buy Crypto on DeHub', url: 'https://fansite.app/buy', description: 'Purchase DHB and other cryptocurrencies with credit card on DeHub.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
       <h1 className="sr-only">DeHub Buy Crypto — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       <div className="max-w-lg mx-auto space-y-4">
         {/* Header */}
@@ -497,7 +497,7 @@ export default function BuyCoinsPage() {
                   className="mt-2"
                   onClick={() => {
                     setPurchaseStatus('idle');
-                    navigate('/app/wallet');
+                    navigate('/wallet');
                   }}
                 >
                   View Wallet

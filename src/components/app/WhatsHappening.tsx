@@ -450,7 +450,7 @@ export const WhatsHappening = memo(function WhatsHappening({ showCountrySelector
         label={t('commandCentre.viewAll')}
         onClick={() => {
           if (activeTab === 'stages') { openStagesModal('browse'); }
-          else { navigate(showCountrySelector && activeTab === 'tickers' ? '/app/top-100' : '/app/explore'); }
+          else { navigate(showCountrySelector && activeTab === 'tickers' ? '/top-100' : '/explore'); }
         }}
         width="100%"
         height="auto"

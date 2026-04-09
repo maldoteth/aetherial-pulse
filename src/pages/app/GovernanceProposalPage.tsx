@@ -109,7 +109,7 @@ export default function GovernanceProposalPage() {
       <div className="min-h-screen px-4 pt-6 text-center">
         <ShieldCheck className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
         <h2 className="text-white font-semibold text-lg mb-1">Proposal not found</h2>
-        <button onClick={() => navigate('/app/governance')} className="text-zinc-400 text-sm underline">
+        <button onClick={() => navigate('/governance')} className="text-zinc-400 text-sm underline">
           Back to Governance
         </button>
       </div>
@@ -131,7 +131,7 @@ export default function GovernanceProposalPage() {
     <div className="min-h-screen px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2 max-w-2xl mx-auto">
       {/* Back button */}
       <button
-        onClick={() => navigate('/app/governance')}
+        onClick={() => navigate('/governance')}
         className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-sm mb-3 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />

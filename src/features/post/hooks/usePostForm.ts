@@ -1302,7 +1302,7 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
       onClose();
       
       // Navigate to home to show the new post
-      navigate('/app');
+      navigate('/');
     } catch (error) {
       console.error('[Mint] Failed to mint post:', error);
       try { console.error('[Mint] Error details:', JSON.stringify(error, null, 2)); } catch {}

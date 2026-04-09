@@ -164,8 +164,8 @@ export function UsernameRequiredModal() {
       setRequiresUsername(false);
       
       // Navigate to home feed if not already there (avoid staying on settings after profile creation)
-      if (window.location.pathname !== '/app') {
-        window.location.href = '/app';
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
       }
       
       toast.success('Profile created successfully!');

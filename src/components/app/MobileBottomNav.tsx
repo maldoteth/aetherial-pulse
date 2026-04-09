@@ -12,34 +12,34 @@ import { useStage } from '@/contexts/StageContext';
 
 // Left side: Home, Messages
 const LEFT_NAV_ITEMS = [
-  { icon: Home, label: 'Home', path: '/app' },
-  { icon: MessageSquare, label: 'Messages', path: '/app/messages' },
+  { icon: Home, label: 'Home', path: '/' },
+  { icon: MessageSquare, label: 'Messages', path: '/messages' },
 ];
 
 // Right side: AI link, Profile
 const RIGHT_NAV_ITEMS = [
-  { icon: Sparkles, label: 'AI', path: '/app/assistant' },
+  { icon: Sparkles, label: 'AI', path: '/assistant' },
 ];
 
 const SCROLL_NAV_ITEMS = [
-  { icon: User, label: 'Profile', path: '/app/profile', requiresAuth: true },
-  { icon: Bell, label: 'Notifications', path: '/app/notifications' },
-  { icon: Users, label: 'Communities', path: '/app/communities' },
-  { icon: CalendarDays, label: 'Events', path: '/app/events' },
+  { icon: User, label: 'Profile', path: '/profile', requiresAuth: true },
+  { icon: Bell, label: 'Notifications', path: '/notifications' },
+  { icon: Users, label: 'Communities', path: '/communities' },
+  { icon: CalendarDays, label: 'Events', path: '/events' },
   { icon: Mic, label: 'Stages', path: '#stages', action: 'open-stages' },
-  { icon: LayoutDashboard, label: 'Command', path: '/app/command-centre' },
-  { icon: Wallet, label: 'Wallet', path: '/app/wallet' },
-  { icon: Vault, label: 'Staking', path: '/app/stake' },
+  { icon: LayoutDashboard, label: 'Command', path: '/command-centre' },
+  { icon: Wallet, label: 'Wallet', path: '/wallet' },
+  { icon: Vault, label: 'Staking', path: '/stake' },
   { icon: ShieldCheck, label: 'Governance', path: '/governance' },
-  { icon: Trophy, label: 'Leaderboard', path: '/app/leaderboard' },
-  { icon: Bookmark, label: 'Bookmarks', path: '/app/bookmarks' },
-  { icon: Settings, label: 'Settings', path: '/app/settings' },
+  { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
+  { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
+  { icon: Settings, label: 'Settings', path: '/settings' },
   { icon: Lightbulb, label: 'Features', path: '/features' },
   { icon: Map, label: 'Guide', path: '/guide' },
   { icon: BookOpen, label: 'Docs', path: 'https://docs.dhb.gg', external: true },
   { icon: FileText, label: 'Blog', path: '/docs/blog' },
-  { icon: Briefcase, label: 'Careers', path: '/app/jobs' },
-  { icon: Scroll, label: 'Glossary', path: '/app/glossary' },
+  { icon: Briefcase, label: 'Careers', path: '/jobs' },
+  { icon: Scroll, label: 'Glossary', path: '/glossary' },
 ];
 
 export function MobileBottomNav() {
@@ -77,10 +77,10 @@ export function MobileBottomNav() {
 
 
   const handleNavClick = (e: React.MouseEvent, path: string) => {
-    if (path === '/app' && location.pathname === '/app') {
+    if (path === '/' && location.pathname === '/') {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('home-refresh'));
-      navigate('/app');
+      navigate('/');
     }
   };
 
@@ -147,8 +147,8 @@ export function MobileBottomNav() {
             {/* Left side items - Home + Messages */}
             <div className="flex items-center justify-start flex-shrink-0 pl-1" style={{ width: 'calc(50% - 24px)' }}>
               {LEFT_NAV_ITEMS.map((item, index) => {
-                const isActive = item.path === '/app' 
-                  ? location.pathname === '/app'
+                const isActive = item.path === '/' 
+                  ? location.pathname === '/'
                   : location.pathname.startsWith(item.path);
                 
                 return (
@@ -216,13 +216,13 @@ export function MobileBottomNav() {
               
               {/* Search Link */}
               <NavLink
-                to="/app/explore"
+                to="/explore"
                 className="flex items-center justify-center h-12 md:h-14 flex-1 transition-all duration-200 text-white rounded-r-2xl"
               >
                   <Search 
                     className={cn(
                       'w-5 h-5 md:w-6 md:h-6 transition-all duration-200 ml-[4px] lg:ml-0',
-                      location.pathname.startsWith('/app/explore')
+                      location.pathname.startsWith('/explore')
                         ? 'drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]' 
                         : 'hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]'
                     )} 

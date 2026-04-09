@@ -206,12 +206,12 @@ export default function FullWalletPage() {
 
   return (
     <div className="px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2 min-h-screen">
-      <SEOHead title="Wallet — Manage Your Crypto Assets" description="View balances, send and receive tokens, and manage your crypto assets across multiple chains on DeHub." url="https://fansite.app/app/wallet" />
+      <SEOHead title="Wallet — Manage Your Crypto Assets" description="View balances, send and receive tokens, and manage your crypto assets across multiple chains on DeHub." url="https://fansite.app/wallet" />
       <h1 className="sr-only">DeHub Wallet — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header - only show back button and title when navigated from command centre */}
       {location.state?.from === 'command-centre' && (
         <div className="flex items-center gap-3 mb-5">
-          <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white h-8 w-8" onClick={() => navigate('/app/command-centre')}>
+          <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white h-8 w-8" onClick={() => navigate('/command-centre')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-lg font-bold text-white">{t('wallet.title')}</h1>
@@ -299,11 +299,11 @@ export default function FullWalletPage() {
           <ShoppingCart className="w-5 h-5" />
           <span className="text-xs whitespace-nowrap hidden lg:inline">{t('wallet.buy')}</span>
         </Button>
-        <Button variant="glass" className="flex-col h-auto py-3 gap-1.5 rounded-xl flex-1 min-w-0" onClick={() => navigate('/app/stake')}>
+        <Button variant="glass" className="flex-col h-auto py-3 gap-1.5 rounded-xl flex-1 min-w-0" onClick={() => navigate('/stake')}>
           <Lock className="w-5 h-5" />
           <span className="text-xs whitespace-nowrap hidden lg:inline">{t('wallet.stake')}</span>
         </Button>
-        <Button variant="glass" className="flex-col h-auto py-3 gap-1.5 rounded-xl flex-1 min-w-0" onClick={() => navigate('/app/bridge')}>
+        <Button variant="glass" className="flex-col h-auto py-3 gap-1.5 rounded-xl flex-1 min-w-0" onClick={() => navigate('/bridge')}>
           <ArrowDownUp className="w-5 h-5" />
           <span className="text-xs whitespace-nowrap hidden lg:inline">Bridge</span>
         </Button>
@@ -461,7 +461,7 @@ export default function FullWalletPage() {
           <div className="p-5 pb-8 space-y-2">
             <h3 className="text-white font-semibold text-base mb-4">{t('wallet.buy')}</h3>
             <button
-              onClick={() => { setBuyDrawerOpen(false); navigate('/app/buy'); }}
+              onClick={() => { setBuyDrawerOpen(false); navigate('/buy'); }}
               className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] backdrop-blur-sm border border-white/10 transition-colors"
             >
               <CreditCard className="w-5 h-5 text-white/70" />
@@ -633,7 +633,7 @@ function GroupedActionDrawer({ open, onOpenChange, grouped, onSend, onReceive, o
                   onClick={() => {
                     setBuyMethodOpen(false);
                     onOpenChange(false);
-                    navigate('/app/buy');
+                    navigate('/buy');
                   }}
                   className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] backdrop-blur-sm border border-white/10 transition-colors"
                 >

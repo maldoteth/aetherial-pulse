@@ -127,7 +127,7 @@ export default function CareersPage() {
 
   return (
     <div className="min-h-screen p-3 sm:p-4">
-      <SEOHead title="Careers — Join the DeHub Team" description="Join the team building the future of decentralized media. Explore open positions at DeHub and help shape Web3 social." url="https://fansite.app/app/careers" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Careers at DeHub', url: 'https://fansite.app/app/careers', description: 'Open positions at DeHub — building the future of decentralized media.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
+      <SEOHead title="Careers — Join the DeHub Team" description="Join the team building the future of decentralized media. Explore open positions at DeHub and help shape Web3 social." url="https://fansite.app/careers" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Careers at DeHub', url: 'https://fansite.app/careers', description: 'Open positions at DeHub — building the future of decentralized media.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
       <h1 className="sr-only">DeHub Careers — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header bento */}
       <div className="rounded-2xl p-4 sm:p-6 mb-4 bg-gradient-to-br from-white/[0.06] via-white/[0.03] to-transparent backdrop-blur-xl border border-white/[0.08]">

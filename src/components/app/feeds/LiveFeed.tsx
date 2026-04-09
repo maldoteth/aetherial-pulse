@@ -189,7 +189,7 @@ export function LiveFeed({ isRefreshing = false, showFilters = false }: LiveFeed
                   TV
                 </h2>
                 <button 
-                  onClick={() => navigate('/app/tv')}
+                  onClick={() => navigate('/tv')}
                   className="text-zinc-400 text-sm hover:text-white transition-colors flex items-center gap-1"
                 >
                   Show All

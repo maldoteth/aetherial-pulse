@@ -23,13 +23,13 @@ export default function StageDeepLinkPage() {
     // If already in this space, just open the modal
     if (currentSpace?.id === id) {
       openModal('live');
-      navigate('/app', { replace: true });
+      navigate('/', { replace: true });
       return;
     }
 
     if (!isAuthenticated) {
       // Not logged in — go home, modal will require auth
-      navigate('/app', { replace: true });
+      navigate('/', { replace: true });
       return;
     }
 
@@ -40,7 +40,7 @@ export default function StageDeepLinkPage() {
         openModal('live');
       }
       // Navigate to home either way — mini player or modal will be visible
-      navigate('/app', { replace: true });
+      navigate('/', { replace: true });
     });
   }, [id, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -57,7 +57,7 @@ export function SidebarNavItem({
     if (isHome) {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('home-refresh'));
-      navigate('/app');
+      navigate('/');
     }
     onNavigate?.();
   };

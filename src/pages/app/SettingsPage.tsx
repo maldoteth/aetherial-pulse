@@ -161,7 +161,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2">
-      <SEOHead title="Settings — Manage Your Account" description="Customize your DeHub experience. Update your profile, privacy settings, notification preferences, and connected wallets." url="https://fansite.app/app/settings" />
+      <SEOHead title="Settings — Manage Your Account" description="Customize your DeHub experience. Update your profile, privacy settings, notification preferences, and connected wallets." url="https://fansite.app/settings" />
       <h1 className="sr-only">DeHub Settings — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <div className="bg-zinc-900 rounded-2xl p-4 sm:p-6 mb-4">
@@ -1815,7 +1815,7 @@ function AssetsSettings() {
       {/* Wallet */}
       <div>
         <button
-          onClick={() => navigate('/app/wallet')}
+          onClick={() => navigate('/wallet')}
           className="w-full flex items-center justify-between p-4 bg-zinc-800 rounded-xl hover:bg-zinc-750 transition-colors group"
         >
           <div className="flex items-center gap-3">

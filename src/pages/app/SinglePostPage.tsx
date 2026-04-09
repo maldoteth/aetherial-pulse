@@ -422,7 +422,7 @@ interface ImmersiveVideoHeaderProps {
 }
 
 function ImmersiveVideoHeader({ 
-  fallbackRoute = '/app',
+  fallbackRoute = '/',
   channel,
   channelAvatar,
   creatorUsername,
@@ -881,7 +881,7 @@ export default function SinglePostPage() {
           open={showDeleteModal}
           onOpenChange={setShowDeleteModal}
           tokenId={id || ''}
-          onSuccess={() => navigate('/app')}
+          onSuccess={() => navigate('/')}
         />
 
         {/* Tip Modal */}
@@ -908,14 +908,14 @@ export default function SinglePostPage() {
       <SEOHead
         title={seoTitle}
         description={seoDesc}
-        url={`https://fansite.app/app/post/${id}`}
+        url={`https://fansite.app/post/${id}`}
         type="article"
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Article',
           headline: seoTitle,
           description: seoDesc,
-          url: `https://fansite.app/app/post/${id}`,
+          url: `https://fansite.app/post/${id}`,
           ...(post?.minterDisplayName && { author: { '@type': 'Person', name: post.minterDisplayName } }),
           ...(post?.createdAt && { datePublished: post.createdAt }),
           publisher: { '@type': 'Organization', name: 'DeHub', url: 'https://fansite.app' },

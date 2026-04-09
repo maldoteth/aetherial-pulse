@@ -717,7 +717,7 @@ const GuidePage: React.FC = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 md:px-8 h-16">
-          <Link to="/app" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+          <Link to="/" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium hidden sm:inline">Back to App</span>
           </Link>

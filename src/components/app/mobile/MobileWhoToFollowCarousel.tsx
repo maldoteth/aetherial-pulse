@@ -193,7 +193,7 @@ export function MobileWhoToFollowCarousel() {
           <span className="text-sm font-semibold text-white">Follow Suggestions</span>
         </div>
         <button 
-          onClick={() => navigate('/app/explore')}
+          onClick={() => navigate('/explore')}
           className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors"
         >
           See All
