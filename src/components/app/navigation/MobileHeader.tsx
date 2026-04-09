@@ -9,13 +9,14 @@ import { useUnreadNotificationCount } from '@/hooks/use-notifications';
 import { useCustomUnreadCount } from '@/hooks/use-custom-notifications';
 import { buildAvatarUrl } from '@/lib/media-url';
 import { useCallback, useRef, memo } from 'react';
+import siteLogoFull from '@/assets/site-logo-full.png';
 
 const HeaderLogo = memo(function HeaderLogo({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button onClick={onClick} className="block cursor-pointer">
       <img
-        src="/dehub-header-logo.png"
-        alt="dehub"
+        src={siteLogoFull}
+        alt="site logo"
         className="h-7 md:h-7 w-auto"
         loading="eager"
         decoding="async"

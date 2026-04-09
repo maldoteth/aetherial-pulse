@@ -65,7 +65,6 @@ import { useOptimisticPosts } from '@/hooks/use-optimistic-posts';
 import { RadioStationCard } from '@/components/app/radio/RadioStationCard';
 import { SwipeableCarousel } from '@/components/app/SwipeableCarousel';
 import { MobileWhoToFollowCarousel } from '@/components/app/mobile';
-import { LeaderboardCarousel } from '@/components/app/feeds/LeaderboardCarousel';
 import { FriendsOnStageBar } from '@/components/app/feeds/FriendsOnStageBar';
 
 import type { VideoItem, ImagePost, TextPost, ShortVideo } from '@/types/feed.types';
@@ -83,7 +82,6 @@ type FeedItemType =
 const PAGE_SIZE = 20;
 const SHORTS_INSERT_INTERVAL = 5;
 const RADIO_INSERT_AFTER = 8;
-const LEADERBOARD_INSERT_AFTER_LIVE_OFFSET = 10;
 /** Insert an all-time most-liked post every N items in trending feed */
 const CLASSIC_INSERT_INTERVAL = 6;
 
@@ -1113,7 +1111,6 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
             </SwipeableCarousel>
           </div>
         ) : null,
-        <div key="leaderboard-carousel" className="my-3"><LeaderboardCarousel /></div>,
       ];
 
       return (
@@ -1159,7 +1156,6 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
     const segments: Segment[] = [];
     let currentCards: ReactNode[] = [];
     let shortsInserted = false;
-    let leaderboardInserted = false;
     let radioInserted = false;
     let liveInserted = false;
     let whoToFollowInserted = false;
@@ -1215,10 +1211,6 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
         liveInserted = true;
       }
 
-      if ((index + 1) === LEADERBOARD_INSERT_AFTER && !leaderboardInserted) {
-        addFullWidth(<div key={`leaderboard-carousel-${index}`}><LeaderboardCarousel /></div>);
-        leaderboardInserted = true;
-      }
     });
 
     if (items.length > 0 && items.length < SHORTS_INSERT_INTERVAL && shorts.length > 0 && !shortsInserted) {
