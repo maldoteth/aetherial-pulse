@@ -63,7 +63,7 @@ interface CachedPageConfig {
 }
 
 const CACHED_PAGES: CachedPageConfig[] = [
-  { key: 'home', path: '/app', component: HomePage, skeleton: FeedSkeleton },
+  { key: 'home', path: '/', component: HomePage, skeleton: FeedSkeleton },
   { key: 'explore', path: '/explore', component: ExplorePage, skeleton: ExploreSkeleton },
   { key: 'notifications', path: '/notifications', component: NotificationsPage, skeleton: NotificationsSkeleton },
   { key: 'messages', path: '/messages', component: MessagesPage, skeleton: MessagesSkeleton },
@@ -77,11 +77,11 @@ const CACHED_PAGES: CachedPageConfig[] = [
   { key: 'tv', path: '/tv', component: TVPage, skeleton: GridSkeleton },
   { key: 'buy', path: '/buy', component: BuyCoinsPage, skeleton: GenericPageSkeleton },
   { key: 'agents', path: '/agents', component: AgentsPage, skeleton: GenericPageSkeleton },
-  { key: 'features', path: ['/features', '/features'], component: FeaturesPage, skeleton: FeaturesSkeleton },
-  { key: 'governance', path: ['/governance', '/governance'], component: GovernancePage, skeleton: FeaturesSkeleton },
-  { key: 'careers', path: ['/jobs', '/jobs'], component: CareersPage, skeleton: GenericPageSkeleton },
-  { key: 'glossary', path: ['/glossary', '/glossary'], component: GlossaryPage, skeleton: GenericPageSkeleton },
-  { key: 'stake', path: ['/stake', '/stake'], component: StakingPage, skeleton: GenericPageSkeleton },
+  { key: 'features', path: '/features', component: FeaturesPage, skeleton: FeaturesSkeleton },
+  { key: 'governance', path: '/governance', component: GovernancePage, skeleton: FeaturesSkeleton },
+  { key: 'careers', path: '/jobs', component: CareersPage, skeleton: GenericPageSkeleton },
+  { key: 'glossary', path: '/glossary', component: GlossaryPage, skeleton: GenericPageSkeleton },
+  { key: 'stake', path: '/stake', component: StakingPage, skeleton: GenericPageSkeleton },
   { key: 'bridge', path: '/bridge', component: BridgePage, skeleton: GenericPageSkeleton },
   { key: 'top-100', path: '/top-100', component: Top100CryptosPage, skeleton: LeaderboardSkeleton },
   { key: 'communities', path: '/communities', component: CommunitiesPage, skeleton: GenericPageSkeleton },

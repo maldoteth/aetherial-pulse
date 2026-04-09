@@ -53,7 +53,7 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: Map, label: 'Guide', path: '/guide' },
   { icon: BookOpen, label: 'Docs', path: 'https://fansite.app/docs', external: true },
   { icon: FileText, label: 'Blog', path: '/docs/blog' },
-  { icon: Home, label: 'Home', path: '/app' },
+  { icon: Home, label: 'Home', path: '/' },
 ];
 
 export const FEED_TABS: SearchTab[] = [
