@@ -424,7 +424,6 @@ export const WhatsHappening = memo(function WhatsHappening({ showCountrySelector
                     )}
                   >
                     <span>{c.name}</span>
-                    <span>{c.name}</span>
                     {c.code === 'global' && <span className="ml-auto text-[10px] text-emerald-400">✓</span>}
                   </button>
                 )) : (
