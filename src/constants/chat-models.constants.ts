@@ -20,9 +20,9 @@ export const CHAT_MODEL_OPTIONS: ChatModelOption[] = [
     emoji: '✨'
   },
   {
-    id: 'dolphin-mixtral',
-    name: 'Dolphin',
-    description: 'Uncensored & free',
+    id: 'wizardlm',
+    name: 'WizardLM',
+    description: 'Uncensored & powerful',
     emoji: '🐬'
   },
   {
