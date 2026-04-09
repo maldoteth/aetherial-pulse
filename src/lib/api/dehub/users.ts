@@ -9,14 +9,25 @@ export interface UpdateProfileData {
   username?: string;
   displayName?: string;
   bio?: string;
+  aboutMe?: string;
   avatarImageUrl?: string;
   coverImageUrl?: string;
+  avatarImg?: File | null;
+  coverImg?: File | null;
   isPrivate?: boolean;
   customs?: Record<string, unknown>;
   dmSettings?: { disables?: string[]; minTipDhb?: number };
+  twitterLink?: string;
+  discordLink?: string;
+  instagramLink?: string;
+  tiktokLink?: string;
+  telegramLink?: string;
+  youtubeLink?: string;
+  facebookLink?: string;
 }
 
 export interface SearchUsersParams {
+  q?: string;
   query?: string;
   page?: number;
   limit?: number;
@@ -24,6 +35,10 @@ export interface SearchUsersParams {
 
 export interface UserCommentsResponse {
   result: Array<{ id: string; content: string; tokenId: number; createdAt: string }>;
+  data?: Array<{ id: string; content: string; tokenId: number; createdAt: string }>;
+  total?: number;
+  page?: number;
+  has_more?: boolean;
   pagination?: { page: number; limit: number; totalCount: number; totalPages: number; hasMore: boolean };
 }
 
@@ -32,9 +47,11 @@ export interface SuggestedAccount {
   username?: string;
   displayName?: string;
   avatarUrl?: string;
+  avatarImageUrl?: string;
   followerCount?: number;
   badgeBalance?: number;
   likes?: number;
+  isFollowing?: boolean;
 }
 
 export async function getAccountInfo(userId: string, address?: string): Promise<DeHubUser> {
