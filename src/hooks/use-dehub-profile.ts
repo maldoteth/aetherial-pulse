@@ -12,8 +12,7 @@ import { getAccountInfo, getAccountByUsername, getAuthToken, getNFTInfo, type De
 import { buildAvatarUrl, buildCoverUrl } from '@/lib/media-url';
 import { mapToVideoItem, mapToImagePost, mapToTextPost, type UnifiedFeedItem } from './use-unified-feed';
 import type { VideoItem, ImagePost, TextPost } from '@/types/feed.types';
-
-const DEHUB_API_BASE = "https://fansite.app/api";
+import { searchNFTs } from '@/lib/api/dehub';
 
 export interface ProfileData {
   id: string;
@@ -225,66 +224,38 @@ interface UseDeHubUserContentOptions {
 export function useDeHubUserContent({ userId, viewerAddress, enabled = true, limit = 15 }: UseDeHubUserContentOptions = {}) {
   return useInfiniteQuery({
     queryKey: ['dehub-user-content', userId, viewerAddress],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = 0 }) => {
       if (!userId) throw new Error('User ID (wallet address) is required');
       
-      // Use /api/feed with minter parameter - the same API that powers the home feed
-      const url = new URL('/api/feed', DEHUB_API_BASE);
-      url.searchParams.set('page', String(pageParam));
-      url.searchParams.set('limit', String(limit));
-      url.searchParams.set('minter', userId);
-      url.searchParams.set('sortBy', 'createdAt');
-      url.searchParams.set('sortOrder', 'desc');
-      // Show all confirmed and pending content on profiles
-      url.searchParams.set('status', 'all');
-      // address param is deprecated - viewer context comes from JWT token
-      
-      const token = getAuthToken();
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(url.toString(), { headers });
-      
-      if (!response.ok) {
-        throw new Error(`Feed API error: ${response.status}`);
-      }
-      
-      const json = await response.json();
-      const items = json.result || [];
-      
-      // Enrich quote posts that are missing their quotedPost data
-      const needsEnrich: { idx: number; item: any }[] = [];
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.isQuotePost && item.quotedTokenId && !item.quotedPost) {
-          needsEnrich.push({ idx: i, item });
-        }
-      }
-      if (needsEnrich.length > 0) {
-        const BATCH_SIZE = 5;
-        for (let b = 0; b < needsEnrich.length; b += BATCH_SIZE) {
-          const batch = needsEnrich.slice(b, b + BATCH_SIZE);
-          const settled = await Promise.allSettled(
-            batch.map(({ item }) => getNFTInfo(String(item.quotedTokenId)))
-          );
-          settled.forEach((outcome, i) => {
-            if (outcome.status === 'fulfilled' && outcome.value) {
-              items[batch[i].idx] = { ...batch[i].item, quotedPost: outcome.value };
-            }
-          });
-        }
-      }
+      const response = await searchNFTs({
+        address: userId,
+        page: pageParam,
+        unit: limit,
+      });
+
+      const items = response.data || [];
       
       return {
-        data: items,
+        data: items.map((nft: any) => ({
+          tokenId: nft.tokenId,
+          name: nft.name || '',
+          description: nft.description || '',
+          imageUrl: nft.imageUrl || '',
+          videoUrl: nft.videoUrl,
+          audioUrl: nft.audioUrl,
+          minter: nft.minter || '',
+          postType: nft.postType || 'feed-simple',
+          category: nft.category ? (Array.isArray(nft.category) ? nft.category : [nft.category]) : [],
+          views: nft.views || 0,
+          likes: nft.likes || 0,
+          commentCount: nft.commentCount || 0,
+          createdAt: nft.createdAt || '',
+          minterUsername: nft.mintername,
+          minterDisplayName: nft.minterDisplayName,
+        })),
         page: pageParam,
-        has_more: json.pagination?.hasMore ?? false,
-        total: json.pagination?.totalCount ?? 0,
+        has_more: response.has_more ?? false,
+        total: response.total ?? 0,
       };
     },
     getNextPageParam: (lastPage) => {
@@ -293,12 +264,12 @@ export function useDeHubUserContent({ userId, viewerAddress, enabled = true, lim
       }
       return undefined;
     },
-    initialPageParam: 1,
+    initialPageParam: 0,
     enabled: enabled && !!userId,
-    staleTime: 1000 * 60 * 10, // 10 minutes - data is fresh for longer
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
-    refetchOnWindowFocus: false, // Don't refetch when tab switching
-    refetchOnMount: false, // Don't refetch when component remounts
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     retry: 2,
   });
 }

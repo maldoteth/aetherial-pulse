@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
   ].filter(Boolean),
   resolve: {
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },

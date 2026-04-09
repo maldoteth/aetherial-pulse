@@ -1,4 +1,8 @@
-import { DEHUB_API_BASE, apiCall, getAuthToken } from './core';
+/**
+ * Fansite Content — Live Supabase + R2 Implementation
+ */
+import { supabase } from '@/integrations/supabase/client';
+import { withWalletHeader } from '@/lib/supabase-wallet-client';
 import type { DeHubNFT } from './types';
 
 export interface StreamInfo {
@@ -41,87 +45,101 @@ export interface MintResponse {
   timestamp: number;
 }
 
+function getWallet(): string | null {
+  return localStorage.getItem('dehub_wallet');
+}
+
+/**
+ * Upload a file to R2 via the edge function
+ */
+async function uploadToR2(file: File | Blob, folder: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('folder', folder);
+
+  const { data, error } = await supabase.functions.invoke('r2-upload', {
+    body: formData,
+  });
+
+  if (error) throw new Error(`Upload failed: ${error.message}`);
+  if (!data?.url) throw new Error('Upload returned no URL');
+  return data.url;
+}
+
+function postTypeToMediaType(postType: string): string {
+  switch (postType) {
+    case 'video': return 'video';
+    case 'feed-images': return 'image';
+    case 'audio':
+    case 'feed-audio': return 'audio';
+    case 'live': return 'video';
+    default: return 'text';
+  }
+}
+
 export async function mintPost(
   params: MintPostParams,
   onProgress?: (percent: number) => void
 ): Promise<MintResponse> {
-  const token = getAuthToken();
-  if (!token) {
-    throw new Error("Authentication required");
-  }
+  const wallet = params.minterAddress || getWallet();
+  if (!wallet) throw new Error('Authentication required');
 
-  const formData = new FormData();
-  formData.append('name', params.name);
-  formData.append('description', params.description);
-  formData.append('postType', params.postType);
-  formData.append('chainId', String(params.chainId));
-  formData.append('category', JSON.stringify(params.category));
+  onProgress?.(10);
 
-  formData.append('minter', params.minterAddress);
-  console.log('[MintPost] Including minter address:', params.minterAddress);
-
-  const streamInfo: StreamInfo = params.streamInfo || {
-    isLockContent: false,
-    isPayPerView: false,
-    isAddBounty: false,
-  };
-  formData.append('streamInfo', JSON.stringify(streamInfo));
-
-  if (params.plans && params.plans.length > 0) {
-    formData.append('plans', JSON.stringify(params.plans));
-  }
+  let mediaUrl: string | null = null;
+  let thumbnailUrl: string | null = null;
+  const mediaType = postTypeToMediaType(params.postType);
 
   if (params.files && params.files.length > 0) {
-    params.files.forEach((file) => {
-      formData.append('file', file);
-    });
+    const mainFile = params.files[0];
+    mediaUrl = await uploadToR2(mainFile, mediaType === 'video' ? 'videos' : mediaType === 'audio' ? 'audio' : 'images');
+    onProgress?.(50);
   }
 
   if (params.thumbnail) {
-    formData.append('file', params.thumbnail, 'thumbnail.jpg');
+    thumbnailUrl = await uploadToR2(params.thumbnail as File, 'thumbnails');
+    onProgress?.(70);
   }
 
-  return new Promise<MintResponse>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+  const streamInfo = params.streamInfo || {};
+  const isPPV = streamInfo.isPayPerView ?? false;
+  const ppvAmount = isPPV ? (streamInfo.payPerViewAmount || 0) : null;
+  const isSubscribersOnly = (params.plans && params.plans.length > 0) ?? false;
 
-    // Track upload progress (bytes sent to server)
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable && onProgress) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        onProgress(percent);
-      }
-    };
+  const query = supabase.from('posts').insert({
+    creator_wallet_address: wallet.toLowerCase(),
+    title: params.name || '',
+    description: params.description || '',
+    media_url: mediaUrl,
+    thumbnail_url: thumbnailUrl,
+    media_type: mediaType,
+    category: params.category?.join(',') || null,
+    is_ppv: isPPV,
+    ppv_amount: ppvAmount,
+    ppv_currency: isPPV ? (streamInfo.payPerViewTokenSymbol || 'DHB') : null,
+    is_subscribers_only: isSubscribersOnly,
+    visibility: 'public',
+  }).select('id, token_id').single();
 
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          resolve(data.result ?? data);
-        } catch {
-          reject(new Error('Invalid response from server'));
-        }
-      } else {
-        let errorData: Record<string, string> = {};
-        try { errorData = JSON.parse(xhr.responseText); } catch { /* ignore */ }
-        const msg = errorData.message || errorData.error || 'Unknown error';
-        console.error(`[MintPost] HTTP ${xhr.status} — ${msg}`, { responseText: xhr.responseText });
-        reject(new Error(`Mint failed (HTTP ${xhr.status}): ${msg}`));
-      }
-    };
+  const { data: post, error } = await withWalletHeader(query, wallet);
 
-    xhr.onerror = () => reject(new Error('Upload failed — please check your connection and try again'));
-    xhr.ontimeout = () => reject(new Error('Upload timed out — your video may be too large or connection too slow'));
+  if (error) {
+    console.error('[mintPost] Insert failed:', error);
+    throw new Error(`Failed to create post: ${error.message}`);
+  }
 
-    // 8-minute timeout for large video files on slow mobile connections
-    xhr.timeout = 8 * 60 * 1000;
+  onProgress?.(100);
+  console.log('[mintPost] Created post:', post);
 
-    xhr.open('POST', `${DEHUB_API_BASE}/api/user_mint`);
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    xhr.send(formData);
-  });
+  return {
+    r: '',
+    s: '',
+    v: 0,
+    createdTokenId: String(post.token_id),
+    timestamp: Date.now(),
+  };
 }
 
-// Simple mintNFT wrapper
 export async function mintNFT(data: {
   title: string;
   description?: string;
@@ -133,11 +151,38 @@ export async function mintNFT(data: {
   is_ppv?: boolean;
   ppv_price?: number;
 }): Promise<DeHubNFT> {
-  return apiCall<DeHubNFT>("/api/user_mint", {
-    method: "POST",
-    body: data,
-    requiresAuth: true,
-  });
+  const wallet = getWallet();
+  if (!wallet) throw new Error('Authentication required');
+
+  const query = supabase.from('posts').insert({
+    creator_wallet_address: wallet.toLowerCase(),
+    title: data.title || '',
+    description: data.description || '',
+    media_url: data.media_url,
+    thumbnail_url: data.thumbnail_url,
+    media_type: data.media_type,
+    category: data.category || null,
+    is_ppv: data.is_ppv ?? false,
+    ppv_amount: data.ppv_price || null,
+    visibility: 'public',
+  }).select('*').single();
+
+  const { data: post, error } = await withWalletHeader(query, wallet);
+  if (error) throw new Error(`Failed to create post: ${error.message}`);
+
+  return {
+    tokenId: post.token_id,
+    name: post.title,
+    description: post.description || '',
+    imageUrl: post.media_type === 'image' ? post.media_url : post.thumbnail_url || '',
+    videoUrl: post.media_type === 'video' ? post.media_url : undefined,
+    postType: (post.media_type || 'image') as 'video' | 'image' | 'audio',
+    minter: post.creator_wallet_address,
+    createdAt: post.created_at,
+    likes: 0,
+    views: 0,
+    commentCount: 0,
+  };
 }
 
 // Edit & Delete
@@ -162,18 +207,30 @@ export async function editPost(
   tokenId: number | string,
   params: EditPostParams
 ): Promise<EditPostResponse> {
-  return apiCall<EditPostResponse>(`/api/nft/${tokenId}`, {
-    method: "PATCH",
-    body: params as Record<string, unknown>,
-    requiresAuth: true,
-  });
+  const wallet = getWallet();
+  if (!wallet) throw new Error('Authentication required');
+
+  const updates: Record<string, unknown> = {};
+  if (params.name !== undefined) updates.title = params.name;
+  if (params.description !== undefined) updates.description = params.description;
+  if (params.category !== undefined) updates.category = params.category.join(',');
+
+  const query = supabase.from('posts').update(updates).eq('token_id', Number(tokenId));
+  const { error } = await withWalletHeader(query, wallet);
+
+  if (error) throw new Error(`Failed to edit post: ${error.message}`);
+  return { result: true, data: { tokenId: Number(tokenId), ...params } };
 }
 
 export async function deletePost(tokenId: number | string): Promise<{ result: boolean }> {
-  return apiCall<{ result: boolean }>(`/api/nft/${tokenId}`, {
-    method: "DELETE",
-    requiresAuth: true,
-  });
+  const wallet = getWallet();
+  if (!wallet) throw new Error('Authentication required');
+
+  const query = supabase.from('posts').delete().eq('token_id', Number(tokenId));
+  const { error } = await withWalletHeader(query, wallet);
+
+  if (error) throw new Error(`Failed to delete post: ${error.message}`);
+  return { result: true };
 }
 
 // Token visibility
@@ -193,34 +250,17 @@ export async function updateTokenVisibility(
   tokenId: number | string,
   visibility: TokenVisibility
 ): Promise<TokenVisibilityResponse> {
-  const token = getAuthToken();
-  
-  if (!token) {
-    throw new Error("Authentication required");
-  }
+  const wallet = getWallet();
+  if (!wallet) throw new Error('Authentication required');
 
-  const visibilityToStatus: Record<TokenVisibility, number> = {
-    'public': 0,
-    'private': 1,
-    'unlisted': 2,
+  const query = supabase.from('posts').update({ visibility }).eq('token_id', Number(tokenId));
+  const { error } = await withWalletHeader(query, wallet);
+
+  if (error) throw new Error(`Failed to update visibility: ${error.message}`);
+
+  return {
+    status: true,
+    message: `Visibility updated to ${visibility}`,
+    result: { tokenId: Number(tokenId), visibility },
   };
-
-  const response = await fetch(`${DEHUB_API_BASE}/api/token_visibility`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      tokenId: Number(tokenId),
-      status: visibilityToStatus[visibility],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || errorData.error || `Failed to update visibility: ${response.status}`);
-  }
-
-  return response.json();
 }
