@@ -2,7 +2,7 @@
  * Direct Messages Hooks
  * =====================
  * React Query hooks for managing DM conversations and messages.
- * Uses Socket.io /dm namespace for real-time events.
+ * Uses Supabase Realtime for real-time events.
  */
 
 import { useEffect } from 'react';
@@ -13,7 +13,7 @@ import {
   getConversations,
   getMessages,
   uploadAndSendMedia,
-  
+  sendMessageToConversation,
   createConversation,
   markConversationAsRead,
   deleteConversation,
@@ -35,29 +35,24 @@ import {
   type GroupInfo,
 } from '@/lib/api/dehub';
 import {
-  emitCreateAndStart,
-  emitSendMessage,
-  emitReadReceipt,
   onDmSendMessage,
   onEditMessage,
   onDmDeleteMessage,
   onReValidateMessage,
   onFeeConfirmed,
   onReadReceipt,
-  type SendMessagePayload,
+  emitReadReceipt,
 } from '@/lib/api/dehub/dm-socket';
 
 // ─── Read-state persistence (survives refresh) ───────────────────────────────
 
 const READ_CONVOS_KEY_PREFIX = 'dehub-read-conversations';
 
-/** Wallet-scoped storage key to prevent cross-account contamination */
 function getReadConvosKey(): string {
   const wallet = typeof window !== 'undefined' ? localStorage.getItem('dehub_wallet') : null;
   return wallet ? `${READ_CONVOS_KEY_PREFIX}:${wallet.toLowerCase()}` : READ_CONVOS_KEY_PREFIX;
 }
 
-/** Get durable read timestamps — no TTL pruning, entries persist until explicitly cleared */
 function getReadConversations(): Record<string, number> {
   try {
     const raw = localStorage.getItem(getReadConvosKey());
@@ -95,7 +90,6 @@ export function useConversations(searchQuery: string = '') {
   const query = useQuery({
     queryKey: [...messagesKeys.conversations(), searchQuery, walletAddress],
     queryFn: async () => {
-      console.log('[useConversations] Fetching...', { searchQuery, walletAddress });
       let items: DeHubConversation[] = [];
       try {
         if (searchQuery) {
@@ -108,7 +102,6 @@ export function useConversations(searchQuery: string = '') {
         console.error('[useConversations] Error:', error);
         throw error;
       }
-      // Apply localStorage read overrides so unread badges don't reappear after refresh
       const readOverrides = getReadConversations();
       return items.map(conv => {
         const convId = conv.id || (conv as any)._id;
@@ -121,10 +114,11 @@ export function useConversations(searchQuery: string = '') {
         return conv;
       });
     },
+    enabled: isAuthenticated,
+    refetchInterval: 20000,
   });
 
-  // Real-time: when any DM message arrives, refresh the conversations list.
-  // Only subscribe after the first successful REST fetch (avoids eager socket connect on load).
+  // Real-time: when any DM message arrives, refresh the conversations list
   const hasData = !!query.data;
   useEffect(() => {
     if (!isAuthenticated || !hasData) return;
@@ -151,7 +145,6 @@ export function useMessages(conversationId: string | null) {
   const { isAuthenticated, walletAddress, user } = useAuth();
   const queryClient = useQueryClient();
 
-  const isVirtual = conversationId?.startsWith('new_') || (conversationId ? /^0x[0-9a-fA-F]{40}$/i.test(conversationId) : false);
   const query = useInfiniteQuery({
     queryKey: messagesKeys.messages(conversationId || ''),
     queryFn: async ({ pageParam = 0 }) => {
@@ -162,51 +155,22 @@ export function useMessages(conversationId: string | null) {
     initialPageParam: 0,
     enabled: isAuthenticated && !!conversationId,
     staleTime: 10 * 1000,
-    // Poll for new messages — backend doesn't reliably push socket events to recipient
     refetchInterval: 5000,
   });
 
-  // Flatten pages → single array, oldest first for chat display
   const messages: DmMessage[] = query.data?.pages
     .flatMap(page => page.items)
     .reverse() || [];
 
-  // Real-time: new messages from socket
+  // Real-time: new messages from Supabase Realtime
   useEffect(() => {
     if (!isAuthenticated || !conversationId) return;
 
     const unsubSend = onDmSendMessage((msg) => {
       const dmId = msg.conversation || (msg as any).dmId;
-      const isMatch = dmId === conversationId ||
-        (conversationId.startsWith('new_') &&
-          msg.sender?.address?.toLowerCase() === conversationId.replace('new_', '').toLowerCase());
+      const isMatch = dmId === conversationId;
       if (!isMatch) return;
 
-      // Implied read: if the OTHER user just sent a message, treat earlier sent lines as read
-      // when we never got a `readReceipt` broadcast (fallback UX).
-      const senderAddress = msg.sender?.address?.toLowerCase();
-      const senderUserId = msg.sender?._id;
-      const isFromOther =
-        (senderAddress && walletAddress && senderAddress !== walletAddress.toLowerCase()) ||
-        (senderUserId && user?._id && senderUserId !== user._id);
-      if (isFromOther) {
-        const msgTime = new Date(msg.createdAt ?? '').getTime();
-        queryClient.setQueryData(messagesKeys.messages(conversationId), (old: any) => {
-          if (!old?.pages) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              items: page.items.map((m: DmMessage) => {
-                if (m.author !== 'me' || m.isRead) return m;
-                const mTime = new Date(m.createdAt ?? '').getTime();
-                // Mark as read any of our messages sent before their reply
-                return mTime <= msgTime ? { ...m, isRead: true } : m;
-              }),
-            })),
-          };
-        });
-      }
       queryClient.setQueryData(
         messagesKeys.messages(conversationId),
         (old: any) => {
@@ -215,69 +179,16 @@ export function useMessages(conversationId: string | null) {
           const newPages = pages.map(page => ({ ...page, items: [...page.items] }));
           const firstItems = newPages[0]?.items ?? [];
           const existingIdx = firstItems.findIndex(m => m._id === msg._id);
-          const normalizedMsg: DmMessage = {
-            ...msg,
-            conversation: dmId || conversationId,
-          } as DmMessage;
-          const ownAddress = walletAddress?.toLowerCase();
-          const incomingAddress = normalizedMsg.sender?.address?.toLowerCase();
-          const ownUserId = user?._id;
-          const incomingUserId = normalizedMsg.sender?._id;
-          const incomingCreatedAt = new Date(normalizedMsg.createdAt ?? '').getTime();
 
           if (existingIdx >= 0) {
-            // Update in place (e.g. media upload completed — merge mediaUrls, uploadStatus)
-            const merged = {
-              ...firstItems[existingIdx],
-              ...normalizedMsg,
-              mediaUrls: (normalizedMsg.mediaUrls?.length ? normalizedMsg.mediaUrls : firstItems[existingIdx].mediaUrls) ?? [],
-              uploadStatus: normalizedMsg.uploadStatus ?? firstItems[existingIdx].uploadStatus,
-            };
-            newPages[0].items[existingIdx] = merged;
+            newPages[0].items[existingIdx] = { ...firstItems[existingIdx], ...msg };
           } else {
-            // Reconcile optimistic temp message (same sender + type + content within short window)
-            // so we don't briefly render duplicates (temp + server copy).
-            const optimisticIdx = firstItems.findIndex((candidate) => {
-              if (!candidate._id?.startsWith('temp-')) return false;
-
-              const sameType = (candidate.msgType ?? 'msg') === (normalizedMsg.msgType ?? 'msg');
-              if (!sameType) return false;
-
-              const candidateAddress = candidate.sender?.address?.toLowerCase();
-              const candidateUserId = candidate.sender?._id;
-
-              const isIncomingFromCurrentUser =
-                (!!incomingAddress && !!ownAddress && incomingAddress === ownAddress) ||
-                (!!incomingUserId && !!ownUserId && incomingUserId === ownUserId);
-              if (!isIncomingFromCurrentUser) return false;
-
-              const sameSender =
-                (!!incomingAddress && !!candidateAddress && incomingAddress === candidateAddress) ||
-                (!!incomingUserId && !!candidateUserId && incomingUserId === candidateUserId);
-              if (!sameSender) return false;
-
-              const candidateContent = (candidate.content || '').trim();
-              const incomingContent = (normalizedMsg.content || '').trim();
-              const sameContent = candidateContent === incomingContent;
-              const isMediaLike = ['media', 'voice', 'gif'].includes(normalizedMsg.msgType as string);
-
-              const candidateCreatedAt = new Date(candidate.createdAt ?? '').getTime();
-              const closeInTime =
-                Number.isFinite(candidateCreatedAt) && Number.isFinite(incomingCreatedAt)
-                  ? Math.abs(candidateCreatedAt - incomingCreatedAt) < 30_000
-                  : Number.isFinite(candidateCreatedAt)
-                    ? Date.now() - candidateCreatedAt < 30_000
-                    : true;
-
-              return (sameContent || isMediaLike) && closeInTime;
-            });
-
+            // Check for optimistic temp message
+            const optimisticIdx = firstItems.findIndex(c => c._id?.startsWith('temp-') && c.author === msg.author);
             if (optimisticIdx >= 0) {
-              // Preserve `author` from the temp message — the server socket event doesn't
-              // include it, but we need it later so onReadReceipt can identify sent messages.
-              newPages[0].items[optimisticIdx] = { author: firstItems[optimisticIdx].author, ...normalizedMsg };
+              newPages[0].items[optimisticIdx] = { author: firstItems[optimisticIdx].author, ...msg };
             } else {
-              newPages[0] = { ...newPages[0], items: [normalizedMsg, ...firstItems] };
+              newPages[0] = { ...newPages[0], items: [msg, ...firstItems] };
             }
           }
           return { ...old, pages: newPages };
@@ -290,15 +201,15 @@ export function useMessages(conversationId: string | null) {
         messagesKeys.messages(conversationId),
         (old: any) => {
           if (!old?.pages) return old;
-          const pages = old.pages.map((page: any) => ({
-            ...page,
-            items: page.items.map((m: DmMessage) =>
-              m._id === data._id
-                ? { ...m, content: data.content, isEdited: true, editedAt: data.editedAt }
-                : m
-            ),
-          }));
-          return { ...old, pages };
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((m: DmMessage) =>
+                m._id === data._id ? { ...m, content: data.content, isEdited: true, editedAt: data.editedAt } : m
+              ),
+            })),
+          };
         }
       );
     });
@@ -308,13 +219,15 @@ export function useMessages(conversationId: string | null) {
         messagesKeys.messages(conversationId),
         (old: any) => {
           if (!old?.pages) return old;
-          const pages = old.pages.map((page: any) => ({
-            ...page,
-            items: page.items.map((m: DmMessage) =>
-              m._id === data._id ? { ...m, isDeleted: true, content: '' } : m
-            ),
-          }));
-          return { ...old, pages };
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((m: DmMessage) =>
+                m._id === data._id ? { ...m, isDeleted: true, content: '' } : m
+              ),
+            })),
+          };
         }
       );
     });
@@ -331,40 +244,37 @@ export function useMessages(conversationId: string | null) {
         messagesKeys.messages(conversationId),
         (old: any) => {
           if (!old?.pages) return old;
-          const pages = old.pages.map((page: any) => ({
-            ...page,
-            items: page.items.map((m: DmMessage) =>
-              m._id === message._id ? { ...m, ...message, mediaUrls: message.mediaUrls ?? m.mediaUrls, uploadStatus: message.uploadStatus ?? m.uploadStatus } : m
-            ),
-          }));
-          return { ...old, pages };
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((m: DmMessage) =>
+                m._id === message._id ? { ...m, ...message } : m
+              ),
+            })),
+          };
         }
       );
     });
 
-    // When the other person reads, mark all our sent messages as read
     const unsubReadReceipt = onReadReceipt((data: any) => {
-      console.log('[DM] onReadReceipt fired', { data, conversationId });
       const dmId = data?.dmId || data?.conversationId;
       if (!dmId || dmId !== conversationId) return;
       queryClient.setQueryData(
         messagesKeys.messages(conversationId),
         (old: any) => {
           if (!old?.pages) return old;
-          const pages = old.pages.map((page: any) => ({
-            ...page,
-            items: page.items.map((m: DmMessage) => {
-              // author is 'me' for own messages (set by parseDmMessage or preserved on reconcile)
-              if (m.author !== 'me' || m.isRead) return m;
-              return { ...m, isRead: true };
-            }),
-          }));
-          return { ...old, pages };
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((m: DmMessage) =>
+                m.author === 'me' && !m.isRead ? { ...m, isRead: true } : m
+              ),
+            })),
+          };
         }
       );
-      // Do NOT invalidate here — an immediate refetch races with backend processing
-      // and overwrites the optimistic isRead:true with the still-stale server value.
-      // The 5s refetchInterval will sync naturally once the backend has caught up.
     });
 
     return () => {
@@ -377,18 +287,15 @@ export function useMessages(conversationId: string | null) {
     };
   }, [conversationId, isAuthenticated, queryClient, walletAddress, user?._id]);
 
-  // Mark as read via socket + persist to localStorage
   const markAsRead = useMutation({
     mutationFn: () => {
       if (conversationId && !conversationId.startsWith('new_') && !/^0x[0-9a-fA-F]{40}$/i.test(conversationId)) {
         emitReadReceipt(conversationId);
-        // Persist to localStorage so it survives page refresh
         persistReadConversation(conversationId);
       }
       return markConversationAsRead(conversationId!);
     },
     onMutate: async () => {
-      // Optimistically set unreadCount to 0 in the conversations cache
       await queryClient.cancelQueries({ queryKey: messagesKeys.conversations() });
       queryClient.setQueriesData(
         { queryKey: messagesKeys.conversations() },
@@ -396,19 +303,11 @@ export function useMessages(conversationId: string | null) {
           if (!Array.isArray(old)) return old;
           return old.map((conv: any) => {
             const convId = conv.id || conv._id;
-            if (convId === conversationId) {
-              return { ...conv, unreadCount: 0 };
-            }
+            if (convId === conversationId) return { ...conv, unreadCount: 0 };
             return conv;
           });
         }
       );
-    },
-    onSettled: () => {
-      // Don't force-refetch here — the optimistic update already cleared the badge,
-      // and the localStorage override protects against stale server counts on next
-      // natural refetch. An immediate invalidation risks the server returning
-      // unreadCount > 0 before markAsRead/readReceipt is fully processed on the server.
     },
   });
 
@@ -427,13 +326,20 @@ export function useMessages(conversationId: string | null) {
 
 // ─── Create and Start ─────────────────────────────────────────────────────────
 
-/**
- * Emit createAndStart to get/create a DM conversation.
- * Returns DmConversation including dmFee.
- */
 export function useCreateAndStart() {
   return useMutation({
-    mutationFn: (userId: string) => emitCreateAndStart(userId),
+    mutationFn: async (userId: string) => {
+      const conv = await createConversation(userId);
+      return {
+        _id: conv.id,
+        participants: [] as any[],
+        lastMessageAt: conv.updatedAt,
+        unreadCount: 0,
+        messages: [] as any[],
+        tips: [] as any[],
+        dmFee: conv.dmFee || undefined,
+      };
+    },
   });
 }
 
@@ -445,104 +351,42 @@ export function useSendMessage(conversationId: string) {
 
   return useMutation({
     mutationFn: async ({
-      content,
-      msgType = 'msg',
-      gifUrl,
-      mediaFile,
-      voiceDuration,
-      replyTo,
-      txHash,
+      content, msgType = 'msg', gifUrl, mediaFile, voiceDuration, replyTo, txHash,
     }: {
-      content: string;
-      msgType?: DmMsgType;
-      gifUrl?: string;
-      mediaFile?: File;
-      voiceDuration?: number;
-      replyTo?: string;
-      txHash?: string;
+      content: string; msgType?: DmMsgType; gifUrl?: string;
+      mediaFile?: File; voiceDuration?: number; replyTo?: string; txHash?: string;
     }): Promise<DmMessage> => {
-      // Virtual conversations need createAndStart first to get real ID (applies to all message types)
+      // Virtual conversations need createConversation first
       const isVirtual = conversationId.startsWith('new_') || /^0x[0-9a-fA-F]{40}$/i.test(conversationId);
       let resolvedId = conversationId;
       if (isVirtual) {
         const recipientAddress = conversationId.startsWith('new_')
           ? conversationId.replace('new_', '')
           : conversationId;
-        try {
-          const dmConversation = await emitCreateAndStart(recipientAddress);
-          if (dmConversation?._id) {
-            resolvedId = dmConversation._id;
-          } else {
-            throw new Error('Failed to create conversation');
-          }
-        } catch (err) {
-          console.error('[useSendMessage] createAndStart failed:', err);
-          throw new Error('Could not establish conversation. Please try again.');
-        }
+        const conv = await createConversation(recipientAddress);
+        resolvedId = conv.id;
       }
 
-      // Media/voice: upload file then return — resolvedId is now guaranteed real
-      if (msgType === 'media' || msgType === 'voice') {
-        if (!mediaFile) throw new Error('No file provided for media/voice message');
+      // Media/voice upload
+      if ((msgType === 'media' || msgType === 'voice') && mediaFile) {
         const senderId = user?._id || walletAddress || '';
         return uploadAndSendMedia(mediaFile, resolvedId, senderId, {
-          content,
-          msgType,
-          voiceDuration,
-          replyTo,
-          txHash,
+          content, msgType, voiceDuration, replyTo, txHash,
         });
       }
 
-      // Real conversation: emit via socket (fire and forget)
-      const payload: SendMessagePayload = {
-        dmId: resolvedId,
-        content,
-        type: msgType,
-        gif: gifUrl,
-        replyTo,
-        txHash,
+      // Send via Supabase insert
+      return sendMessageToConversation(resolvedId, content, msgType, {
+        mediaUrl: gifUrl,
         voiceDuration,
-      };
-      emitSendMessage(payload);
-
-      // Return an optimistic message with the resolved conversation ID
-      const tempMessage: DmMessage = {
-        _id: `temp-${Date.now()}`,
-        conversation: resolvedId,
-        sender: {
-          _id: user?._id || walletAddress || '',
-          username: user?.username || '',
-          address: walletAddress || '',
-          displayName: user?.displayName || user?.display_name || '',
-          avatarImageUrl: user?.avatarImageUrl || '',
-        },
-        content,
-        msgType,
-        mediaUrls: gifUrl ? [{ url: gifUrl, type: 'image', mimeType: 'image/gif' }] : [],
-        voiceDuration: null,
-        isRead: false,
-        isEdited: false,
-        editedAt: null,
-        isForwarded: false,
-        replyTo: null,
-        paymentStatus: null,
-        paymentTxHash: null,
-        tipAmount: null,
-        tipSymbol: null,
-        isDeleted: false,
-        author: 'me',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      return tempMessage;
+        replyToId: replyTo,
+      });
     },
 
     onMutate: async ({ content, msgType, gifUrl, mediaFile, voiceDuration }) => {
       await queryClient.cancelQueries({ queryKey: messagesKeys.messages(conversationId) });
       const previousMessages = queryClient.getQueryData(messagesKeys.messages(conversationId));
 
-      // Optimistic: prepend temp message
       const optimisticMessage: DmMessage = {
         _id: `temp-${Date.now()}`,
         conversation: conversationId,
@@ -559,16 +403,9 @@ export function useSendMessage(conversationId: string) {
           ? [{ url: URL.createObjectURL(mediaFile), type: msgType === 'voice' ? 'audio' : 'image', mimeType: mediaFile.type }]
           : gifUrl ? [{ url: gifUrl, type: 'image', mimeType: 'image/gif' }] : [],
         voiceDuration: voiceDuration ?? null,
-        isRead: false,
-        isEdited: false,
-        editedAt: null,
-        isForwarded: false,
-        replyTo: null,
-        paymentStatus: null,
-        paymentTxHash: null,
-        tipAmount: null,
-        tipSymbol: null,
-        isDeleted: false,
+        isRead: false, isEdited: false, editedAt: null, isForwarded: false,
+        replyTo: null, paymentStatus: null, paymentTxHash: null,
+        tipAmount: null, tipSymbol: null, isDeleted: false,
         author: 'me',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -593,46 +430,28 @@ export function useSendMessage(conversationId: string) {
     },
 
     onSettled: (_data, _err, variables) => {
-      // Don't immediately invalidate messages — the optimistic message is already visible.
-      // The socket event (onDmSendMessage) will trigger a refetch when the server confirms.
-      // Immediate invalidation causes the optimistic message to vanish briefly because
-      // the server hasn't processed the fire-and-forget socket emit yet.
-      
-      // For media/voice, delay refetch to allow CDN processing
-      if (variables?.mediaFile && (variables?.msgType === 'media' || variables?.msgType === 'voice')) {
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: messagesKeys.messages(conversationId) });
-        }, 3000);
-      } else {
-        // For text/gif messages, delay the refetch so the server has time to persist
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: messagesKeys.messages(conversationId) });
-        }, 2000);
-      }
+      const delay = variables?.mediaFile ? 3000 : 2000;
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: messagesKeys.messages(conversationId) });
+      }, delay);
       queryClient.invalidateQueries({ queryKey: messagesKeys.conversations() });
     },
   });
 }
 
-// ─── Create Conversation (virtual, for new DM flow) ───────────────────────────
+// ─── Create Conversation ──────────────────────────────────────────────────────
 
 export function useCreateConversation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ recipientAddress, recipientUser }: {
-      recipientAddress: string;
-      recipientUser?: Partial<DeHubUser>;
+      recipientAddress: string; recipientUser?: Partial<DeHubUser>;
     }) => createConversation(recipientAddress, recipientUser),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: messagesKeys.conversations() });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: messagesKeys.conversations() }); },
   });
 }
 
 // ─── Delete Conversation ──────────────────────────────────────────────────────
-
-// ─── Deleted conversations persistence ────────────────────────────────────────
 
 const DELETED_CONVOS_KEY = 'dehub-deleted-conversations';
 
@@ -640,18 +459,13 @@ export function getDeletedConversationIds(): Set<string> {
   try {
     const raw = localStorage.getItem(DELETED_CONVOS_KEY);
     return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
-    return new Set();
-  }
+  } catch { return new Set(); }
 }
 
 function persistDeletedConversation(conversationId: string) {
   const ids = getDeletedConversationIds();
   ids.add(conversationId);
-  // Also persist the peer address variant so both "new_0x..." and the raw dmId are covered
-  if (conversationId.startsWith('new_')) {
-    ids.add(conversationId.replace('new_', ''));
-  }
+  if (conversationId.startsWith('new_')) ids.add(conversationId.replace('new_', ''));
   localStorage.setItem(DELETED_CONVOS_KEY, JSON.stringify([...ids]));
 }
 
@@ -663,35 +477,19 @@ export function useDeleteConversation() {
     mutationFn: (conversationId: string) =>
       deleteConversation(conversationId, walletAddress || undefined),
     onMutate: async (conversationId: string) => {
-      // Persist deletion so it survives refetches and page reloads
       persistDeletedConversation(conversationId);
-
-      // Optimistically remove from ALL conversation query caches
       await queryClient.cancelQueries({ queryKey: messagesKeys.conversations() });
-      const snapshot = queryClient.getQueriesData({ queryKey: messagesKeys.conversations() });
       queryClient.setQueriesData(
         { queryKey: messagesKeys.conversations() },
-        (old: any) => {
-          if (Array.isArray(old)) {
-            return old.filter((c: any) => c.id !== conversationId);
-          }
-          return old;
-        }
+        (old: any) => Array.isArray(old) ? old.filter((c: any) => c.id !== conversationId) : old
       );
-      // Also remove cached messages for this conversation
       queryClient.removeQueries({ queryKey: messagesKeys.messages(conversationId) });
-      return { snapshot };
     },
-    onSuccess: () => {
-      // Don't invalidate — the deleted ID is persisted and will be filtered on next fetch
-    },
-    onError: (_err, conversationId, context) => {
-      // Rollback: remove from persisted deletions
+    onError: (_err, conversationId) => {
       const ids = getDeletedConversationIds();
       ids.delete(conversationId);
       if (conversationId.startsWith('new_')) ids.delete(conversationId.replace('new_', ''));
       localStorage.setItem(DELETED_CONVOS_KEY, JSON.stringify([...ids]));
-      // Restore cache
       queryClient.invalidateQueries({ queryKey: messagesKeys.conversations() });
     },
   });
