@@ -13,7 +13,8 @@ import { useStage } from '@/contexts/StageContext';
 
 import { useUnreadNotificationCount } from '@/hooks/use-notifications';
 import { useCustomUnreadCount } from '@/hooks/use-custom-notifications';
-import dehubLogoCompact from '@/assets/fansite-logo.png';
+import fansiteLogoFull from '@/assets/fansite-logo-full.png';
+import fansiteIcon from '@/assets/fansite-icon.png';
 import { cn } from '@/lib/utils';
 import { buildAvatarUrl } from '@/lib/media-url';
 import { useSidebarCollapse } from '@/contexts/SidebarCollapseContext';
@@ -114,19 +115,17 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
             <button onClick={handleLogoClick} className="block cursor-pointer">
               {isCollapsed ? (
                 <img
-                  src={dehubLogoCompact}
-                  alt="dehub"
+                  src={fansiteIcon}
+                  alt="fansite"
                   className="h-[32px] w-auto"
                   decoding="async"
                 />
               ) : (
                 <img
-                  src="/dehub-header-logo.png"
-                  alt="dehub"
+                  src={fansiteLogoFull}
+                  alt="fansite"
                   className="h-[40.6px] w-auto relative -top-[3px]"
                   fetchPriority="high"
-                  width={135}
-                  height={41}
                   decoding="async"
                 />
               )}
