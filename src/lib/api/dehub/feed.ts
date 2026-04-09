@@ -33,7 +33,7 @@ function getWallet(): string | null {
 
 export async function searchNFTs(params: SearchNFTsParams = {}): Promise<PaginatedResponse<DeHubNFT>> {
   const page = params.page || 0;
-  const limit = params.limit || 20;
+  const limit = (params as any).limit || params.unit || 20;
   const from = page * limit;
 
   let query = supabase.from('posts').select('*', { count: 'exact' })
@@ -43,7 +43,7 @@ export async function searchNFTs(params: SearchNFTsParams = {}): Promise<Paginat
   if (params.category) query = query.ilike('category', `%${params.category}%`);
   if (params.postType) query = query.eq('media_type', params.postType);
   if (params.address) query = query.eq('creator_wallet_address', params.address.toLowerCase());
-  if (params.q) query = query.textSearch('search_vector', params.q);
+  if (params.search) query = query.textSearch('search_vector', params.search);
 
   const { data, count } = await query;
   return {
@@ -68,8 +68,9 @@ export async function universalSearch(params: UniversalSearchParams): Promise<Un
 
   return {
     accounts: (profiles || []).map((p: any) => ({
+      id: p.id,
       address: p.wallet_address,
-      username: p.username,
+      username: p.username || '',
       displayName: p.display_name,
       avatarImageUrl: p.avatar_url,
     })),
@@ -182,7 +183,7 @@ export async function getWatchHistory(page?: number, limit?: number, address?: s
 
 export async function getCategories(): Promise<DeHubCategory[]> {
   const { data } = await supabase.from('trending_categories').select('*').order('post_count', { ascending: false }).limit(20);
-  return (data || []).map((c: any) => ({ id: c.id, name: c.name, postCount: c.post_count }));
+  return (data || []).map((c: any) => ({ id: c.id, name: c.name, slug: c.name.toLowerCase().replace(/\s+/g, '-'), nft_count: c.post_count }));
 }
 
 export async function getServerTime(): Promise<{ time: string }> {
