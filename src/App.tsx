@@ -106,22 +106,7 @@ const queryClient = new QueryClient({
  * the heavy chunk is already cached and the transition is instant.
  */
 function HeroRoute() {
-  // Kick off WalletProviders chunk download in the background immediately.
-  // By the time the user clicks Enter (5-30s), it will be fully loaded.
-  useEffect(() => {
-    import("./components/app/WalletProviders");
-  }, []);
-
-  const shouldSkip = localStorage.getItem(SKIP_LANDING_KEY) === 'true';
-  if (shouldSkip) {
-    return <Navigate to="/app" replace />;
-  }
-
-  return (
-    <Suspense fallback={<PageLoader />}>
-      <Index />
-    </Suspense>
-  );
+  return <Navigate to="/app" replace />;
 }
 
 /**
