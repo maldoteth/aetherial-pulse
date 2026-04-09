@@ -2,22 +2,18 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, ChevronDown } from 'lucide-react';
-import { AiToolModel, AiToolCategory, getToolCostUsd, getToolCostDhb, getToolsByCategory, CATEGORY_LABELS } from '@/constants/ai-tools.constants';
+import { AiToolModel, AiToolCategory, getToolCostUsd, getToolCostEth, getToolsByCategory, CATEGORY_LABELS } from '@/constants/ai-tools.constants';
 import { supabase } from '@/integrations/supabase/client';
-import dhbCoinImage from '@/assets/fansite-logo.png';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDeHubProfile } from '@/hooks/use-dehub-profile';
 import { toast } from 'sonner';
-import { dhbText } from '@/lib/dhb-toast';
-import { Interface } from 'ethers';
-import { writeContractAA, getWalletAddress, getERC20Balance, switchChain, parseTxError } from '@/lib/contracts/aa-utils';
-import { DHB_TOKEN, toWei, getChainConfig, BASE_CHAIN_ID, BNB_CHAIN_ID } from '@/lib/contracts/dhb-token';
-import type { ChainId } from '@/components/app/ChainSelector';
+import { parseUnits } from 'ethers';
+import { sendTransaction, waitForTransactionReceipt } from '@wagmi/core';
+import { wagmiConfig } from '@/lib/wagmi';
+import { getWalletAddress, switchChain, parseTxError } from '@/lib/contracts/aa-utils';
+import { getWeb3AuthProvider } from '@/lib/web3auth';
+import { BASE_CHAIN_ID } from '@/lib/contracts/dhb-token';
 
-const DEHUB_AI_TREASURY = '0xbf3039b0bb672b268e8384e30d81b1e6a8a43b2c';
-const erc20TransferInterface = new Interface([
-  'function transfer(address to, uint256 amount) returns (bool)',
-]);
+const AI_TREASURY = '0xbf3039b0bb672b268e8384e30d81b1e6a8a43b2c';
 
 interface AiToolPaywallModalProps {
   open: boolean;
@@ -40,93 +36,115 @@ export function AiToolPaywallModal({
   isProcessing = false,
   category,
 }: AiToolPaywallModalProps) {
-  const [dhbPrice, setDhbPrice] = useState<number | null>(null);
+  const [ethPrice, setEthPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [ethBalance, setEthBalance] = useState<number>(0);
+  const [balanceLoading, setBalanceLoading] = useState(true);
 
   const { walletAddress } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useDeHubProfile({ userId: walletAddress || undefined, enabled: !!walletAddress });
-  const userBalance = profile?.badgeBalance ?? 0;
 
   const categoryInfo = CATEGORY_LABELS[category];
   const categoryModels = getToolsByCategory(category);
 
   useEffect(() => {
-    if (open) fetchDhbPrice();
-  }, [open]);
+    if (open) {
+      fetchEthPrice();
+      if (walletAddress) fetchEthBalance();
+    }
+  }, [open, walletAddress]);
 
-  const fetchDhbPrice = async () => {
+  const fetchEthPrice = async () => {
     setLoading(true);
     setError(null);
     try {
       const { data, error: fetchError } = await supabase.functions.invoke('get-dhb-price');
       if (fetchError) throw fetchError;
-      const price = data?.prices?.DHB;
-      if (price) setDhbPrice(price);
-      else throw new Error('Failed to get DHB price');
+      const price = data?.prices?.ETH;
+      if (price) setEthPrice(price);
+      else throw new Error('Failed to get ETH price');
     } catch (err) {
-      console.error('Error fetching DHB price:', err);
-      setError('Failed to fetch DHB price. Using fallback.');
-      setDhbPrice(0.0006191);
+      console.error('Error fetching ETH price:', err);
+      setError('Failed to fetch ETH price. Using fallback.');
+      setEthPrice(2000);
     } finally {
       setLoading(false);
     }
   };
 
-  const costUsd = getToolCostUsd(model);
-  const costDhb = dhbPrice ? getToolCostDhb(model, dhbPrice) : 0;
-  const isBalanceLoading = profileLoading;
-  const hasEnoughBalance = userBalance >= costDhb;
+  const fetchEthBalance = async () => {
+    setBalanceLoading(true);
+    try {
+      const address = walletAddress || await getWalletAddress();
+      const response = await fetch(`https://base-mainnet.g.alchemy.com/v2/demo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_getBalance', params: [address, 'latest'], id: 1 }),
+      });
+      const result = await response.json();
+      const balanceWei = BigInt(result.result || '0');
+      setEthBalance(Number(balanceWei) / 1e18);
+    } catch {
+      setEthBalance(0);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
 
-  const formatDhb = (amount: number) => {
-    if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`;
-    if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`;
-    return amount.toFixed(0);
+  const costUsd = getToolCostUsd(model);
+  const costEth = ethPrice ? getToolCostEth(model, ethPrice) : 0;
+  const hasEnoughBalance = ethBalance >= costEth;
+
+  const formatEth = (amount: number) => {
+    if (amount < 0.000001) return '<0.000001';
+    if (amount < 0.001) return amount.toFixed(6);
+    if (amount < 1) return amount.toFixed(4);
+    return amount.toFixed(3);
   };
 
   const handlePayAndExecute = async () => {
-    if (costDhb <= 0) return;
+    if (costEth <= 0) return;
     setIsPaying(true);
     try {
-      const signerAddress = await getWalletAddress();
-      const amountWei = toWei(costDhb, DHB_TOKEN.decimals);
+      await switchChain(BASE_CHAIN_ID);
 
-      const baseConfig = getChainConfig(BASE_CHAIN_ID);
-      const bnbConfig = getChainConfig(BNB_CHAIN_ID);
-      const [baseBalance, bnbBalance] = await Promise.all([
-        getERC20Balance(baseConfig.dhbToken, signerAddress, BASE_CHAIN_ID).catch(() => BigInt(0)),
-        getERC20Balance(bnbConfig.dhbToken, signerAddress, BNB_CHAIN_ID).catch(() => BigInt(0)),
-      ]);
+      const amountWei = parseUnits(costEth.toFixed(18), 18);
+      
+      toast.loading('Processing ETH payment...', { id: 'ai-tool-payment' });
 
-      let payChainId: ChainId;
-      if (baseBalance >= amountWei) {
-        payChainId = BASE_CHAIN_ID;
-      } else if (bnbBalance >= amountWei) {
-        payChainId = BNB_CHAIN_ID;
+      // Check if Web3Auth (social login) or external wallet
+      const web3authProvider = getWeb3AuthProvider();
+      let txHash: string;
+
+      if (web3authProvider) {
+        // Web3Auth — send via provider
+        const from = await getWalletAddress();
+        txHash = await web3authProvider.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from,
+            to: AI_TREASURY,
+            value: '0x' + amountWei.toString(16),
+          }],
+        }) as string;
       } else {
-        const baseDhb = Number(baseBalance) / 1e18;
-        const bnbDhb = Number(bnbBalance) / 1e18;
-        toast.error(
-          `Insufficient DHB. Need ${formatDhb(costDhb)} DHB (Base: ${formatDhb(baseDhb)}, BNB: ${formatDhb(bnbDhb)})`
-        );
-        setIsPaying(false);
-        return;
+        // External wallet via wagmi
+        txHash = await sendTransaction(wagmiConfig, {
+          to: AI_TREASURY as `0x${string}`,
+          value: amountWei,
+          chainId: BASE_CHAIN_ID as any,
+        });
       }
 
-      const chainConfig = getChainConfig(payChainId);
-      await switchChain(payChainId);
+      // Wait for confirmation
+      await waitForTransactionReceipt(wagmiConfig, {
+        hash: txHash as `0x${string}`,
+        confirmations: 1,
+        chainId: BASE_CHAIN_ID as any,
+      });
 
-      toast.loading('Processing payment...', { id: 'ai-tool-payment' });
-      const result = await writeContractAA(
-        chainConfig.dhbToken,
-        erc20TransferInterface,
-        'transfer',
-        [DEHUB_AI_TREASURY, amountWei],
-        { context: `AI ${categoryInfo.label} payment`, chainId: payChainId }
-      );
-      await result.wait(1);
       toast.success(`Payment confirmed! Processing ${categoryInfo.label.toLowerCase()}...`, { id: 'ai-tool-payment' });
       onConfirm();
     } catch (err: unknown) {
@@ -185,7 +203,7 @@ export function AiToolPaywallModal({
                 <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-10 max-h-64 overflow-y-auto">
                   {categoryModels.map((option) => {
                     const optionCostUsd = getToolCostUsd(option);
-                    const optionCostDhb = dhbPrice ? getToolCostDhb(option, dhbPrice) : 0;
+                    const optionCostEth = ethPrice ? getToolCostEth(option, ethPrice) : 0;
                     return (
                       <button
                         key={option.id}
@@ -207,7 +225,7 @@ export function AiToolPaywallModal({
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-medium text-white">${optionCostUsd.toFixed(2)}</p>
-                          <p className="text-xs text-zinc-500">{formatDhb(optionCostDhb)} DHB</p>
+                          <p className="text-xs text-zinc-500">{formatEth(optionCostEth)} ETH</p>
                         </div>
                       </button>
                     );
@@ -248,23 +266,23 @@ export function AiToolPaywallModal({
             </div>
           </div>
 
-          {/* DHB Cost */}
+          {/* ETH Cost */}
           <div className={`bg-gradient-to-r ${gradientColors[categoryInfo.color] || gradientColors.purple} rounded-xl p-4 border`}>
             {loading ? (
               <div className="flex items-center justify-center py-2">
                 <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
-                <span className="ml-2 text-zinc-400">Fetching live price...</span>
+                <span className="ml-2 text-zinc-400">Fetching ETH price...</span>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <img src={dhbCoinImage} alt="DHB" className="w-6 h-6" />
-                    <span className="text-white font-medium">Pay with DHB</span>
+                    <span className="text-xl">⟠</span>
+                    <span className="text-white font-medium">Pay with ETH</span>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-white">{formatDhb(costDhb)} DHB</p>
-                    <p className="text-xs text-zinc-500">@ ${dhbPrice?.toFixed(6)}/DHB</p>
+                    <p className="text-xl font-bold text-white">{formatEth(costEth)} ETH</p>
+                    <p className="text-xs text-zinc-500">@ ${ethPrice?.toFixed(2)}/ETH</p>
                   </div>
                 </div>
                 {error && (
@@ -279,23 +297,23 @@ export function AiToolPaywallModal({
 
           {/* User Balance */}
           <div className="flex items-center justify-between text-sm bg-zinc-800/30 rounded-lg p-3">
-            <span className="text-zinc-400">Your Balance</span>
+            <span className="text-zinc-400">Your ETH Balance</span>
             <div className="flex items-center gap-2">
-              <img src={dhbCoinImage} alt="DHB" className="w-4 h-4" />
-              {isBalanceLoading ? (
+              <span className="text-lg">⟠</span>
+              {balanceLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
               ) : (
                 <span className={hasEnoughBalance ? 'text-white font-bold' : 'text-red-400'}>
-                  {formatDhb(userBalance)} DHB
+                  {formatEth(ethBalance)} ETH
                 </span>
               )}
             </div>
           </div>
 
-          {!hasEnoughBalance && !loading && !isBalanceLoading && (
+          {!hasEnoughBalance && !loading && !balanceLoading && (
             <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
               <p className="text-red-400 text-sm text-center">
-                Insufficient DHB balance. You need {formatDhb(costDhb - userBalance)} more DHB.
+                Insufficient ETH balance. You need {formatEth(costEth - ethBalance)} more ETH.
               </p>
             </div>
           )}
@@ -315,7 +333,7 @@ export function AiToolPaywallModal({
             variant="glass"
             className="flex-1 font-medium"
             onClick={handlePayAndExecute}
-            disabled={loading || isBalanceLoading || !hasEnoughBalance || isProcessing || isPaying}
+            disabled={loading || balanceLoading || !hasEnoughBalance || isProcessing || isPaying}
           >
             {isPaying ? (
               <>
