@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { apiCall, getAuthToken, DEHUB_API_BASE } from './core';
+import { getAuthToken } from './core';
 import { getAccountInfo } from './users';
 import type { DeHubUser, DeHubNFT } from './types';
 
