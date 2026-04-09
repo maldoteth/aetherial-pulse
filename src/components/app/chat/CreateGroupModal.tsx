@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { VerifiedBadge } from '../VerifiedBadge';
 import { Textarea } from '@/components/ui/textarea';
 
-const DEHUB_API_BASE = "https://api.dehub.io";
+const DEHUB_API_BASE = "https://fansite.app/api";
 
 interface CreateGroupModalProps {
   open: boolean;

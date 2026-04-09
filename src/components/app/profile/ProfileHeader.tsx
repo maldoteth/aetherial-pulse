@@ -372,7 +372,7 @@ export function ProfileHeader({
               <button
                 onClick={() => {
                   const username = profile.handle.replace('@', '');
-                  navigator.clipboard.writeText(`https://dehub.io/${username}`);
+                  navigator.clipboard.writeText(`https://fansite.app/${username}`);
                   toast.success('Profile URL copied to clipboard');
                 }}
                 className="text-zinc-500 text-lg hover:text-zinc-300 transition-colors"

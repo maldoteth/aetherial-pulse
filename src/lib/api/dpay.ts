@@ -6,7 +6,7 @@
 
 import { getAuthToken } from './dehub';
 
-const DEHUB_API_BASE = "https://api.dehub.io";
+const DEHUB_API_BASE = "https://fansite.app/api";
 
 // Types
 export interface DPayToken {

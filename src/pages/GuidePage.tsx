@@ -44,7 +44,7 @@ const sections: GuideSection[] = [
     icon: LogIn,
     intro: "DeHub supports two ways to sign in: social login via Web3Auth (email, Google, X, etc.) or connecting an external wallet like MetaMask. Social-login users get a smart account — the platform covers all gas fees. External-wallet users need to hold gas on the relevant chain.",
     steps: [
-      "Visit dehub.io and click 'Launch App' or navigate to /app.",
+      "Visit fansite.app and click 'Launch App' or navigate to /app.",
       "Choose 'Sign In' — you'll see social login options (Google, X, Email, etc.) and a 'Connect Wallet' option for external wallets.",
       "If using social login, complete the sign-in flow. A smart account is created for you automatically.",
       "If connecting an external wallet, approve the connection in your wallet extension or mobile app.",
@@ -158,7 +158,7 @@ const sections: GuideSection[] = [
       "Visit other users' profiles by clicking their username or avatar anywhere on the platform."
     ],
     tips: [
-      "Your username is unique and appears in your profile URL (dehub.io/@username).",
+      "Your username is unique and appears in your profile URL (fansite.app/@username).",
       "Privacy settings let you control who can see your follower counts."
     ]
   },

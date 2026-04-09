@@ -19,7 +19,7 @@ import { getAuthToken, searchNFTs, getLiveStreams } from '@/lib/api/dehub';
 import { DEFAULT_DEHUB_LIVE_QUERY_OPTIONS } from '@/hooks/use-dehub-feed';
 import { useAuth } from '@/contexts/AuthContext';
 
-const DEHUB_API_BASE = "https://api.dehub.io";
+const DEHUB_API_BASE = "https://fansite.app/api";
 
 // Delay prefetch to avoid overlapping with nebula prefetch and feed component loads
 const PREFETCH_DELAY_MS = 3000;

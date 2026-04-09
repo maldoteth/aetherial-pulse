@@ -1,6 +1,6 @@
 /**
  * Check if a stream tokenId is marked live in Supabase.
- * Used when api.dehub.io /start fails - we store live status in our table.
+ * Used when api.fansite.app /start fails - we store live status in our table.
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';

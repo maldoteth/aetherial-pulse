@@ -11,7 +11,7 @@
 
 import { getAuthToken } from '@/lib/api/dehub';
 
-const DEHUB_API_BASE = "https://api.dehub.io";
+const DEHUB_API_BASE = "https://fansite.app/api";
 const VIEWED_STORAGE_KEY = 'dehub_viewed_posts';
 const VIEW_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 

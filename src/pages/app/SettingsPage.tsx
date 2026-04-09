@@ -161,7 +161,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2">
-      <SEOHead title="Settings — Manage Your Account" description="Customize your DeHub experience. Update your profile, privacy settings, notification preferences, and connected wallets." url="https://dehub.io/app/settings" />
+      <SEOHead title="Settings — Manage Your Account" description="Customize your DeHub experience. Update your profile, privacy settings, notification preferences, and connected wallets." url="https://fansite.app/app/settings" />
       <h1 className="sr-only">DeHub Settings — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <div className="bg-zinc-900 rounded-2xl p-4 sm:p-6 mb-4">
@@ -977,7 +977,7 @@ function PrivacySettings() {
       const { getAuthToken } = await import('@/lib/api/dehub');
       const token = getAuthToken();
       if (token) {
-        const response = await fetch('https://api.dehub.io/api/batch_token_visibility', {
+        const response = await fetch('https://fansite.app/api/api/batch_token_visibility', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1636,7 +1636,7 @@ function FreeAccessListSection() {
           {freeAccessUsers.map((u) => {
             const name = u.displayName || u.username || `${u.address.slice(0, 6)}...${u.address.slice(-4)}`;
             const avatarUrl = u.avatarImageUrl
-              ? (u.avatarImageUrl.startsWith('http') ? u.avatarImageUrl : `https://cdn.dehub.io/${u.avatarImageUrl}`)
+              ? (u.avatarImageUrl.startsWith('http') ? u.avatarImageUrl : `https://cdn.fansite.app/${u.avatarImageUrl}`)
               : undefined;
             return (
               <div key={u.address} className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50">

@@ -13,7 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 // prefetchAllFeeds removed — nebula only caches home feed queries to avoid 429s
 import { getAuthToken } from '@/lib/api/dehub';
 
-const DEHUB_API_BASE = "https://api.dehub.io";
+const DEHUB_API_BASE = "https://fansite.app/api";
 const PREFETCH_TRIGGERED_KEY = 'nebula-prefetch-triggered';
 
 /**

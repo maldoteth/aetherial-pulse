@@ -13,7 +13,7 @@ import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 export default function CreatorsPage() {
   return (
     <>
-      <SEOHead title="Become a Creator" description="Apply to become a creator on DeHub — the open source, censorship resistant media platform." url="https://dehub.io/creators" />
+      <SEOHead title="Become a Creator" description="Apply to become a creator on DeHub — the open source, censorship resistant media platform." url="https://fansite.app/creators" />
       <CreatorsPageInner />
     </>
   );
