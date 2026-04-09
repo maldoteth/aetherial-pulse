@@ -41,7 +41,7 @@ Rules:
     const endpoint = NOVITA_API_KEY 
       ? "https://api.novita.ai/v3/openai/chat/completions"
       : "https://ai.gateway.lovable.dev/v1/chat/completions";
-    const model = NOVITA_API_KEY ? "dolphin-mixtral-8x22b" : "google/gemini-3-flash-preview";
+    const model = NOVITA_API_KEY ? "microsoft/wizardlm-2-8x22b" : "google/gemini-3-flash-preview";
 
     const response = await fetch(endpoint, {
       method: "POST",

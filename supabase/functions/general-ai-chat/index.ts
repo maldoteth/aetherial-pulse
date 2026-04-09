@@ -660,7 +660,7 @@ Example: [{"content": "Interested in DeFi yield farming", "type": "interest"}]`;
     const memoryEndpoint = novitaKey 
       ? 'https://api.novita.ai/v3/openai/chat/completions'
       : 'https://ai.gateway.lovable.dev/v1/chat/completions';
-    const memoryModel = novitaKey ? 'dolphin-mixtral-8x22b' : 'google/gemini-2.5-flash-lite';
+    const memoryModel = novitaKey ? 'microsoft/wizardlm-2-8x22b' : 'google/gemini-2.5-flash-lite';
 
     const response = await fetch(memoryEndpoint, {
       method: 'POST',
@@ -823,7 +823,7 @@ serve(async (req) => {
         const swapEndpoint = swapNovitaKey 
           ? 'https://api.novita.ai/v3/openai/chat/completions'
           : 'https://ai.gateway.lovable.dev/v1/chat/completions';
-        const swapModel = swapNovitaKey ? 'dolphin-mixtral-8x22b' : 'google/gemini-2.5-flash';
+        const swapModel = swapNovitaKey ? 'microsoft/wizardlm-2-8x22b' : 'google/gemini-2.5-flash';
 
         const swapExtractionResponse = await fetch(swapEndpoint, {
           method: 'POST',
@@ -1267,9 +1267,9 @@ IMPORTANT FORMATTING RULES:
       
       // Map model IDs to Novita model names
       if (effectiveModel === 'gemini-2.5-pro' || effectiveModel === 'gpt-5-mini') {
-        modelName = 'dolphin-mixtral-8x22b'; // Best uncensored for complex reasoning
+        modelName = 'microsoft/wizardlm-2-8x22b'; // Best uncensored for complex reasoning
       } else {
-        modelName = 'dolphin-mixtral-8x22b'; // Default uncensored model
+        modelName = 'microsoft/wizardlm-2-8x22b'; // Default uncensored model
       }
       console.log('Using Novita AI with model:', modelName, '| Tier:', modelTier, '| Reason:', modelReason);
     } else {
