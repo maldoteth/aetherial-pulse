@@ -374,45 +374,49 @@ export function mapToTextPost(item: UnifiedFeedItem, index: number): TextPost {
 // ===========================================================================
 
 async function fetchUnifiedFeedFromAPI(params: UnifiedFeedParams = {}): Promise<UnifiedFeedResponse> {
-  const url = new URL('/api/feed', DEHUB_API_BASE);
-  
-  if (params.page !== undefined) url.searchParams.set('page', String(params.page));
-  if (params.limit !== undefined) url.searchParams.set('limit', String(params.limit));
-  if (params.sortBy) url.searchParams.set('sortBy', params.sortBy);
-  if (params.sortOrder) url.searchParams.set('sortOrder', params.sortOrder);
-  if (params.postType && params.postType !== 'all') url.searchParams.set('postType', params.postType);
-  if (params.status) url.searchParams.set('status', params.status);
-  if (params.minter) url.searchParams.set('minter', params.minter);
-  if (params.search) url.searchParams.set('search', params.search);
-  if (params.owner) url.searchParams.set('owner', params.owner);
-  if (params.category) url.searchParams.set('category', params.category);
-  if (params.isPPV !== undefined) url.searchParams.set('isPPV', String(params.isPPV));
-  if (params.isLocked !== undefined) url.searchParams.set('isLocked', String(params.isLocked));
-  if (params.hasBounty !== undefined) url.searchParams.set('hasBounty', String(params.hasBounty));
-  if (params.hasPlans !== undefined) url.searchParams.set('hasPlans', String(params.hasPlans));
-  if (params.range) url.searchParams.set('range', params.range);
-  if (params.from) url.searchParams.set('from', params.from);
-  if (params.to) url.searchParams.set('to', params.to);
-  if (params.shuffleSeed) url.searchParams.set('shuffleSeed', params.shuffleSeed);
-  if (params.maxPerCreator !== undefined) url.searchParams.set('maxPerCreator', String(params.maxPerCreator));
-  if (params.followingOnly) url.searchParams.set('followingOnly', 'true');
-  
-  const token = getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+  const page = params.page || 1;
+  const limit = params.limit || 20;
+
+  const response = await searchNFTs({
+    page: page - 1, // searchNFTs uses 0-based pages
+    unit: limit,
+    category: params.category,
+    postType: params.postType === 'all' ? undefined : params.postType,
+    address: params.minter,
+    search: params.search,
+  });
+
+  const items: UnifiedFeedItem[] = (response.data || []).map((nft: DeHubNFT) => ({
+    tokenId: nft.tokenId,
+    name: nft.name || '',
+    description: nft.description || '',
+    imageUrl: nft.imageUrl || '',
+    videoUrl: nft.videoUrl,
+    audioUrl: nft.audioUrl,
+    minter: nft.minter || '',
+    postType: (nft.postType as any) || 'feed-simple',
+    category: nft.category ? (Array.isArray(nft.category) ? nft.category : [nft.category]) : [],
+    views: nft.views || 0,
+    likes: nft.likes || 0,
+    commentCount: nft.commentCount || 0,
+    createdAt: nft.createdAt || '',
+    minterUsername: nft.mintername,
+    minterDisplayName: nft.minterDisplayName,
+  }));
+
+  const totalPages = Math.ceil((response.total || 0) / limit);
+
+  return {
+    status: true,
+    result: items,
+    pagination: {
+      page,
+      limit,
+      totalCount: response.total || 0,
+      totalPages,
+      hasMore: page < totalPages,
+    },
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  const response = await fetch(url.toString(), { headers });
-  
-  if (!response.ok) {
-    throw new Error(`Feed API error: ${response.status}`);
-  }
-  
-  return response.json();
 }
 
 // ===========================================================================
