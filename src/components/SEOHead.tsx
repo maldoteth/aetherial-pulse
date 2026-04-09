@@ -10,9 +10,9 @@ interface SEOHeadProps {
 }
 
 const defaults = {
-  title: 'DeHub',
-  description: 'DeHub is open source, user owned and censorship resistant media.',
-  image: 'https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo//Screenshot%202026-03-20%20225233.png',
+  title: 'fansite',
+  description: 'fansite — your social media platform.',
+  image: '',
   url: 'https://fansite.app',
 };
 
