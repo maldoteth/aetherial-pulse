@@ -334,8 +334,10 @@ export function useLiveChatMessages(roomId: string | null) {
       unsubBanned();
       unsubUnbanned();
       unsubDebug();
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
+      if (socket) {
+        socket.off?.('connect');
+        socket.off?.('disconnect');
+      }
       setIsConnected(false);
     };
   }, [roomId]);
