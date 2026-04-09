@@ -134,7 +134,7 @@ export async function rejectAllFollowRequests(): Promise<{ result: boolean }> {
 export async function getFollowList(
   address: string,
   type: 'followers' | 'following',
-  options?: { page?: number; limit?: number; search?: string }
+  options?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }
 ): Promise<{ items: FollowListItem[]; pagination?: any }> {
   const page = options?.page || 1;
   const limit = options?.limit || 20;
