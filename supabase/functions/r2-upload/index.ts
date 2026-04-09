@@ -1,0 +1,63 @@
+import { corsHeaders } from '@supabase/supabase-js/cors';
+import { S3Client, PutObjectCommand } from 'npm:@aws-sdk/client-s3@3.600.0';
+
+const R2_ACCOUNT_ID = Deno.env.get('R2_ACCOUNT_ID')!;
+const R2_ACCESS_KEY_ID = Deno.env.get('R2_ACCESS_KEY_ID')!;
+const R2_SECRET_ACCESS_KEY = Deno.env.get('R2_SECRET_ACCESS_KEY')!;
+const R2_BUCKET_NAME = Deno.env.get('R2_BUCKET_NAME')!;
+const R2_PUBLIC_URL = Deno.env.get('R2_PUBLIC_URL')!;
+
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: R2_ACCESS_KEY_ID,
+    secretAccessKey: R2_SECRET_ACCESS_KEY,
+  },
+});
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const formData = await req.formData();
+    const file = formData.get('file') as File | null;
+    const folder = (formData.get('folder') as string) || 'uploads';
+
+    if (!file) {
+      return new Response(JSON.stringify({ error: 'No file provided' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Generate unique key
+    const ext = file.name.split('.').pop() || 'bin';
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    const key = `${folder}/${timestamp}-${random}.${ext}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+
+    await s3.send(new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+      Body: new Uint8Array(arrayBuffer),
+      ContentType: file.type,
+    }));
+
+    const publicUrl = `${R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`;
+
+    return new Response(JSON.stringify({ url: publicUrl, key }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('R2 upload error:', error);
+    return new Response(JSON.stringify({ error: 'Upload failed', details: String(error) }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
