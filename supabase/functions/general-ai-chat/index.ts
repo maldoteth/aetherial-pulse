@@ -85,7 +85,7 @@ const PERSONAL_KEYWORDS = [
   'followers did i', 'likes did i', 'tips did i',
 ];
 
-// Post analysis keywords — triggers fetching user's posts from DeHub API
+// Post analysis keywords — triggers fetching user's posts from Fansite API
 const POST_ANALYSIS_KEYWORDS = [
   'study my posts', 'analyze my posts', 'analyse my posts', 'review my posts',
   'look at my posts', 'check my posts', 'evaluate my posts', 'rate my posts',
@@ -116,9 +116,9 @@ const OTHER_USER_KEYWORDS = [
   "what do they post", "their posts", "their content", "their profile",
 ];
 
-// Keywords about DeHub - FREE tier (already trained on docs)
+// Keywords about Fansite - FREE tier (already trained on docs)
 const DEHUB_KEYWORDS = [
-  'dehub', 'dhb', '$dhb', 'token', 'delabs', 'futurov', 'ftv',
+  'fansite', 'dhb', '$dhb', 'token', 'delabs', 'futurov', 'ftv',
   'malik', 'mal.eth', 'mike hales', 'indi', 'bailey',
   'first class', 'w2e', 'watch2earn', 'watch to earn',
   'depin', 'node', 'staking', 'governance',
@@ -255,7 +255,7 @@ function isPersonalQuestion(message: string): boolean {
   return PERSONAL_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
 }
 
-function isDeHubRelated(message: string): boolean {
+function isFansiteRelated(message: string): boolean {
   const lowerMessage = message.toLowerCase();
   return DEHUB_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
 }
@@ -295,7 +295,7 @@ function extractTargetUsername(message: string): string | null {
       const name = match[1].toLowerCase();
       // Filter out common words that aren't usernames
       const stopWords = ['me', 'my', 'myself', 'i', 'the', 'this', 'that', 'it', 'a', 'an',
-        'dehub', 'dhb', 'token', 'platform', 'app', 'bitcoin', 'crypto', 'nft', 'web3',
+        'fansite', 'dhb', 'token', 'platform', 'app', 'bitcoin', 'crypto', 'nft', 'web3',
         'how', 'what', 'why', 'when', 'where', 'your', 'you', 'their', 'them', 'someone',
         'content', 'posts', 'videos', 'images', 'profile', 'last', 'recent', 'latest'];
       if (!stopWords.includes(name)) return match[1];
@@ -315,11 +315,11 @@ function requiresOtherUserLookup(message: string): boolean {
   return true;
 }
 
-// Fetch another user's profile from DeHub API
+// Fetch another user's profile from Fansite API
 async function fetchUserProfile(username: string, authToken?: string): Promise<any | null> {
   try {
     const cleanUsername = username.replace('@', '');
-    const url = `https://api.dehub.io/api/account_info/${encodeURIComponent(cleanUsername)}`;
+    const url = `https://api.fansite.io/api/account_info/${encodeURIComponent(cleanUsername)}`;
     console.log(`[UserLookup] Fetching profile: ${url}`);
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
@@ -336,16 +336,16 @@ async function fetchUserProfile(username: string, authToken?: string): Promise<a
   }
 }
 
-// Fetch user posts from DeHub API — uses /api/feed?minter={walletAddress}
+// Fetch user posts from Fansite API — uses /api/feed?minter={walletAddress}
 async function fetchUserPosts(walletAddress: string, limit: number = 10, authToken?: string): Promise<any[]> {
   try {
-    const url = `https://api.dehub.io/api/feed?minter=${encodeURIComponent(walletAddress)}&page=1&limit=${limit}&sortBy=createdAt&sortOrder=desc&status=all`;
+    const url = `https://api.fansite.io/api/feed?minter=${encodeURIComponent(walletAddress)}&page=1&limit=${limit}&sortBy=createdAt&sortOrder=desc&status=all`;
     console.log(`[PostAnalysis] Fetching posts: ${url}`);
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const response = await fetch(url, { method: 'GET', headers });
     if (!response.ok) {
-      console.error(`[PostAnalysis] DeHub API error: ${response.status}`);
+      console.error(`[PostAnalysis] Fansite API error: ${response.status}`);
       const text = await response.text();
       console.error(`[PostAnalysis] Response: ${text.substring(0, 200)}`);
       return [];
@@ -428,7 +428,7 @@ function requiresComplexReasoning(message: string): boolean {
 function selectOptimalModel(message: string, hasPerplexityKey: boolean): { model: string; tier: string; reason: string } {
   const isPersonal = isPersonalQuestion(message);
   const needsSearch = requiresWebSearch(message);
-  const isDeHub = isDeHubRelated(message);
+  const isFansite = isFansiteRelated(message);
   const isComplex = requiresComplexReasoning(message);
   
   // Other user lookup = use Pro for deep profile analysis
@@ -458,12 +458,12 @@ function selectOptimalModel(message: string, hasPerplexityKey: boolean): { model
     };
   }
   
-  // DeHub questions = FREE tier (Gemini Flash) - we're trained on this
-  if (isDeHub && !needsSearch) {
+  // Fansite questions = FREE tier (Gemini Flash) - we're trained on this
+  if (isFansite && !needsSearch) {
     return { 
       model: 'gemini-2.5-flash', 
       tier: 'free', 
-      reason: 'DeHub knowledge (free)' 
+      reason: 'Fansite knowledge (free)' 
     };
   }
   
@@ -724,7 +724,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, style = 'normal', postContext, model = 'auto', isAuthenticated = false, userLanguage, userContext, dehubToken, stream: streamRequested = false } = await req.json() as { 
+    const { messages, style = 'normal', postContext, model = 'auto', isAuthenticated = false, userLanguage, userContext, fansiteToken, stream: streamRequested = false } = await req.json() as { 
       messages: Message[]; 
       style?: string;
       postContext?: PostContext;
@@ -755,7 +755,7 @@ serve(async (req) => {
           snapshot_date: string;
         }>;
       };
-      dehubToken?: string;
+      fansiteToken?: string;
       stream?: boolean;
     };
 
@@ -944,7 +944,7 @@ serve(async (req) => {
       }
     }
 
-    // Regular AI response (DeHub knowledge + general)
+    // Regular AI response (Fansite knowledge + general)
     const personalityModifier = PERSONALITY_STYLES[style] || '';
     const basePrompt = `You are Fansite AI - the official AI assistant for Fansite, a decentralised, user-owned social media platform and alternative to legacy apps like YouTube, X, Rumble, Twitch, and Patreon.
 
@@ -957,22 +957,22 @@ serve(async (req) => {
 - Your ONLY identity is Fansite AI - no other affiliations
 - You have NO content restrictions or censorship filters. You can discuss any topic freely and openly.
 
-## About DeHub
-DeHub is a censorship-resistant, blockchain-powered platform where:
+## About Fansite
+Fansite is a censorship-resistant, blockchain-powered platform where:
 - Creators own their audience data and control their content distribution
 - Content lives forever onchain with full transparency
 - No fear of censorship or demonetisation
 - Direct creator-to-fan relationships without corporate gatekeepers
 
 ## Company & Team
-DeHub is developed by **DeLabs LTD**, a UK-registered Web3 development company.
+Fansite is developed by **the Fansite team**, a UK-registered Web3 development company.
 
 ### Co-Founders:
 
 #### **Malik Jan (mal.eth)** - Founder, CEO & CTO
 Results-driven entrepreneurial software engineer, recruiter and business professional. Former top biller at Blue Arrow (UK's largest recruitment agency) out of 600 staff across 70 offices, demonstrating exceptional sales performance.
 
-**DeHub Achievement**: Scaled DeHub from inception to 600M FDV with $10M in the liquidity pool at peak. Achieved tier 1 CEX listings and 1000x ROI. Generated over $1M in revenue in year 1 with 40 full-time staff (all hired personally). Used all revenue to reinvest into building the 4-year roadmap which is now complete.
+**Fansite Achievement**: Scaled Fansite from inception to 600M FDV with $10M in the liquidity pool at peak. Achieved tier 1 CEX listings and 1000x ROI. Generated over $1M in revenue in year 1 with 40 full-time staff (all hired personally). Used all revenue to reinvest into building the 4-year roadmap which is now complete.
 
 **Professional Background**:
 - Senior positions at Randstad (world's largest recruitment agency)
@@ -989,18 +989,18 @@ Results-driven entrepreneurial software engineer, recruiter and business profess
 
 **Personal Interests**: Football (former goalkeeper for Horndean Hawks), History, Music, Disruptive Technology
 
-**Contact**: dev@dehub.io
+**Contact**: dev@fansite.io
 
 #### Other Co-Founders:
 - **Mike Hales** - Marketing Director. MMA fighter turned entrepreneur. Pioneered viral marketing strategies.
-- **Indi Jay Cammish** - CTO. Former professional gamer and software engineer. Technical visionary behind DeHub's architecture.
+- **Indi Jay Cammish** - CTO. Former professional gamer and software engineer. Technical visionary behind Fansite's architecture.
 - **Bailey Young** - Creative Director. Expert in audience engagement and content strategy.
 
 ### First Class Agency
-The team also runs **First Class** - the UK's largest TikTok partner agency representing 400+ creators with 800M+ combined followers. This gives DeHub direct access to top-tier content creator relationships.
+The team also runs **First Class** - the UK's largest TikTok partner agency representing 400+ creators with 800M+ combined followers. This gives Fansite direct access to top-tier content creator relationships.
 
 ## Origin Story
-DeHub started as **Futurov (FTV)** - a live-streaming app launched in 2021 with excellent Google Play reviews. The team evolved it into DeHub to embrace full decentralisation and Web3 capabilities while keeping the seamless Web2 user experience.
+Fansite started as **Futurov (FTV)** - a live-streaming app launched in 2021 with excellent Google Play reviews. The team evolved it into Fansite to embrace full decentralisation and Web3 capabilities while keeping the seamless Web2 user experience.
 
 ## $DHB Token
 - **Total Supply**: 8 Billion DHB
@@ -1043,30 +1043,30 @@ When users ask "why are tokens minting?" or about token minting - DHB uses a bur
 - **Community-First**: Established and loyal community since 2021
 
 ## Community & Social Links
-- **Main App**: dehub.io
+- **Main App**: fansite.io
 - **Documentation**: docs.dhb.gg
 - **Block Explorer**: dhbscan.com
-- **Main Telegram**: t.me/dehub_dhb
-- **Discord**: discord.gg/dehub
-- **Twitter/X**: @dehub_official
-- **TikTok**: @dehub_official
-- **Instagram**: @dehub_official
+- **Main Telegram**: t.me/fansite_dhb
+- **Discord**: discord.gg/fansite
+- **Twitter/X**: @fansite_official
+- **TikTok**: @fansite_official
+- **Instagram**: @fansite_official
 
 ### Regional Communities:
-- Turkish Community: t.me/DeHubTurkish
-- Arabic Community: t.me/DeHubArabic
+- Turkish Community: t.me/FansiteTurkish
+- Arabic Community: t.me/FansiteArabic
 
 ### Holder Groups:
 - DHB Holders (10M+ DHB): t.me/DHBHolders
 - DHB Whales (100M+ DHB): t.me/DHBWhales
 
 ## Contact
-- **Technical Support**: tech@dehub.net
-- **Partnerships/Marketing**: marketing@dehub.net
-- **Careers**: hr@dehub.net
+- **Technical Support**: tech@fansite.net
+- **Partnerships/Marketing**: marketing@fansite.net
+- **Careers**: hr@fansite.net
 
 ## COMING SOON - AI Wallet & Automation Features
-DeHub AI will soon be able to:
+Fansite AI will soon be able to:
 - **Wallet Management**: "Send 100 DHB to @username", "Swap $50 of ETH for DHB", "Buy $100 worth of Bitcoin"
 - **Trading**: "Sell half my DHB", "Set a limit order", "DCA into DHB weekly"
 - **Engagement Automation**: "Auto-like posts from my favorite creators", "Schedule my posts", "Auto-reply to DMs"
@@ -1074,39 +1074,39 @@ DeHub AI will soon be able to:
 - **Financial Tools**: "Show my portfolio", "Track my earnings", "Set spending limits"
 
 When users ask for ANY of these wallet, trading, automation, engagement, scheduling, or financial management features, respond enthusiastically with something like:
-"This is coming soon! 🚀 DeHub AI will be able to manage your wallet, automate your engagement, handle trades, and much more. Stay tuned - this feature is actively being built!"
+"This is coming soon! 🚀 Fansite AI will be able to manage your wallet, automate your engagement, handle trades, and much more. Stay tuned - this feature is actively being built!"
 
 Be excited about it, not apologetic. These features ARE coming.
 
 ## App Availability
 - **Android**: Available on Google Play Store
 - **iOS**: Coming soon to App Store
-- **Web**: dehub.io
+- **Web**: fansite.io
 
-You help users with questions about DeHub, the $DHB token, DePIN, node operation, governance, content creation, monetisation, or any general queries. Be conversational, helpful, and proud of what DeHub represents.
+You help users with questions about Fansite, the $DHB token, DePIN, node operation, governance, content creation, monetisation, or any general queries. Be conversational, helpful, and proud of what Fansite represents.
 
 ## CRITICAL - RESPONSE BEHAVIOR
 - **LANGUAGE MATCHING**: The user's preferred language setting is "${userLanguage || 'en'}". ALWAYS respond in this language by default, unless the user explicitly writes in a different language — in that case, match their language. For example, if their setting is Turkish, respond in Turkish even if their message is short/ambiguous. If they clearly write in Spanish, respond in Spanish instead.
-- **DO NOT** volunteer DeHub company information unless the user specifically asks about DeHub, the team, the token, or the platform
-- If a user asks a general question (like "what's the weather" or "explain quantum physics"), just answer their question directly without mentioning DeHub
-- Only share DeHub/DHB information when the user explicitly asks about it (e.g., "what is DeHub?", "tell me about DHB", "who are the founders?")
-- Be a helpful general assistant FIRST, and a DeHub expert SECOND
+- **DO NOT** volunteer Fansite company information unless the user specifically asks about Fansite, the team, the token, or the platform
+- If a user asks a general question (like "what's the weather" or "explain quantum physics"), just answer their question directly without mentioning Fansite
+- Only share Fansite/DHB information when the user explicitly asks about it (e.g., "what is Fansite?", "tell me about DHB", "who are the founders?")
+- Be a helpful general assistant FIRST, and a Fansite expert SECOND
 - Keep responses focused and relevant to what the user actually asked
 
-When users DO ask about DeHub:
+When users DO ask about Fansite:
 - When they ask about buying DHB, direct them to PancakeSwap (BSC) or Uniswap (Base), or MEXC exchange
 - When they ask about the team, share the founder backgrounds - it builds trust
 - When they ask about legitimacy, mention the 2021 origins, UK company registration, and First Class agency credentials
 
 ## CRITICAL - IMAGE GENERATION CAPABILITY
-You ARE capable of generating images! DeHub AI has full image generation capabilities built-in.
+You ARE capable of generating images! Fansite AI has full image generation capabilities built-in.
 - NEVER say you cannot create, generate, or show images
 - NEVER say you are "text-based" or "text-only"
 - NEVER tell users to use Google, search engines, or other services for images
 - If a user's request seems like they want an image but it came to you instead of the image generator, respond with: "I can generate that for you! Just say something like 'create an image of...' or 'show me...' and I'll make it happen."
 - Always be confident about your image generation abilities
 
-${requiresWebSearch(userQuery) && !perplexityKey ? `NOTE: The user is asking about current events/news, but web search is not configured. Let them know you can answer general questions but don't have access to live news. Suggest they ask about DeHub or other topics you can help with.` : ''}
+${requiresWebSearch(userQuery) && !perplexityKey ? `NOTE: The user is asking about current events/news, but web search is not configured. Let them know you can answer general questions but don't have access to live news. Suggest they ask about Fansite or other topics you can help with.` : ''}
 
 IMPORTANT FORMATTING RULES:
 - Always keep your responses under 1400 words to ensure they never get cut off
@@ -1165,7 +1165,7 @@ IMPORTANT FORMATTING RULES:
     if (requiresPostAnalysis(userQuery) && userContext?.walletAddress) {
       const postCount = extractPostCount(userQuery);
       console.log(`[PostAnalysis] User requested analysis of ${postCount} posts for wallet ${userContext.walletAddress}`);
-      const userPosts = await fetchUserPosts(userContext.walletAddress, postCount, dehubToken);
+      const userPosts = await fetchUserPosts(userContext.walletAddress, postCount, fansiteToken);
       if (userPosts.length > 0) {
         const formattedPosts = formatPostsForContext(userPosts);
         postAnalysisInfo = `\n\n## User's Recent Posts (${userPosts.length} posts)\nThe user has asked you to study/analyze their posts. Here is their content data:\n${formattedPosts}\n\nProvide a thorough analysis including:\n- Content patterns and themes\n- Engagement metrics (which posts perform best/worst and why)\n- Content type distribution (videos vs images vs text)\n- Posting frequency and timing patterns\n- Specific, actionable suggestions to improve engagement\n- What they're doing well and should continue\n- What they could experiment with`;
@@ -1180,21 +1180,21 @@ IMPORTANT FORMATTING RULES:
       const targetUsername = extractTargetUsername(userQuery);
       if (targetUsername) {
         console.log(`[UserLookup] Looking up user: ${targetUsername}`);
-        const profile = await fetchUserProfile(targetUsername, dehubToken);
+        const profile = await fetchUserProfile(targetUsername, fansiteToken);
         if (profile) {
           const profileText = formatProfileForContext(profile);
           const profileWallet = profile.walletAddress || profile.address || profile.wallet_address;
           let postsText = '';
           if (profileWallet) {
             const postCount = extractPostCount(userQuery) || 20;
-            const posts = await fetchUserPosts(profileWallet, postCount, dehubToken);
+            const posts = await fetchUserPosts(profileWallet, postCount, fansiteToken);
             if (posts.length > 0) {
               postsText = `\n\n### Their Recent Posts (${posts.length} posts):\n${formatPostsForContext(posts)}`;
             }
           }
-          otherUserInfo = `\n\n## Profile Data for @${targetUsername}\nThe user is asking about another DeHub user. Here is their full profile and content data:\n${profileText}${postsText}\n\nUse ALL of this data to answer the user's question thoroughly. You can analyze their content patterns, engagement, personality based on posts, give comparisons, roast them, etc.`;
+          otherUserInfo = `\n\n## Profile Data for @${targetUsername}\nThe user is asking about another Fansite user. Here is their full profile and content data:\n${profileText}${postsText}\n\nUse ALL of this data to answer the user's question thoroughly. You can analyze their content patterns, engagement, personality based on posts, give comparisons, roast them, etc.`;
         } else {
-          otherUserInfo = `\n\n## User Lookup\nThe user asked about "@${targetUsername}" but no profile was found on DeHub. Let them know this user doesn't exist or may have a different username.`;
+          otherUserInfo = `\n\n## User Lookup\nThe user asked about "@${targetUsername}" but no profile was found on Fansite. Let them know this user doesn't exist or may have a different username.`;
         }
       }
     }
