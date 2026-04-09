@@ -51,8 +51,8 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
       <nav className="space-y-1">
         {NAV_ITEMS.map((item) => {
           const isActive =
-            item.path === '/app'
-              ? location.pathname === '/app'
+            item.path === '/'
+              ? location.pathname === '/'
               : !item.external && !item.action && location.pathname.startsWith(item.path);
 
           return (
