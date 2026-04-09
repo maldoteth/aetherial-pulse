@@ -262,19 +262,21 @@ export function useLiveChatMessages(roomId: string | null) {
 
     const unsubDebug = debugSocketEvents();
     const socket = getSocket();
-    setIsConnected(socket.connected);
-
-    const onConnect = () => {
+    // Socket is null when using Supabase realtime — mark as connected immediately
+    if (!socket) {
       setIsConnected(true);
-      joinRoom(roomId);
-    };
-    const onDisconnect = () => setIsConnected(false);
-
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-
-    if (socket.connected) {
-      joinRoom(roomId);
+    } else {
+      setIsConnected(socket.connected);
+      const onConnect = () => {
+        setIsConnected(true);
+        joinRoom(roomId);
+      };
+      const onDisconnect = () => setIsConnected(false);
+      socket.on('connect', onConnect);
+      socket.on('disconnect', onDisconnect);
+      if (socket.connected) {
+        joinRoom(roomId);
+      }
     }
 
     const unsubJoined = onRoomJoined((data) => {
@@ -332,8 +334,10 @@ export function useLiveChatMessages(roomId: string | null) {
       unsubBanned();
       unsubUnbanned();
       unsubDebug();
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
+      if (socket) {
+        socket.off?.('connect');
+        socket.off?.('disconnect');
+      }
       setIsConnected(false);
     };
   }, [roomId]);
