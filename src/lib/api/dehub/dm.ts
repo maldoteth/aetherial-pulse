@@ -263,90 +263,16 @@ function parseDmMessage(raw: any, myAddress: string): DmMessage {
 }
 
 // ─── Contacts & Conversations ─────────────────────────────────────────────────
+// All DM functions are stubbed — will be migrated to Lovable Cloud tables.
 
-
-/**
- * Fetch DM contacts list for the given wallet address.
- * Merges DeHub API contacts with Supabase direct_messages conversations.
- */
 export async function getContacts(
   address: string,
   page: number = 0,
   limit: number = 50
 ): Promise<DeHubConversation[]> {
   if (!address) return [];
-  const myAddress = address.toLowerCase();
-
-  let dehubItems: DeHubConversation[] = [];
-  try {
-    const response = await apiCall<unknown>(`/api/dm/contacts/${address}`, {
-      params: { page, limit },
-      requiresAuth: true,
-    });
-    console.log('[DM API] getContacts raw response:', response);
-
-    let items: unknown[] = [];
-    const r = response as Record<string, unknown>;
-    if (Array.isArray(response)) items = response;
-    else if (Array.isArray(r?.result)) items = r.result as unknown[];
-    else if (r?.result && Array.isArray((r.result as Record<string, unknown>)?.items)) items = ((r.result as Record<string, unknown>).items as unknown[]) || [];
-    else if (Array.isArray(r?.items)) items = r.items as unknown[];
-
-    dehubItems = items.map((item: unknown) => mapApiConversationToDeHub(item as Record<string, unknown>, myAddress));
-  } catch (err) {
-    console.warn('[DM API] getContacts DeHub failed (will use Supabase):', err);
-  }
-
-
-  // Enrich DeHub conversations with profile data (displayName, badgeBalance) when missing
-  await Promise.all(
-    dehubItems.map(async (conv) => {
-      const other = conv.otherUser;
-      if (!other?.address) return;
-      const needsEnrich = !other.displayName || other.badgeBalance == null;
-      if (!needsEnrich) return;
-      try {
-        const profile = await getAccountInfo(other.address);
-        if (profile) {
-          if (!other.displayName) {
-            other.displayName = profile.displayName || profile.display_name || '';
-            other.display_name = other.displayName;
-          }
-          if (other.badgeBalance == null) {
-            other.badgeBalance = profile.badgeBalance;
-          }
-          if (!other.avatarImageUrl) {
-            other.avatarImageUrl = profile.avatarImageUrl || profile.avatarUrl || '';
-          }
-        }
-      } catch { /* keep existing data */ }
-    })
-  );
-
-  // Filter out permanently deleted conversations
-  const deletedIds = (() => {
-    try {
-      const raw = localStorage.getItem('dehub-deleted-conversations');
-      return raw ? new Set<string>(JSON.parse(raw)) : new Set<string>();
-    } catch { return new Set<string>(); }
-  })();
-  if (deletedIds.size > 0) {
-    dehubItems = dehubItems.filter(c => {
-      const id = c.id || '';
-      const peerAddr = (c.otherUser?.address || '').toLowerCase();
-      return !deletedIds.has(id) && !deletedIds.has(peerAddr) && !deletedIds.has(`new_${peerAddr}`);
-    });
-  }
-
-  // Sort by last activity (newest first)
-  dehubItems.sort((a, b) => {
-    const ta = new Date(a.updatedAt || a.lastMessage?.createdAt || 0).getTime();
-    const tb = new Date(b.updatedAt || b.lastMessage?.createdAt || 0).getTime();
-    return tb - ta;
-  });
-
-  console.log('[DM API] getContacts mapped:', dehubItems.length, 'conversations (DeHub + Supabase)');
-  return dehubItems.slice(0, limit);
+  console.log('[DM API] getContacts — not yet migrated, returning empty');
+  return [];
 }
 
 export async function getConversations(
@@ -354,42 +280,17 @@ export async function getConversations(
   limit: number = 20,
   searchQuery?: string
 ): Promise<{ items: DeHubConversation[]; totalCount: number; hasMore: boolean }> {
-  console.log('[DM API] getConversations called', { page, limit, searchQuery });
-
-  if (!searchQuery) {
-    const token = getAuthToken();
-    if (!token) return { items: [], totalCount: 0, hasMore: false };
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const userAddress = payload.address?.toLowerCase();
-      if (!userAddress) return { items: [], totalCount: 0, hasMore: false };
-      const items = await getContacts(userAddress, page, limit);
-      return { items, totalCount: items.length, hasMore: items.length >= limit };
-    } catch (error) {
-      console.error('[DM API] getConversations failed:', error);
-      throw error;
-    }
-  }
-
-  // Search path — server-side search
+  console.log('[DM API] getConversations — not yet migrated');
+  const token = getAuthToken();
+  if (!token) return { items: [], totalCount: 0, hasMore: false };
   try {
-    const response = await apiCall<any>('/api/dm/search', {
-      params: { query: searchQuery, page, limit },
-      requiresAuth: true,
-    });
-    console.log('[DM API] Search response:', response);
-
-    if (response?.result?.items) return response.result;
-    if (response?.result && Array.isArray(response.result)) {
-      return { items: response.result, totalCount: response.result.length, hasMore: response.result.length >= limit };
-    }
-    if (Array.isArray(response)) {
-      return { items: response, totalCount: response.length, hasMore: response.length >= limit };
-    }
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userAddress = payload.address?.toLowerCase();
+    if (!userAddress) return { items: [], totalCount: 0, hasMore: false };
+    const items = await getContacts(userAddress, page, limit);
+    return { items, totalCount: items.length, hasMore: items.length >= limit };
+  } catch {
     return { items: [], totalCount: 0, hasMore: false };
-  } catch (error) {
-    console.error('[DM API] Search failed:', error);
-    throw error;
   }
 }
 
@@ -405,11 +306,14 @@ export async function getConversation(conversationId: string): Promise<DeHubConv
       updatedAt: new Date().toISOString(),
     };
   }
-
-  const response = await apiCall<{ result: DeHubConversation }>(`/api/dm/${conversationId}`, {
-    requiresAuth: true,
-  });
-  return response.result;
+  // Stub — return empty conversation
+  return {
+    id: conversationId,
+    participants: [],
+    unreadCount: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export async function createConversation(
@@ -441,104 +345,23 @@ export async function createConversation(
 
 export async function deleteConversation(
   dmId: string,
-  address?: string
+  _address?: string
 ): Promise<{ success: boolean }> {
-  const myAddress = address?.toLowerCase() || (() => {
-    try {
-      const token = getAuthToken();
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.address?.toLowerCase() || '';
-      }
-    } catch {}
-    return '';
-  })();
-
-  // For virtual/wallet-based conversations, just return success (no more Supabase DMs)
-  if (dmId.startsWith('new_') || /^0x[0-9a-fA-F]{40}$/i.test(dmId)) {
-    return { success: true };
-  }
-
-  // For real DeHub conversations, call the API AND clean up Supabase
-  try {
-    await apiCall<any>('/api/dm/delete-messages', {
-      method: 'POST',
-      body: { address: myAddress, dmId },
-      requiresAuth: true,
-    });
-  } catch (err) {
-    console.error('[DM API] deleteConversation DeHub API failed:', err);
-    throw err;
-  }
-
+  console.log('[DM API] deleteConversation — stub');
   return { success: true };
 }
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
-
-
 
 export async function getMessages(
   conversationId: string,
   page: number = 0,
   limit: number = 30
 ): Promise<{ items: DmMessage[]; totalCount: number; hasMore: boolean }> {
-  const myAddress = (localStorage.getItem('dehub_wallet') || '').toLowerCase();
-
-  // Virtual conversations no longer supported (legacy Supabase DMs removed)
-  if (conversationId.startsWith('new_') || /^0x[0-9a-fA-F]{40}$/i.test(conversationId)) {
-    return { items: [], totalCount: 0, hasMore: false };
-  }
-
-  try {
-    const response = await apiCall<any>(`/api/dm/messages/${conversationId}`, {
-      params: { page, limit },
-      requiresAuth: true,
-    });
-    let rawItems: any[] = [];
-    let hasMore = false;
-    let totalCount = 0;
-
-    if (response?.result?.items && Array.isArray(response.result.items)) {
-      rawItems = response.result.items;
-      hasMore = response.result.hasMore ?? rawItems.length >= limit;
-      totalCount = response.result.totalCount || rawItems.length;
-    } else if (response?.result && Array.isArray(response.result)) {
-      rawItems = response.result;
-      hasMore = rawItems.length >= limit;
-      totalCount = rawItems.length;
-    } else if (response?.items && Array.isArray(response.items)) {
-      rawItems = response.items;
-      hasMore = response.hasMore ?? rawItems.length >= limit;
-      totalCount = response.totalCount || rawItems.length;
-    } else if (response?.messages && Array.isArray(response.messages)) {
-      rawItems = response.messages;
-      hasMore = response.hasMore ?? rawItems.length >= limit;
-      totalCount = response.totalCount || rawItems.length;
-    } else if (Array.isArray(response)) {
-      rawItems = response;
-      hasMore = rawItems.length >= limit;
-      totalCount = rawItems.length;
-    }
-
-    const items = rawItems
-      .map(raw => parseDmMessage(raw, myAddress))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    const isReadCount = items.filter(m => m.isRead).length;
-    const myMsgCount = items.filter(m => m.author === 'me').length;
-    console.log('[DM API] getMessages parsed', { total: items.length, isReadCount, myMsgCount });
-    return { items, totalCount, hasMore };
-  } catch (error) {
-    console.error('[DM API] getMessages failed:', error);
-    throw error;
-  }
+  console.log('[DM API] getMessages — not yet migrated');
+  return { items: [], totalCount: 0, hasMore: false };
 }
 
-/**
- * Upload a media/voice file and create a DM message in one call.
- * Uses POST /dm/upload (DeHub CDN).
- */
 export async function uploadAndSendMedia(
   file: File,
   conversationId: string,
@@ -551,45 +374,10 @@ export async function uploadAndSendMedia(
     txHash?: string;
   }
 ): Promise<DmMessage> {
-  console.log('[DM API] uploadAndSendMedia called', { fileName: file.name, size: file.size, conversationId });
-
-  const token = getAuthToken();
-  if (!token) throw new Error('Authentication required');
-
-  const formData = new FormData();
-  formData.append('file', file, file.name);
-  formData.append('conversationId', conversationId);
-  formData.append('senderId', senderId);
-  if (opts?.content) formData.append('content', opts.content);
-  if (opts?.msgType) formData.append('msgType', opts.msgType);
-  if (opts?.voiceDuration != null) formData.append('voiceDuration', String(opts.voiceDuration));
-  if (opts?.replyTo) formData.append('replyTo', opts.replyTo);
-  if (opts?.txHash) formData.append('txHash', opts.txHash);
-
-  const response = await fetch(`${DEHUB_API_BASE}/api/dm/upload`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData.message || errData.error || `Upload failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const raw = data?.result || data;
-  const myAddress = localStorage.getItem('dehub_wallet')?.toLowerCase() || '';
-  return parseDmMessage(raw, myAddress);
+  console.warn('[DM API] uploadAndSendMedia — not yet migrated');
+  throw new Error('DM media upload not yet migrated');
 }
 
-/**
- * Upload an image via the dm-upload-media Supabase edge function.
- * Used for comment images and other non-DM media uploads.
- * @deprecated For DM images, prefer uploadAndSendMedia instead.
- */
 export async function uploadChatImage(file: File): Promise<{ url: string }> {
   const token = getAuthToken();
   if (!token) throw new Error('Authentication required');
@@ -614,15 +402,7 @@ export async function uploadChatImage(file: File): Promise<{ url: string }> {
   return { url: data.url };
 }
 
-/**
- * Mark conversation as read (companion to socket).
- * Server expects: socket.emit('markAsRead', { dmId }); incoming updates use `readReceipt`.
- * No REST for this path — emitReadReceipt in dm-socket emits `markAsRead`.
- */
 export async function markConversationAsRead(conversationId: string): Promise<{ success: boolean }> {
-  if (conversationId.startsWith('new_') || /^0x[0-9a-fA-F]{40}$/i.test(conversationId)) {
-    return { success: true };
-  }
   return { success: true };
 }
 
@@ -630,48 +410,33 @@ export async function markConversationAsRead(conversationId: string): Promise<{ 
 
 export async function searchUsersForDM(
   query: string,
-  page: number = 0,
+  _page: number = 0,
   limit: number = 10
 ): Promise<{ items: DeHubUser[]; hasMore: boolean }> {
   const trimmedQuery = query?.trim();
   if (!trimmedQuery || trimmedQuery.length < 2) return { items: [], hasMore: false };
 
-  console.log('[DM API] searchUsersForDM called', { query: trimmedQuery });
-
+  // Search profiles table in Supabase
   try {
-    const response = await apiCall<any>('/api/dm/search', {
-      params: { q: trimmedQuery, page, limit },
-      requiresAuth: true,
-    });
-    console.log('[DM API] searchUsersForDM response:', response);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('wallet_address, username, display_name, avatar_url, is_verified')
+      .or(`username.ilike.%${trimmedQuery}%,display_name.ilike.%${trimmedQuery}%,wallet_address.ilike.%${trimmedQuery}%`)
+      .limit(limit);
 
-    let accounts: any[] = [];
-    if (response?.users && Array.isArray(response.users)) accounts = response.users;
-    else if (response?.accounts?.items && Array.isArray(response.accounts.items)) accounts = response.accounts.items;
-    else if (response?.result?.accounts && Array.isArray(response.result.accounts)) accounts = response.result.accounts;
-    else if (response?.accounts && Array.isArray(response.accounts)) accounts = response.accounts;
-    else if (response?.result && Array.isArray(response.result)) accounts = response.result;
-    else if (Array.isArray(response)) accounts = response;
+    if (error) throw error;
 
-    const items: DeHubUser[] = accounts.map((acc: any) => {
-      // dmSetting from search API comes as an array — extract first element
-      const rawDmSetting = acc.dmSettings || acc.dmSetting;
-      const dmSettings = Array.isArray(rawDmSetting) ? rawDmSetting[0] : rawDmSetting;
-      return {
-        _id: acc._id || acc.id,
-        id: acc.id || acc._id,
-        address: acc.address,
-        username: acc.username,
-        displayName: acc.displayName || acc.display_name,
-        display_name: acc.display_name || acc.displayName,
-        avatarImageUrl: acc.avatarImageUrl || acc.avatarUrl,
-        avatarUrl: acc.avatarUrl || acc.avatarImageUrl,
-        isVerified: acc.isVerified || acc.verified,
-        is_verified: acc.is_verified || acc.verified,
-        bio: acc.bio,
-        dmSettings: dmSettings || undefined,
-      };
-    });
+    const items: DeHubUser[] = (data || []).map((p: any) => ({
+      _id: p.wallet_address,
+      address: p.wallet_address,
+      username: p.username,
+      displayName: p.display_name,
+      display_name: p.display_name,
+      avatarImageUrl: p.avatar_url,
+      avatarUrl: p.avatar_url,
+      isVerified: p.is_verified,
+      is_verified: p.is_verified,
+    }));
 
     return { items, hasMore: items.length >= limit };
   } catch (error) {
@@ -682,38 +447,19 @@ export async function searchUsersForDM(
 
 // ─── Block / Unblock ──────────────────────────────────────────────────────────
 
-export async function blockConversation(conversationId: string): Promise<{ success: boolean }> {
-  try {
-    const response = await apiCall<any>('/api/dm/block', {
-      method: 'POST',
-      body: { conversationId },
-      requiresAuth: true,
-    });
-    return { success: response?.success !== false };
-  } catch (error) {
-    console.error('[DM API] blockConversation failed:', error);
-    throw error;
-  }
+export async function blockConversation(_conversationId: string): Promise<{ success: boolean }> {
+  console.log('[DM API] blockConversation — stub');
+  return { success: true };
 }
 
-export async function unblockConversation(conversationId: string): Promise<{ success: boolean }> {
-  try {
-    const response = await apiCall<any>(`/api/dm/un-block/${conversationId}`, {
-      method: 'GET',
-      requiresAuth: true,
-    });
-    return { success: response?.success !== false };
-  } catch (error) {
-    console.error('[DM API] unblockConversation failed:', error);
-    throw error;
-  }
+export async function unblockConversation(_conversationId: string): Promise<{ success: boolean }> {
+  console.log('[DM API] unblockConversation — stub');
+  return { success: true };
 }
 
 // ─── Group Chat ───────────────────────────────────────────────────────────────
-// Note: DeHub backend does not support group DMs (chat-system.md: "All DMs are 1:1 only").
-// These functions fail gracefully with a clear error.
 
-const GROUP_NOT_SUPPORTED = 'Group chat is not supported. DeHub DMs are 1:1 only.';
+const GROUP_NOT_SUPPORTED = 'Group chat is not supported. DMs are 1:1 only.';
 
 export async function createGroup(
   _name: string,
@@ -752,80 +498,38 @@ export async function blockUserInGroup(
 // ─── User Status ──────────────────────────────────────────────────────────────
 
 export async function getDMContacts(
-  address: string,
-  page: number = 0,
-  limit: number = 10
+  _address: string,
+  _page: number = 0,
+  _limit: number = 10
 ): Promise<{ items: DeHubUser[]; hasMore: boolean }> {
-  const response = await apiCall<{ result: { items: DeHubUser[]; hasMore: boolean } }>(`/api/dm/contacts/${address}`, {
-    params: { page, limit },
-    requiresAuth: true,
-  });
-  return response.result || { items: [], hasMore: false };
+  return { items: [], hasMore: false };
 }
 
-export async function getDMUserStatus(address: string): Promise<{ online: boolean; lastSeen?: string }> {
-  const response = await apiCall<{ result: { online: boolean; lastSeen?: string } }>(`/api/dm/user-status/${address}`, {
-    requiresAuth: true,
-  });
-  return response.result || { online: false };
+export async function getDMUserStatus(_address: string): Promise<{ online: boolean; lastSeen?: string }> {
+  return { online: false };
 }
 
 export async function getUserOnlineStatus(address: string): Promise<UserOnlineStatus> {
-  try {
-    const response = await apiCall<any>(`/api/dm/user-status/${address}`, {
-      method: 'GET',
-      requiresAuth: true,
-    });
-    const result = response?.result || response;
-    return { address, online: result?.online ?? false, lastSeen: result?.lastSeen };
-  } catch (error) {
-    console.error('[DM API] getUserOnlineStatus failed:', error);
-    return { address, online: false };
-  }
+  return { address, online: false };
 }
 
 // ─── Subscription-gated DMs ───────────────────────────────────────────────────
 
-export async function getDMPlanSettings(planId: string): Promise<{
+export async function getDMPlanSettings(_planId: string): Promise<{
   enabled: boolean;
   minTipDhb?: number;
   allowedMessageTypes?: DMMessageType[];
 }> {
-  try {
-    const response = await apiCall<any>(`/api/dm/plan/${planId}`, {
-      method: 'GET',
-      requiresAuth: true,
-    });
-    return response?.result || response || { enabled: true };
-  } catch (error) {
-    console.error('[DM API] getDMPlanSettings failed:', error);
-    return { enabled: true };
-  }
+  return { enabled: true };
 }
 
 // ─── DM Videos ────────────────────────────────────────────────────────────────
 
 export async function getDMVideos(
-  page: number = 0,
-  limit: number = 20
+  _page: number = 0,
+  _limit: number = 20
 ): Promise<{ items: DeHubNFT[]; hasMore: boolean }> {
-  try {
-    const response = await apiCall<any>('/api/dm/dm-videos', {
-      params: { page, limit },
-      requiresAuth: true,
-    });
-    if (response?.result?.items) return response.result;
-    if (response?.result && Array.isArray(response.result)) {
-      return { items: response.result, hasMore: response.result.length >= limit };
-    }
-    if (Array.isArray(response)) {
-      return { items: response, hasMore: response.length >= limit };
-    }
-    return { items: [], hasMore: false };
-  } catch (error) {
-    console.error('[DM API] getDMVideos failed:', error);
-    return { items: [], hasMore: false };
-  }
+  return { items: [], hasMore: false };
 }
 
 // ─── Free DM Access ───────────────────────────────────────────────────────────
@@ -838,53 +542,16 @@ export interface FreeAccessUser {
   grantedAt?: string;
 }
 
-/**
- * Grant free DM access to a specific user (they can message you without paying the fee).
- */
-export async function grantFreeDmAccess(targetAddress: string): Promise<{ success: boolean }> {
-  try {
-    const response = await apiCall<any>('/api/dm/grant-free-access', {
-      method: 'POST',
-      body: { address: targetAddress },
-      requiresAuth: true,
-    });
-    return { success: response?.success !== false };
-  } catch (error) {
-    console.error('[DM API] grantFreeDmAccess failed:', error);
-    throw error;
-  }
+export async function grantFreeDmAccess(_targetAddress: string): Promise<{ success: boolean }> {
+  console.log('[DM API] grantFreeDmAccess — stub');
+  return { success: true };
 }
 
-/**
- * Revoke free DM access from a specific user.
- */
-export async function revokeFreeDmAccess(targetAddress: string): Promise<{ success: boolean }> {
-  try {
-    const response = await apiCall<any>('/api/dm/revoke-free-access', {
-      method: 'POST',
-      body: { address: targetAddress },
-      requiresAuth: true,
-    });
-    return { success: response?.success !== false };
-  } catch (error) {
-    console.error('[DM API] revokeFreeDmAccess failed:', error);
-    throw error;
-  }
+export async function revokeFreeDmAccess(_targetAddress: string): Promise<{ success: boolean }> {
+  console.log('[DM API] revokeFreeDmAccess — stub');
+  return { success: true };
 }
 
-/**
- * Get list of users who have been granted free DM access.
- */
 export async function getFreeDmAccessList(): Promise<FreeAccessUser[]> {
-  try {
-    const response = await apiCall<any>('/api/dm/free-access-list', {
-      method: 'GET',
-      requiresAuth: true,
-    });
-    const items = response?.result?.items || response?.result || response?.items || [];
-    return Array.isArray(items) ? items : [];
-  } catch (error) {
-    console.error('[DM API] getFreeDmAccessList failed:', error);
-    return [];
-  }
+  return [];
 }
