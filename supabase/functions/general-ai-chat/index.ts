@@ -633,8 +633,10 @@ async function loadUserMemories(walletAddress: string): Promise<string> {
 // Extract and save new memories from the conversation
 async function extractAndSaveMemories(walletAddress: string, userMessages: string[], aiResponse: string): Promise<void> {
   try {
+    const novitaKey = Deno.env.get('NOVITA_API_KEY');
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) return;
+    const memoryApiKey = novitaKey || lovableApiKey;
+    if (!memoryApiKey) return;
 
     // Only extract from meaningful conversations (at least 2 user messages)
     if (userMessages.length < 2) return;
@@ -655,16 +657,21 @@ ${aiResponse.substring(0, 500)}
 Return ONLY a JSON array of objects with "content" (the fact) and "type" (one of: preference, interest, fact, goal). Return [] if nothing worth remembering.
 Example: [{"content": "Interested in DeFi yield farming", "type": "interest"}]`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const memoryEndpoint = novitaKey 
+      ? 'https://api.novita.ai/v3/openai/chat/completions'
+      : 'https://ai.gateway.lovable.dev/v1/chat/completions';
+    const memoryModel = novitaKey ? 'dolphin-mixtral-8x22b' : 'google/gemini-2.5-flash-lite';
+
+    const response = await fetch(memoryEndpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${memoryApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
+        model: memoryModel,
         messages: [{ role: 'user', content: extractionPrompt }],
-        max_completion_tokens: 300,
+        max_tokens: 300,
       }),
     });
 
