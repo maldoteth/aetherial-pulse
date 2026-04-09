@@ -36,20 +36,20 @@ export async function getNFTInfo(tokenId: string): Promise<DeHubNFT> {
 export async function recordView(tokenId: string): Promise<void> {}
 export async function recordListen(tokenId: string): Promise<void> {}
 
-export interface SavePostResponse { result: boolean; saved: boolean; }
+export interface SavePostResponse { result: boolean; saved: boolean; message?: string; }
 export async function toggleSavePost(tokenId: string | number): Promise<SavePostResponse> {
   return { result: true, saved: true };
 }
 
-export async function getSavedPosts(page?: number, limit?: number): Promise<{ result: DeHubNFT[]; pagination?: any }> {
+export async function getSavedPosts(page?: number, limit?: number, address?: string): Promise<{ result: DeHubNFT[]; pagination?: any }> {
   return { result: [] };
 }
 
-export async function getLikedPosts(address: string, page?: number, limit?: number): Promise<{ result: DeHubNFT[]; pagination?: any }> {
+export async function getLikedPosts(page?: number | string, limit?: number): Promise<{ result: DeHubNFT[]; pagination?: any }> {
   return { result: [] };
 }
 
-export async function getWatchHistory(page?: number, limit?: number): Promise<{ result: DeHubNFT[]; pagination?: any }> {
+export async function getWatchHistory(page?: number, limit?: number, address?: string): Promise<{ result: DeHubNFT[]; pagination?: any }> {
   return { result: [] };
 }
 

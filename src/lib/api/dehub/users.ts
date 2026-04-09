@@ -68,7 +68,9 @@ export async function updateProfile(data: UpdateProfileData): Promise<{ result: 
 
 export async function getUserNFTs(
   address: string,
-  params?: { page?: number; unit?: number; postType?: string; status?: string }
+  page?: number,
+  limit?: number,
+  params?: { postType?: string; status?: string }
 ): Promise<PaginatedResponse<DeHubNFT>> {
   return { data: [], total: 0, page: 0, limit: 20, has_more: false };
 }
