@@ -66,9 +66,6 @@ async function uploadToR2(file: File | Blob, folder: string): Promise<string> {
   return data.url;
 }
 
-/**
- * Determine the media_type for the posts table from postType
- */
 function postTypeToMediaType(postType: string): string {
   switch (postType) {
     case 'video': return 'video';
@@ -80,9 +77,6 @@ function postTypeToMediaType(postType: string): string {
   }
 }
 
-/**
- * Create a new post — uploads media to R2 and inserts into the posts table.
- */
 export async function mintPost(
   params: MintPostParams,
   onProgress?: (percent: number) => void
@@ -92,7 +86,6 @@ export async function mintPost(
 
   onProgress?.(10);
 
-  // 1. Upload files to R2
   let mediaUrl: string | null = null;
   let thumbnailUrl: string | null = null;
   const mediaType = postTypeToMediaType(params.postType);
@@ -101,9 +94,6 @@ export async function mintPost(
     const mainFile = params.files[0];
     mediaUrl = await uploadToR2(mainFile, mediaType === 'video' ? 'videos' : mediaType === 'audio' ? 'audio' : 'images');
     onProgress?.(50);
-
-    // For images, if multiple files, upload them all (first is primary)
-    // TODO: support multi-image posts in the future
   }
 
   if (params.thumbnail) {
@@ -111,29 +101,27 @@ export async function mintPost(
     onProgress?.(70);
   }
 
-  // 2. Build PPV/subscription metadata
   const streamInfo = params.streamInfo || {};
   const isPPV = streamInfo.isPayPerView ?? false;
   const ppvAmount = isPPV ? (streamInfo.payPerViewAmount || 0) : null;
   const isSubscribersOnly = (params.plans && params.plans.length > 0) ?? false;
 
-  // 3. Insert into posts table
-  const { data: post, error } = await withWalletHeader(wallet, () =>
-    supabase.from('posts').insert({
-      creator_wallet_address: wallet.toLowerCase(),
-      title: params.name || '',
-      description: params.description || '',
-      media_url: mediaUrl,
-      thumbnail_url: thumbnailUrl,
-      media_type: mediaType,
-      category: params.category?.join(',') || null,
-      is_ppv: isPPV,
-      ppv_amount: ppvAmount,
-      ppv_currency: isPPV ? (streamInfo.payPerViewTokenSymbol || 'DHB') : null,
-      is_subscribers_only: isSubscribersOnly,
-      visibility: 'public',
-    }).select('id, token_id').single()
-  );
+  const query = supabase.from('posts').insert({
+    creator_wallet_address: wallet.toLowerCase(),
+    title: params.name || '',
+    description: params.description || '',
+    media_url: mediaUrl,
+    thumbnail_url: thumbnailUrl,
+    media_type: mediaType,
+    category: params.category?.join(',') || null,
+    is_ppv: isPPV,
+    ppv_amount: ppvAmount,
+    ppv_currency: isPPV ? (streamInfo.payPerViewTokenSymbol || 'DHB') : null,
+    is_subscribers_only: isSubscribersOnly,
+    visibility: 'public',
+  }).select('id, token_id').single();
+
+  const { data: post, error } = await withWalletHeader(query, wallet);
 
   if (error) {
     console.error('[mintPost] Insert failed:', error);
@@ -141,10 +129,8 @@ export async function mintPost(
   }
 
   onProgress?.(100);
-
   console.log('[mintPost] Created post:', post);
 
-  // Return a MintResponse-compatible object
   return {
     r: '',
     s: '',
@@ -154,7 +140,6 @@ export async function mintPost(
   };
 }
 
-// Simple mintNFT wrapper — delegates to mintPost
 export async function mintNFT(data: {
   title: string;
   description?: string;
@@ -169,21 +154,20 @@ export async function mintNFT(data: {
   const wallet = getWallet();
   if (!wallet) throw new Error('Authentication required');
 
-  const { data: post, error } = await withWalletHeader(wallet, () =>
-    supabase.from('posts').insert({
-      creator_wallet_address: wallet.toLowerCase(),
-      title: data.title || '',
-      description: data.description || '',
-      media_url: data.media_url,
-      thumbnail_url: data.thumbnail_url,
-      media_type: data.media_type,
-      category: data.category || null,
-      is_ppv: data.is_ppv ?? false,
-      ppv_amount: data.ppv_price || null,
-      visibility: 'public',
-    }).select('*').single()
-  );
+  const query = supabase.from('posts').insert({
+    creator_wallet_address: wallet.toLowerCase(),
+    title: data.title || '',
+    description: data.description || '',
+    media_url: data.media_url,
+    thumbnail_url: data.thumbnail_url,
+    media_type: data.media_type,
+    category: data.category || null,
+    is_ppv: data.is_ppv ?? false,
+    ppv_amount: data.ppv_price || null,
+    visibility: 'public',
+  }).select('*').single();
 
+  const { data: post, error } = await withWalletHeader(query, wallet);
   if (error) throw new Error(`Failed to create post: ${error.message}`);
 
   return {
@@ -231,9 +215,8 @@ export async function editPost(
   if (params.description !== undefined) updates.description = params.description;
   if (params.category !== undefined) updates.category = params.category.join(',');
 
-  const { error } = await withWalletHeader(wallet, () =>
-    supabase.from('posts').update(updates).eq('token_id', Number(tokenId))
-  );
+  const query = supabase.from('posts').update(updates).eq('token_id', Number(tokenId));
+  const { error } = await withWalletHeader(query, wallet);
 
   if (error) throw new Error(`Failed to edit post: ${error.message}`);
   return { result: true, data: { tokenId: Number(tokenId), ...params } };
@@ -243,9 +226,8 @@ export async function deletePost(tokenId: number | string): Promise<{ result: bo
   const wallet = getWallet();
   if (!wallet) throw new Error('Authentication required');
 
-  const { error } = await withWalletHeader(wallet, () =>
-    supabase.from('posts').delete().eq('token_id', Number(tokenId))
-  );
+  const query = supabase.from('posts').delete().eq('token_id', Number(tokenId));
+  const { error } = await withWalletHeader(query, wallet);
 
   if (error) throw new Error(`Failed to delete post: ${error.message}`);
   return { result: true };
@@ -271,9 +253,8 @@ export async function updateTokenVisibility(
   const wallet = getWallet();
   if (!wallet) throw new Error('Authentication required');
 
-  const { error } = await withWalletHeader(wallet, () =>
-    supabase.from('posts').update({ visibility }).eq('token_id', Number(tokenId))
-  );
+  const query = supabase.from('posts').update({ visibility }).eq('token_id', Number(tokenId));
+  const { error } = await withWalletHeader(query, wallet);
 
   if (error) throw new Error(`Failed to update visibility: ${error.message}`);
 
