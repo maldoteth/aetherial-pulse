@@ -37,7 +37,7 @@ export function GlobalFeedNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const navVisible = useScrollDirection();
-  const isHomePage = location.pathname === '/app';
+  const isHomePage = location.pathname === '/';
 
   const [activeTab, setActiveTab] = useState(() => isHomePage ? getPersistedTab() : '');
   const [enableTransition, setEnableTransition] = useState(false);
@@ -179,7 +179,7 @@ export function GlobalFeedNav() {
     } else {
       // Navigate to home with the desired tab
       sessionStorage.setItem(HOME_STATE_STORAGE_KEY, JSON.stringify({ tab: tabValue }));
-      navigate('/app');
+      navigate('/');
     }
   }, [isHomePage, navigate, activeTab, isDragging, applyTab]);
 

@@ -60,7 +60,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
               key={item.label}
               item={item}
               isActive={isActive}
-              isHome={item.path === '/app'}
+              isHome={item.path === '/'}
               currentPath={location.pathname}
               onNavigate={onToggle}
               onClick={item.action === 'open-stages' ? () => { onToggle(); openStagesModal(); } : undefined}

@@ -118,7 +118,7 @@ export const TrendingTopicsList = memo(function TrendingTopicsList({
     
     setFilterValue('home', 'categories', updated);
     window.dispatchEvent(new CustomEvent('category-filter-changed', { detail: categoryName }));
-    navigate('/app');
+    navigate('/');
   };
 
   return (

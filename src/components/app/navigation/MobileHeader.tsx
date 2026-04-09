@@ -51,10 +51,10 @@ export function MobileHeader({ isOpen, onToggle, children }: MobileHeaderProps) 
 
   const handleLogoClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    if (pathnameRef.current === '/app') {
+    if (pathnameRef.current === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      navigate('/app');
+      navigate('/');
     }
   }, [navigate]);
 

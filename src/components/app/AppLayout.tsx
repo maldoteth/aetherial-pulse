@@ -70,7 +70,7 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
   
   // Save home scroll position continuously when on home page
   useEffect(() => {
-    const isHome = location.pathname === '/app';
+    const isHome = location.pathname === '/';
     if (!isHome) return;
     
     const saveScroll = () => {
@@ -99,7 +99,7 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
     const currentPath = location.pathname;
     const prevPath = prevPathRef.current;
     
-    if (isPostRoute && prevPath === '/app') {
+    if (isPostRoute && prevPath === '/') {
       setCameFromHome(true);
       sessionStorage.setItem(POST_OVERLAY_ORIGIN_KEY, 'home');
     }
@@ -109,7 +109,7 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
   
   // Restore scroll position when returning to home from post overlay
   useLayoutEffect(() => {
-    const isHomePage = location.pathname === '/app';
+    const isHomePage = location.pathname === '/';
     const wasInPostOverlay = sessionStorage.getItem(POST_OVERLAY_ORIGIN_KEY) === 'home';
     
     if (isHomePage && wasInPostOverlay) {
@@ -159,7 +159,7 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
     const curr = location.pathname;
     prevCachedPathRef.current = curr;
     
-    if (prev !== curr && isCachedPageRoute(curr) && curr !== '/app') {
+    if (prev !== curr && isCachedPageRoute(curr) && curr !== '/') {
       // Don't scroll to top when returning to home (handled by scroll restoration)
       window.scrollTo(0, 0);
     }
@@ -168,7 +168,7 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   
   const showHomePagePersisted = isPostRoute && cameFromHome;
-  const isHomePage = location.pathname === '/app';
+  const isHomePage = location.pathname === '/';
   const isCached = isCachedPageRoute(location.pathname);
   // Dynamic routes: post overlay, single post, post info, or username profiles
   const isDynamicRoute = !isCached && !showHomePagePersisted;

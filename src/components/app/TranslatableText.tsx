@@ -184,7 +184,7 @@ export function renderTextWithLinks(text: string): ReactNode[] {
             e.preventDefault();
             // Dispatch category filter event that HomeFeed listens for
             window.dispatchEvent(new CustomEvent('category-filter-changed', { detail: tag }));
-            clientNavigate('/app');
+            clientNavigate('/');
           }}
           data-no-navigate="true"
         >

@@ -12,7 +12,7 @@ import { useStage } from '@/contexts/StageContext';
 
 // Left side: Home, Messages
 const LEFT_NAV_ITEMS = [
-  { icon: Home, label: 'Home', path: '/app' },
+  { icon: Home, label: 'Home', path: '/' },
   { icon: MessageSquare, label: 'Messages', path: '/messages' },
 ];
 
@@ -77,10 +77,10 @@ export function MobileBottomNav() {
 
 
   const handleNavClick = (e: React.MouseEvent, path: string) => {
-    if (path === '/app' && location.pathname === '/app') {
+    if (path === '/' && location.pathname === '/') {
       e.preventDefault();
       window.dispatchEvent(new CustomEvent('home-refresh'));
-      navigate('/app');
+      navigate('/');
     }
   };
 
@@ -147,8 +147,8 @@ export function MobileBottomNav() {
             {/* Left side items - Home + Messages */}
             <div className="flex items-center justify-start flex-shrink-0 pl-1" style={{ width: 'calc(50% - 24px)' }}>
               {LEFT_NAV_ITEMS.map((item, index) => {
-                const isActive = item.path === '/app' 
-                  ? location.pathname === '/app'
+                const isActive = item.path === '/' 
+                  ? location.pathname === '/'
                   : location.pathname.startsWith(item.path);
                 
                 return (

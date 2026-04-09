@@ -56,10 +56,10 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
       return;
     }
     
-    if (location.pathname === '/app') {
+    if (location.pathname === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      navigate('/app');
+      navigate('/');
     }
   };
 
@@ -84,7 +84,7 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
   };
 
   // Filter out Assistant item - we'll render it specially as a NavLink
-  const navItemsWithoutAI = NAV_ITEMS.filter((item) => item.path !== '/app' && item.label !== 'Assistant');
+  const navItemsWithoutAI = NAV_ITEMS.filter((item) => item.path !== '/' && item.label !== 'Assistant');
   const isAIActive = location.pathname === '/assistant';
 
   // Get user display info for avatar

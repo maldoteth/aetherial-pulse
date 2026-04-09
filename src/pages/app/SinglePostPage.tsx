@@ -422,7 +422,7 @@ interface ImmersiveVideoHeaderProps {
 }
 
 function ImmersiveVideoHeader({ 
-  fallbackRoute = '/app',
+  fallbackRoute = '/',
   channel,
   channelAvatar,
   creatorUsername,
@@ -881,7 +881,7 @@ export default function SinglePostPage() {
           open={showDeleteModal}
           onOpenChange={setShowDeleteModal}
           tokenId={id || ''}
-          onSuccess={() => navigate('/app')}
+          onSuccess={() => navigate('/')}
         />
 
         {/* Tip Modal */}
