@@ -17,6 +17,14 @@ import { useStage } from '@/contexts/StageContext';
 
 const COUNTRIES = [
   { code: 'global', flag: '🌍', name: 'Global' },
+  // Regions
+  { code: 'r-europe', flag: '🇪🇺', name: 'Europe' },
+  { code: 'r-north-america', flag: '🌎', name: 'North America' },
+  { code: 'r-south-america', flag: '🌎', name: 'South America' },
+  { code: 'r-asia', flag: '🌏', name: 'Asia' },
+  { code: 'r-africa', flag: '🌍', name: 'Africa' },
+  { code: 'r-oceania', flag: '🌏', name: 'Oceania' },
+  // Countries
   { code: 'us', flag: '🇺🇸', name: 'United States' },
   { code: 'gb', flag: '🇬🇧', name: 'United Kingdom' },
   { code: 'de', flag: '🇩🇪', name: 'Germany' },
