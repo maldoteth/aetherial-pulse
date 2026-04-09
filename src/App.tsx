@@ -1,7 +1,7 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { OptimisticPostsProvider } from "@/hooks/use-optimistic-posts";
 import { UsernameRequiredModal } from "@/components/app/modals";
 import { LoginModal } from "@/components/app/LoginModal";
@@ -15,7 +15,6 @@ import { HelmetProvider } from "react-helmet-async";
 import { SEOHead } from "@/components/SEOHead";
 
 // Wallet/Auth providers — lazy loaded to keep them out of the main bundle.
-// Wagmi + RainbowKit + Web3Auth total ~1.5 MB; deferring them reduces TBT significantly.
 const WalletProviders = React.lazy(() =>
   import("./components/app/WalletProviders").then(m => ({ default: m.WalletProviders }))
 );
@@ -39,7 +38,7 @@ const EventPage = React.lazy(() => import("./pages/EventPage"));
 
 const SKIP_LANDING_KEY = "dehub_skip_landing";
 
-// Preload critical dynamic-route chunks after initial render so first navigation is instant
+// Preload critical dynamic-route chunks after initial render
 const preloadCriticalChunks = () => {
   const schedule = typeof requestIdleCallback === 'function' ? requestIdleCallback : (cb: () => void) => setTimeout(cb, 2000);
   schedule(() => {
@@ -58,8 +57,6 @@ const PageLoader = () => (
 
 /**
  * One-time cache migration for existing testers.
- * Clears stale auth/wagmi/web3auth data after auth flow changes.
- * Bump CURRENT_CACHE_VERSION to force another clear in the future.
  */
 const CURRENT_CACHE_VERSION = '2';
 (function migrateStaleCacheOnce() {
@@ -100,18 +97,7 @@ const queryClient = new QueryClient({
 });
 
 /**
- * Hero route — renders immediately with NO wallet dependencies.
- * WalletProviders (~1.5 MB) is preloaded in the background while the user
- * watches the 3D nebula animation, so by the time they click "Enter App"
- * the heavy chunk is already cached and the transition is instant.
- */
-function HeroRoute() {
-  return <Navigate to="/app" replace />;
-}
-
-/**
  * Authenticated app shell — everything that needs WalletProviders / AuthProvider.
- * Only mounted after user has passed the hero (or is a returning user).
  */
 function AppContent() {
   const { isLoginModalOpen, closeLoginModal } = useAuth();
@@ -135,50 +121,43 @@ function AppContent() {
 
           {/* Single shared AppLayout — header/sidebar mount ONCE and persist across all app routes */}
           <Route element={<AppLayout />}>
-            <Route path="/jobs" element={null} />
-            <Route path="/features" element={null} />
-            <Route path="/governance" element={null} />
-            <Route path="/stake" element={null} />
-
-            {/* App routes — cached pages render null, PersistentPageCache manages them */}
-            <Route path="/app">
-              <Route index element={null} />
-              <Route path="explore" element={null} />
-              <Route path="profile" element={null} />
-              <Route path="notifications" element={null} />
-              <Route path="messages" element={null} />
-              <Route path="assistant" element={null} />
-              <Route path="leaderboard" element={null} />
-              <Route path="bookmarks" element={null} />
-              <Route path="settings" element={null} />
-              <Route path="command-centre" element={null} />
-              <Route path="wallet" element={null} />
-              <Route path="music" element={null} />
-              <Route path="buy" element={null} />
-              <Route path="agents" element={null} />
-              <Route path="tv" element={null} />
-              <Route path="features" element={null} />
-              <Route path="governance" element={null} />
-              <Route path="governance/:proposalId" element={<Suspense fallback={<PageLoader />}><GovernanceProposalPage /></Suspense>} />
-              <Route path="stake" element={null} />
-              <Route path="bridge" element={null} />
-              <Route path="top-100" element={null} />
-              <Route path="jobs" element={null} />
-              <Route path="glossary" element={null} />
-              <Route path="events" element={null} />
-              <Route path="events/:eventNumber" element={<Suspense fallback={<PageLoader />}><EventPage /></Suspense>} />
-              <Route path="communities" element={null} />
-              <Route path="communities/:slug" element={<Suspense fallback={<PageLoader />}><CommunityPage /></Suspense>} />
-              <Route path="post/:postId" element={<Suspense fallback={<PageLoader />}><SinglePostPage /></Suspense>} />
-              <Route path="video/:tokenId" element={<Suspense fallback={<PageLoader />}><SinglePostPage /></Suspense>} />
-              <Route path="post/:postId/info" element={<Suspense fallback={<PageLoader />}><PostInfoPage /></Suspense>} />
-            </Route>
+            {/* All main routes — cached pages render null, PersistentPageCache manages them */}
+            <Route index element={null} />
+            <Route path="explore" element={null} />
+            <Route path="profile" element={null} />
+            <Route path="notifications" element={null} />
+            <Route path="messages" element={null} />
+            <Route path="assistant" element={null} />
+            <Route path="leaderboard" element={null} />
+            <Route path="bookmarks" element={null} />
+            <Route path="settings" element={null} />
+            <Route path="command-centre" element={null} />
+            <Route path="wallet" element={null} />
+            <Route path="music" element={null} />
+            <Route path="buy" element={null} />
+            <Route path="agents" element={null} />
+            <Route path="tv" element={null} />
+            <Route path="features" element={null} />
+            <Route path="governance" element={null} />
+            <Route path="governance/:proposalId" element={<Suspense fallback={<PageLoader />}><GovernanceProposalPage /></Suspense>} />
+            <Route path="stake" element={null} />
+            <Route path="bridge" element={null} />
+            <Route path="top-100" element={null} />
+            <Route path="jobs" element={null} />
+            <Route path="glossary" element={null} />
+            <Route path="events" element={null} />
+            <Route path="events/:eventNumber" element={<Suspense fallback={<PageLoader />}><EventPage /></Suspense>} />
+            <Route path="communities" element={null} />
+            <Route path="communities/:slug" element={<Suspense fallback={<PageLoader />}><CommunityPage /></Suspense>} />
+            <Route path="post/:postId" element={<Suspense fallback={<PageLoader />}><SinglePostPage /></Suspense>} />
+            <Route path="video/:tokenId" element={<Suspense fallback={<PageLoader />}><SinglePostPage /></Suspense>} />
+            <Route path="post/:postId/info" element={<Suspense fallback={<PageLoader />}><PostInfoPage /></Suspense>} />
 
             {/* Stage invite links */}
-            <Route path="/stage/:id" element={<Suspense fallback={<PageLoader />}><StageDeepLinkPage /></Suspense>} />
+            <Route path="stage/:id" element={<Suspense fallback={<PageLoader />}><StageDeepLinkPage /></Suspense>} />
 
             {/* Username profiles — inside shared layout so header never remounts */}
-            <Route path="/:username" element={<Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>} />
+            <Route path=":username" element={<Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
@@ -194,34 +173,18 @@ const App = () => (
   <HelmetProvider>
     <I18nextProvider i18n={i18nInstance}>
       <QueryClientProvider client={queryClient}>
-        {/*
-         * BrowserRouter is now OUTSIDE WalletProviders so the hero route (/)
-         * can render immediately without waiting for the ~1.5 MB wallet chunk.
-         */}
         <BrowserRouter>
           <SEOHead />
           <Sonner />
-          <Routes>
-            {/* Hero — zero wallet dependencies, renders on first paint */}
-            <Route path="/" element={<HeroRoute />} />
-
-            {/*
-             * All other routes need wallet/auth context.
-             * WalletProviders is preloaded by HeroRoute in the background,
-             * so this Suspense resolves instantly for users coming from the hero.
-             */}
-            <Route path="*" element={
-              <Suspense fallback={<WalletLoader />}>
-                <WalletProviders>
-                  <OptimisticPostsProvider>
-                    <TooltipProvider>
-                      <AppContent />
-                    </TooltipProvider>
-                  </OptimisticPostsProvider>
-                </WalletProviders>
-              </Suspense>
-            } />
-          </Routes>
+          <Suspense fallback={<WalletLoader />}>
+            <WalletProviders>
+              <OptimisticPostsProvider>
+                <TooltipProvider>
+                  <AppContent />
+                </TooltipProvider>
+              </OptimisticPostsProvider>
+            </WalletProviders>
+          </Suspense>
         </BrowserRouter>
       </QueryClientProvider>
     </I18nextProvider>
