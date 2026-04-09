@@ -13,8 +13,8 @@ import { useStage } from '@/contexts/StageContext';
 
 import { useUnreadNotificationCount } from '@/hooks/use-notifications';
 import { useCustomUnreadCount } from '@/hooks/use-custom-notifications';
-import fansiteLogoFull from '@/assets/fansite-logo-full.png';
-import fansiteIcon from '@/assets/fansite-icon.png';
+import siteLogoFull from '@/assets/site-logo-full.png';
+import siteLogoIcon from '@/assets/site-logo-icon.png';
 import { cn } from '@/lib/utils';
 import { buildAvatarUrl } from '@/lib/media-url';
 import { useSidebarCollapse } from '@/contexts/SidebarCollapseContext';
@@ -115,15 +115,15 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
             <button onClick={handleLogoClick} className="block cursor-pointer">
               {isCollapsed ? (
                 <img
-                  src={fansiteIcon}
-                  alt="fansite"
+                  src={siteLogoIcon}
+                  alt="site logo"
                   className="h-[32px] w-auto"
                   decoding="async"
                 />
               ) : (
                 <img
-                  src={fansiteLogoFull}
-                  alt="fansite"
+                  src={siteLogoFull}
+                  alt="site logo"
                   className="h-[40.6px] w-auto relative -top-[3px]"
                   fetchPriority="high"
                   decoding="async"

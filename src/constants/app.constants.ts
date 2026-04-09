@@ -37,7 +37,6 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: Bell, label: 'Notifications', path: '/notifications' },
   { icon: MessageSquare, label: 'Messages', path: '/messages' },
   { icon: Sparkles, label: 'Assistant', path: '/assistant' },
-  { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
   { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
   { icon: Settings, label: 'Settings', path: '/settings' },
   { icon: LayoutDashboard, label: 'Command', path: '/command-centre' },
