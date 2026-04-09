@@ -41,7 +41,6 @@ export interface UserCommentsResponse {
   has_more?: boolean;
   pagination?: { page: number; limit: number; totalCount: number; totalPages: number; hasMore: boolean };
 }
-}
 
 export interface SuggestedAccount {
   address: string;
