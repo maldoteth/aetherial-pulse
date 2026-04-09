@@ -400,17 +400,65 @@ export const WhatsHappening = memo(function WhatsHappening({ showCountrySelector
         </div>
       </div>
 
-      {/* View all button */}
-      <LiquidGlassBubble2
-        label={t('commandCentre.viewAll')}
-        onClick={() => {
-          if (activeTab === 'stages') { openStagesModal('browse'); }
-          else { navigate(showCountrySelector && activeTab === 'tickers' ? '/top-100' : '/explore'); }
-        }}
-        width="100%"
-        height="auto"
-        className="-mt-1 [&>div]:!py-2 [&>div]:from-zinc-900/90 [&>div]:to-white/5 [&>div]:before:from-transparent [&>div]:after:from-transparent"
-      />
+      {/* Globe country selector */}
+      {showCountrySelector ? (
+        <div ref={countryDropdownRef} className="relative -mt-1">
+          <button
+            onClick={() => setShowCountryDropdown(prev => !prev)}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-br from-zinc-900/90 to-white/5 border border-white/10 text-xs text-zinc-400 hover:text-white transition-colors"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>{t('sidebar.selectCountry', 'Select Country')}</span>
+            <ChevronDown className={cn('w-3 h-3 transition-transform', showCountryDropdown && 'rotate-180')} />
+          </button>
+          {showCountryDropdown && (
+            <div className="absolute left-0 right-0 bottom-full mb-1 bg-zinc-800 border border-zinc-700/50 rounded-xl shadow-xl z-50 py-1 max-h-72 flex flex-col">
+              <div className="px-2 py-1.5 border-b border-zinc-700/50">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500" />
+                  <input
+                    type="text"
+                    placeholder="Search countries..."
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                    className="w-full pl-7 pr-2 py-1.5 bg-zinc-700/50 border border-zinc-600/50 rounded-lg text-xs text-white placeholder:text-zinc-500 outline-none focus:border-zinc-500"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent">
+                {filteredCountries.length > 0 ? filteredCountries.map(c => (
+                  <button
+                    key={c.code}
+                    onClick={() => handleCountrySelect(c.code)}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-zinc-700/50 text-left',
+                      c.code === 'global' ? 'text-white font-medium' : 'text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    <span>{c.flag}</span>
+                    <span>{c.name}</span>
+                    {c.code === 'global' && <span className="ml-auto text-[10px] text-emerald-400">✓</span>}
+                  </button>
+                )) : (
+                  <p className="text-xs text-zinc-500 text-center py-3">No countries found</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <LiquidGlassBubble2
+          label={t('commandCentre.viewAll')}
+          onClick={() => {
+            if (activeTab === 'stages') { openStagesModal('browse'); }
+            else { navigate('/explore'); }
+          }}
+          width="100%"
+          height="auto"
+          className="-mt-1 [&>div]:!py-2 [&>div]:from-zinc-900/90 [&>div]:to-white/5 [&>div]:before:from-transparent [&>div]:after:from-transparent"
+        />
+      )}
       </div>
       <GoLiveModal isOpen={showGoLive} onClose={() => setShowGoLive(false)} />
     </div>
