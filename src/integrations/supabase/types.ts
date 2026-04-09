@@ -770,6 +770,86 @@ export type Database = {
         }
         Relationships: []
       }
+      dm_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string | null
+          participant_a: string
+          participant_b: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          participant_a: string
+          participant_b: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          participant_a?: string
+          participant_b?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dm_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          is_read: boolean
+          media_url: string | null
+          msg_type: string
+          reply_to_id: string | null
+          sender_address: string
+          tip_amount: number | null
+          voice_duration: number | null
+        }
+        Insert: {
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_read?: boolean
+          media_url?: string | null
+          msg_type?: string
+          reply_to_id?: string | null
+          sender_address: string
+          tip_amount?: number | null
+          voice_duration?: number | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_read?: boolean
+          media_url?: string | null
+          msg_type?: string
+          reply_to_id?: string | null
+          sender_address?: string
+          tip_amount?: number | null
+          voice_duration?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "dm_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_chat_messages: {
         Row: {
           avatar_url: string | null
@@ -1835,6 +1915,39 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_address: string
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_address: string
+          status?: string
+          target_id: string
+          target_type?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_address?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       space_participants: {
         Row: {
           avatar: string | null
@@ -2046,6 +2159,95 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          benefits: Json | null
+          created_at: string
+          creator_address: string
+          currency: string
+          description: string | null
+          duration: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          subscriber_count: number
+          tier: number
+          updated_at: string
+        }
+        Insert: {
+          benefits?: Json | null
+          created_at?: string
+          creator_address: string
+          currency?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          subscriber_count?: number
+          tier?: number
+          updated_at?: string
+        }
+        Update: {
+          benefits?: Json | null
+          created_at?: string
+          creator_address?: string
+          currency?: string
+          description?: string | null
+          duration?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          subscriber_count?: number
+          tier?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          creator_address: string
+          end_date: string
+          id: string
+          is_active: boolean
+          plan_id: string
+          start_date: string
+          subscriber_address: string
+        }
+        Insert: {
+          created_at?: string
+          creator_address: string
+          end_date: string
+          id?: string
+          is_active?: boolean
+          plan_id: string
+          start_date?: string
+          subscriber_address: string
+        }
+        Update: {
+          created_at?: string
+          creator_address?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          plan_id?: string
+          start_date?: string
+          subscriber_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suggested_profiles_cache: {
         Row: {
           address: string
@@ -2238,6 +2440,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_address: string
+          blocker_address: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_address: string
+          blocker_address: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_address?: string
+          blocker_address?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       user_feedback_surveys: {
         Row: {
           age_range: string | null
@@ -2344,6 +2570,10 @@ export type Database = {
       increment_ticker_search: {
         Args: { p_symbol: string }
         Returns: undefined
+      }
+      is_dm_participant: {
+        Args: { _conversation_id: string }
+        Returns: boolean
       }
     }
     Enums: {
