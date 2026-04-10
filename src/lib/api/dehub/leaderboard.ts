@@ -22,12 +22,18 @@ export async function getLeaderboard(
 ): Promise<LeaderboardResponse> {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('leaderboard_cache')
       .select('data, updated_at')
       .eq('sort_mode', sort)
       .eq('period', period)
-      .single();
+      .maybeSingle();
+
+    // No cached row yet for this period/sort is a normal state.
+    // Only log unexpected errors.
+    if (error) {
+      console.warn('[Leaderboard] Cache query failed:', error);
+    }
 
     if (data?.data) {
       return data.data as unknown as LeaderboardResponse;
