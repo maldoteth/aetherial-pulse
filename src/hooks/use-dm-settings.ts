@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiCall } from '@/lib/api/dehub/core';
+import { supabase } from '@/integrations/supabase/client';
+import { withWalletHeader } from '@/lib/supabase-wallet-client';
 import { toast } from 'sonner';
 
 export type WhoCanMessage = 'everyone' | 'none';
@@ -12,19 +13,12 @@ interface DmStatusResponse {
   freeAccessUsers?: string[];
 }
 
-/**
- * Derives the WhoCanMessage value from the API's disables array.
- */
 function deriveWhoCanMessage(disables?: string[]): WhoCanMessage {
   if (!disables || disables.length === 0) return 'everyone';
-  // ACTIVE_ALL means DMs are open; only treat as closed if a disable entry is present
-  const hasDisable = disables.some(d => !d.startsWith('ACTIVE'));
+  const hasDisable = disables.some((d) => !d.startsWith('ACTIVE'));
   return hasDisable ? 'none' : 'everyone';
 }
 
-/**
- * Maps WhoCanMessage back to API payload.
- */
 function toStatusPayload(value: WhoCanMessage): { status: string; action: string } {
   switch (value) {
     case 'none':
@@ -35,25 +29,34 @@ function toStatusPayload(value: WhoCanMessage): { status: string; action: string
   }
 }
 
+function parseDmSettings(raw: unknown): DmStatusResponse {
+  if (!raw || typeof raw !== 'object') return {};
+  const o = raw as Record<string, unknown>;
+  return {
+    disables: Array.isArray(o.disables) ? (o.disables as string[]) : undefined,
+    perMessageFee: typeof o.perMessageFee === 'number' ? o.perMessageFee : undefined,
+    freeAccessUsers: Array.isArray(o.freeAccessUsers) ? (o.freeAccessUsers as string[]) : undefined,
+  };
+}
+
 export function useDmSettings() {
   const { walletAddress, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch current DM status from the dedicated endpoint
   const { data: dmStatus, isLoading } = useQuery({
     queryKey: ['dm-user-status', walletAddress],
     queryFn: async (): Promise<DmStatusResponse> => {
       if (!walletAddress) return {};
-      try {
-        const response = await apiCall<any>(`/api/dm/user-status/${walletAddress.toLowerCase()}`, {
-          method: 'GET',
-          requiresAuth: true,
-        });
-        return response?.data || response?.result || response || {};
-      } catch (error) {
-        console.error('[useDmSettings] Failed to fetch DM status:', error);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('dm_settings')
+        .eq('wallet_address', walletAddress.toLowerCase())
+        .maybeSingle();
+      if (error) {
+        console.error('[useDmSettings] Failed to fetch profile:', error);
         return {};
       }
+      return parseDmSettings(data?.dm_settings);
     },
     enabled: !!walletAddress && isAuthenticated,
     staleTime: 30_000,
@@ -61,20 +64,48 @@ export function useDmSettings() {
 
   const whoCanMessage = deriveWhoCanMessage(dmStatus?.disables);
   const messageFee = dmStatus?.perMessageFee ?? 0;
-  // Do Not Disturb is a local concept we can keep in localStorage
   const [doNotDisturb, setDoNotDisturbLocal] = useState(() => {
-    try { return localStorage.getItem('dehub_dnd') === 'true'; } catch { return false; }
+    try {
+      return localStorage.getItem('dehub_dnd') === 'true';
+    } catch {
+      return false;
+    }
   });
 
-  // Update DM status (who can message)
+  const loadDmSettings = async (): Promise<DmStatusResponse> => {
+    if (!walletAddress) return {};
+    const { data } = await supabase
+      .from('profiles')
+      .select('dm_settings')
+      .eq('wallet_address', walletAddress.toLowerCase())
+      .maybeSingle();
+    return parseDmSettings(data?.dm_settings);
+  };
+
+  const persistDmSettings = async (patch: Partial<DmStatusResponse>) => {
+    if (!walletAddress) throw new Error('Not authenticated');
+    const base = await loadDmSettings();
+    const merged = { ...base, ...patch };
+    const { error } = await withWalletHeader(
+      supabase
+        .from('profiles')
+        .upsert(
+          {
+            wallet_address: walletAddress.toLowerCase(),
+            dm_settings: merged,
+          },
+          { onConflict: 'wallet_address' },
+        ),
+      walletAddress,
+    );
+    if (error) throw error;
+  };
+
   const updateMutation = useMutation({
     mutationFn: async (payload: { status: string; action: string }) => {
-      if (!walletAddress) throw new Error('Not authenticated');
-      await apiCall<any>(`/api/dm/user-status/${walletAddress.toLowerCase()}`, {
-        method: 'POST',
-        body: payload,
-        requiresAuth: true,
-      });
+      const disables =
+        payload.action === 'disable' ? ['NEW_DM'] : [];
+      await persistDmSettings({ disables });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dm-user-status', walletAddress] });
@@ -86,16 +117,9 @@ export function useDmSettings() {
     },
   });
 
-  // Update fee — API requires status+action in every POST. Include current DM access state.
   const updateFeeMutation = useMutation({
     mutationFn: async (fee: number) => {
-      if (!walletAddress) throw new Error('Not authenticated');
-      const payload = toStatusPayload(whoCanMessage);
-      await apiCall<any>(`/api/dm/user-status/${walletAddress.toLowerCase()}`, {
-        method: 'POST',
-        body: { ...payload, perMessageFee: fee },
-        requiresAuth: true,
-      });
+      await persistDmSettings({ perMessageFee: fee });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dm-user-status', walletAddress] });
@@ -122,7 +146,11 @@ export function useDmSettings() {
     },
     updateDoNotDisturb: (enabled: boolean) => {
       setDoNotDisturbLocal(enabled);
-      try { localStorage.setItem('dehub_dnd', String(enabled)); } catch {}
+      try {
+        localStorage.setItem('dehub_dnd', String(enabled));
+      } catch {
+        /* ignore */
+      }
       toast.success('DM settings updated');
     },
   };

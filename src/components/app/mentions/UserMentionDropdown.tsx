@@ -9,7 +9,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/app/VerifiedBadge';
-import { apiCall, getMediaUrl } from '@/lib/api/dehub/core';
+import { getMediaUrl } from '@/lib/api/dehub/core';
+import { searchUsers } from '@/lib/api/dehub/users';
 import { Search, Loader2, AtSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -79,20 +80,10 @@ export function UserMentionDropdown({
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const response = await apiCall<{ result?: Array<{
-          username: string;
-          displayName?: string;
-          avatarImageUrl?: string;
-          address?: string;
-          isFollowing?: boolean;
-          isVerified?: boolean;
-        }> }>('/api/users/mention_search', {
-          params: { q: searchQuery },
-        });
+        const { data: items = [] } = await searchUsers({ q: searchQuery, limit: 10, page: 0 });
 
         if (latestQueryRef.current !== searchQuery) return;
 
-        const items = response?.result || [];
         const mapped: MentionUser[] = items.slice(0, 10).map((u) => ({
           id: u.address || u.username || '',
           username: u.username || '',

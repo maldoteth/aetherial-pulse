@@ -1,38 +1,29 @@
 /**
- * Get Stream Ingest URL for OBS
- * =============================
- * Fetches stream credentials from DeHub nft_info and returns OBS-ready
- * ingest URL + stream key. Use when api.dehub.io /api/live/* endpoints fail.
+ * Cloudflare Stream — live input credentials (RTMP ingest + HLS playback)
  *
- * POST body: { tokenId: string }
- * Or: GET ?tokenId=xxx
+ * POST / GET body or query: { tokenId: string } — posts.token_id (serial)
  *
- * Returns: { ingestUrl, streamKey, playbackUrl, hlsUrl }
+ * Requires: x-wallet-address must match posts.creator_wallet_address for that token.
+ *
+ * Secrets (Supabase Edge → Settings):
+ *   CLOUDFLARE_ACCOUNT_ID
+ *   CLOUDFLARE_STREAM_API_TOKEN  (Stream:Edit)
  */
 
-const DEHUB_API_BASE = "https://api.dehub.io";
-const LIVEPEER_RTMP_URL = "rtmp://rtmp.livepeer.com/live";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-request-id, prefer",
+    "authorization, x-client-info, apikey, content-type, x-wallet-address, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-request-id, prefer",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Content-Type": "application/json",
 };
 
-interface NftInfoStream {
-  streamKey?: string;
-  playbackId?: string;
-  _id?: string;
-  id?: string;
-  streamId?: string;
-  [key: string]: unknown;
-}
-
-interface NftInfoResult {
-  stream?: NftInfoStream;
-  [key: string]: unknown;
+interface CfLiveInputResult {
+  uid: string;
+  rtmps?: { url?: string; streamKey?: string };
+  webRTC?: { url?: string };
 }
 
 Deno.serve(async (req) => {
@@ -42,86 +33,158 @@ Deno.serve(async (req) => {
 
   try {
     let tokenId: string | null = null;
-
     if (req.method === "GET") {
-      const url = new URL(req.url);
-      tokenId = url.searchParams.get("tokenId");
+      tokenId = new URL(req.url).searchParams.get("tokenId");
     } else if (req.method === "POST") {
       const body = await req.json().catch(() => ({}));
-      tokenId = body?.tokenId ?? null;
+      tokenId = body?.tokenId != null ? String(body.tokenId) : null;
     }
 
-    if (!tokenId || typeof tokenId !== "string") {
+    if (!tokenId) {
       return new Response(
-        JSON.stringify({
-          error: "Bad Request",
-          message: "tokenId is required (query param or body)",
-        }),
-        { status: 400, headers: corsHeaders }
+        JSON.stringify({ error: "tokenId is required" }),
+        { status: 400, headers: corsHeaders },
       );
     }
 
-    const authHeader = req.headers.get("Authorization");
+    const wallet = req.headers.get("x-wallet-address")?.toLowerCase() || "";
+    if (!wallet) {
+      return new Response(
+        JSON.stringify({ error: "x-wallet-address header required" }),
+        { status: 401, headers: corsHeaders },
+      );
+    }
 
-    const nftRes = await fetch(`${DEHUB_API_BASE}/api/nft_info/${encodeURIComponent(tokenId)}`, {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(authHeader ? { Authorization: authHeader } : {}),
+    const accountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+    const cfToken = Deno.env.get("CLOUDFLARE_STREAM_API_TOKEN");
+    if (!accountId || !cfToken) {
+      console.error("[get-stream-ingest] Missing CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_STREAM_API_TOKEN");
+      return new Response(
+        JSON.stringify({
+          error: "Stream not configured",
+          message: "Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_API_TOKEN on this Edge Function.",
+        }),
+        { status: 503, headers: corsHeaders },
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    const numeric = Number(tokenId);
+    if (Number.isNaN(numeric)) {
+      return new Response(JSON.stringify({ error: "Invalid tokenId" }), { status: 400, headers: corsHeaders });
+    }
+
+    const { data: post, error: postErr } = await supabase
+      .from("posts")
+      .select("id, token_id, creator_wallet_address, title, metadata")
+      .eq("token_id", numeric)
+      .maybeSingle();
+
+    if (postErr || !post) {
+      return new Response(JSON.stringify({ error: "Post not found" }), { status: 404, headers: corsHeaders });
+    }
+
+    if (!post.creator_wallet_address || post.creator_wallet_address.toLowerCase() !== wallet) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+    }
+
+    const existingMeta = (post.metadata || {}) as Record<string, unknown>;
+    const existingCf = existingMeta.cloudflare as Record<string, unknown> | undefined;
+    if (existingCf?.uid && existingCf?.rtmpsUrl && existingCf?.streamKey) {
+      const uid = String(existingCf.uid);
+      const hlsUrl = String(existingCf.hlsUrl || `https://videodelivery.net/${uid}/manifest/video.m3u8`);
+      return new Response(
+        JSON.stringify({
+          ingestUrl: existingCf.rtmpsUrl,
+          streamKey: existingCf.streamKey,
+          hlsUrl,
+          playbackUrl: existingCf.playbackUrl || `/post/${tokenId}`,
+          streamId: uid,
+          uid,
+        }),
+        { status: 200, headers: corsHeaders },
+      );
+    }
+
+    const title = (post as { title?: string }).title || `live-${tokenId}`;
+    const cfRes = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/live_inputs`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${cfToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          meta: { name: title.slice(0, 120) },
+          recording: { mode: "automatic" },
+        }),
       },
-    });
+    );
 
-    if (!nftRes.ok) {
-      const errText = await nftRes.text();
-      console.error("[get-stream-ingest] nft_info failed:", nftRes.status, errText);
+    const cfJson = await cfRes.json();
+    if (!cfRes.ok || !cfJson?.success) {
+      console.error("[get-stream-ingest] Cloudflare error:", cfRes.status, cfJson);
       return new Response(
         JSON.stringify({
-          error: "Failed to fetch stream info",
-          message: `nft_info returned ${nftRes.status}`,
+          error: "Cloudflare Stream API error",
+          message: cfJson?.errors?.[0]?.message || cfJson?.message || "Unknown",
         }),
-        { status: 502, headers: corsHeaders }
+        { status: 502, headers: corsHeaders },
       );
     }
 
-    const nftData = await nftRes.json() as NftInfoResult | { result?: NftInfoResult };
-    const nft = ((nftData as { result?: NftInfoResult }).result ?? nftData) as NftInfoResult;
-    const stream = nft?.stream;
-
-    if (!stream?.streamKey) {
+    const result = cfJson.result as CfLiveInputResult;
+    const uid = result.uid;
+    const rtmps = result.rtmps;
+    const ingestUrl = rtmps?.url || "";
+    const streamKey = rtmps?.streamKey || "";
+    if (!ingestUrl || !streamKey) {
       return new Response(
-        JSON.stringify({
-          error: "Stream not ready",
-          message: "Stream key not available yet. The backend may still be provisioning.",
-        }),
-        { status: 404, headers: corsHeaders }
+        JSON.stringify({ error: "Stream not ready", message: "Missing RTMP URL or stream key from Cloudflare" }),
+        { status: 502, headers: corsHeaders },
       );
     }
 
-    const playbackId = stream.playbackId || "";
-    const hlsUrl = playbackId
-      ? `https://livepeercdn.studio/hls/${playbackId}/index.m3u8`
-      : "";
+    const hlsUrl = `https://videodelivery.net/${uid}/manifest/video.m3u8`;
 
-    const result = {
-      ingestUrl: LIVEPEER_RTMP_URL,
-      streamKey: stream.streamKey,
-      playbackUrl: `https://dehub.io/app/post/${tokenId}`,
-      hlsUrl,
-      streamId: stream._id || stream.id || stream.streamId || tokenId,
+    const nextMetadata = {
+      ...existingMeta,
+      cloudflare: {
+        uid,
+        liveInputUid: uid,
+        rtmpsUrl: ingestUrl,
+        streamKey,
+        hlsUrl,
+        is_live: true,
+        createdAt: new Date().toISOString(),
+      },
     };
 
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: corsHeaders,
-    });
+    await supabase.from("posts").update({ metadata: nextMetadata }).eq("id", post.id);
+
+    return new Response(
+      JSON.stringify({
+        ingestUrl,
+        streamKey,
+        hlsUrl,
+        playbackUrl: `/post/${tokenId}`,
+        streamId: uid,
+        uid,
+      }),
+      { status: 200, headers: corsHeaders },
+    );
   } catch (error) {
-    console.error("[get-stream-ingest] Error:", error);
+    console.error("[get-stream-ingest]", error);
     return new Response(
       JSON.stringify({
         error: "Internal Server Error",
         message: error instanceof Error ? error.message : "Unknown error",
       }),
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: corsHeaders },
     );
   }
 });

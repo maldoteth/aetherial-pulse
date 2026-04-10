@@ -15,11 +15,9 @@
 
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getAuthToken, searchNFTs, getLiveStreams } from '@/lib/api/dehub';
+import { searchNFTs, getLiveStreams } from '@/lib/api/dehub';
 import { DEFAULT_DEHUB_LIVE_QUERY_OPTIONS } from '@/hooks/use-dehub-feed';
 import { useAuth } from '@/contexts/AuthContext';
-
-const DEHUB_API_BASE = "https://fansite.app/api";
 
 // Delay prefetch to avoid overlapping with nebula prefetch and feed component loads
 const PREFETCH_DELAY_MS = 3000;
@@ -28,7 +26,7 @@ const PREFETCH_DELAY_MS = 3000;
 const PREFETCH_DONE_KEY = 'feeds-prefetched';
 
 /**
- * Fetch unified feed from API (for videos)
+ * Unified feed via Supabase (searchNFTs) — same data as feed hooks.
  */
 async function fetchUnifiedFeed(params: {
   postType?: string;
@@ -37,29 +35,27 @@ async function fetchUnifiedFeed(params: {
   sortOrder?: string;
   status?: string;
 }) {
-  const url = new URL('/api/feed', DEHUB_API_BASE);
-  url.searchParams.set('page', '1');
-  url.searchParams.set('limit', String(params.limit || 20));
-  if (params.postType && params.postType !== 'all') {
-    url.searchParams.set('postType', params.postType);
-  }
-  if (params.sortBy) url.searchParams.set('sortBy', params.sortBy);
-  if (params.sortOrder) url.searchParams.set('sortOrder', params.sortOrder);
-  if (params.status) url.searchParams.set('status', params.status);
-  // address param is deprecated - viewer context comes from JWT token
-  
-  const token = getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+  const limit = params.limit || 20;
+  const raw = params.postType;
+  const postType =
+    raw === 'feed-images'
+      ? 'image'
+      : raw === 'feed-simple'
+        ? 'text'
+        : raw === 'video' || !raw || raw === 'all'
+          ? 'video'
+          : raw;
+
+  const res = await searchNFTs({
+    page: 0,
+    unit: limit,
+    ...(postType ? { postType } : {}),
+  });
+
+  return {
+    result: res.data,
+    pagination: { total: res.total, page: res.page + 1 },
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  const response = await fetch(url.toString(), { headers });
-  if (!response.ok) throw new Error(`Feed error: ${response.status}`);
-  return response.json();
 }
 
 /**

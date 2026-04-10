@@ -72,7 +72,7 @@ function postTypeToMediaType(postType: string): string {
     case 'feed-images': return 'image';
     case 'audio':
     case 'feed-audio': return 'audio';
-    case 'live': return 'video';
+    case 'live': return 'live';
     default: return 'text';
   }
 }
@@ -106,6 +106,11 @@ export async function mintPost(
   const ppvAmount = isPPV ? (streamInfo.payPerViewAmount || 0) : null;
   const isSubscribersOnly = (params.plans && params.plans.length > 0) ?? false;
 
+  const metadata =
+    params.postType === 'live'
+      ? { live: true as const, streamInfo: params.streamInfo || {} }
+      : undefined;
+
   const query = supabase.from('posts').insert({
     creator_wallet_address: wallet.toLowerCase(),
     title: params.name || '',
@@ -119,6 +124,7 @@ export async function mintPost(
     ppv_currency: isPPV ? (streamInfo.payPerViewTokenSymbol || 'DHB') : null,
     is_subscribers_only: isSubscribersOnly,
     visibility: 'public',
+    ...(metadata ? { metadata } : {}),
   }).select('id, token_id').single();
 
   const { data: post, error } = await withWalletHeader(query, wallet);

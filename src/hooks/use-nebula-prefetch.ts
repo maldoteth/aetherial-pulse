@@ -10,11 +10,24 @@
 
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-// prefetchAllFeeds removed — nebula only caches home feed queries to avoid 429s
-import { getAuthToken } from '@/lib/api/dehub';
+import { searchNFTs } from '@/lib/api/dehub';
 
-const DEHUB_API_BASE = "https://fansite.app/api";
 const PREFETCH_TRIGGERED_KEY = 'nebula-prefetch-triggered';
+
+async function fetchFeedUnified(postTypeKey: string | undefined, limit = 20) {
+  const map: Record<string, string> = {
+    video: 'video',
+    'feed-images': 'image',
+    'feed-simple': 'text',
+  };
+  const pt = postTypeKey ? map[postTypeKey] : undefined;
+  const res = await searchNFTs({
+    page: 0,
+    unit: limit,
+    ...(pt ? { postType: pt } : {}),
+  });
+  return { result: res.data, pagination: { total: res.total, page: res.page + 1 } };
+}
 
 /**
  * Prefetch the home feed's 3 interleaved queries (video, images, text)
@@ -22,40 +35,11 @@ const PREFETCH_TRIGGERED_KEY = 'nebula-prefetch-triggered';
  */
 async function prefetchHomeFeed(queryClient: ReturnType<typeof useQueryClient>) {
   try {
-    const token = getAuthToken();
-    const headers: HeadersInit = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const fetchFeed = async (postType: string) => {
-      const url = new URL('/api/feed', DEHUB_API_BASE);
-      url.searchParams.set('page', '1');
-      url.searchParams.set('limit', '20');
-      url.searchParams.set('sortBy', 'createdAt');
-      url.searchParams.set('sortOrder', 'desc');
-      url.searchParams.set('status', 'minted');
-      url.searchParams.set('postType', postType);
-      const res = await fetch(url.toString(), { headers });
-      if (!res.ok) return null;
-      return res.json();
-    };
-
-    // Fire 3 home feed queries + unified home feed in parallel (removed duplicate scroll carousel fetch)
     const [videosRes, imagesRes, textsRes, unifiedHomeRes] = await Promise.allSettled([
-      fetchFeed('video'),
-      fetchFeed('feed-images'),
-      fetchFeed('feed-simple'),
-      (async () => {
-        // Unified home feed (no postType filter) - matches "Latest" sort in HomeFeed
-        const url = new URL('/api/feed', DEHUB_API_BASE);
-        url.searchParams.set('page', '1');
-        url.searchParams.set('limit', '20');
-        url.searchParams.set('sortBy', 'createdAt');
-        url.searchParams.set('sortOrder', 'desc');
-        url.searchParams.set('status', 'minted');
-        const res = await fetch(url.toString(), { headers });
-        if (!res.ok) return null;
-        return res.json();
-      })(),
+      fetchFeedUnified('video', 20),
+      fetchFeedUnified('feed-images', 20),
+      fetchFeedUnified('feed-simple', 20),
+      fetchFeedUnified(undefined, 20),
     ]);
 
     const baseParams = {

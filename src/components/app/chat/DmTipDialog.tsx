@@ -26,7 +26,6 @@ import {
 } from '@/lib/contracts/aa-utils';
 import { BASE_CHAIN_ID } from '@/lib/contracts/dhb-token';
 import { sendTip } from '@/lib/contracts/stream-controller';
-import { apiCall } from '@/lib/api/dehub/core';
 
 const QUICK_AMOUNTS = [500, 1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 1_000_000];
 
@@ -80,19 +79,9 @@ export function DmTipDialog({
       setAmount('');
       onOpenChange(false);
 
-      // Background: notify backend after confirmation
-      tipResult.confirmed.then((confirmedTxHash) => {
-        apiCall('/api/dm/tip-notify', {
-          method: 'POST',
-          body: {
-            txHash: confirmedTxHash,
-            conversationId,
-            senderAddress: signerAddress,
-          },
-          requiresAuth: true,
-        }).catch((notifyErr) => {
-          console.warn('[DmTip] tip-notify failed (non-fatal):', notifyErr);
-        });
+      // Tip is on-chain; optional backend indexing can be added via Supabase later.
+      tipResult.confirmed.then(() => {
+        console.debug('[DmTip] confirmed', { conversationId });
       }).catch((err) => {
         console.warn('[DmTip] Background confirmation failed:', err);
       });

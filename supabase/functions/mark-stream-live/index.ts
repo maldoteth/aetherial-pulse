@@ -1,11 +1,6 @@
 /**
- * Mark Stream Live
- * =================
- * When api.dehub.io /api/live/start fails, we store the stream as "live"
- * in Supabase so the UI shows it correctly.
- *
- * POST body: { tokenId: string, streamId?: string, address: string }
- * Requires: x-dehub-token header (DeHub JWT) for auth
+ * Mark Stream Live — store session in Supabase when user goes live.
+ * Auth: x-wallet-address must match posts.creator_wallet_address for tokenId.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -18,15 +13,19 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
-async function validateDeHubToken(token: string, address: string): Promise<boolean> {
-  try {
-    const res = await fetch(`https://api.dehub.io/api/account_info/${address}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+async function verifyPostOwner(
+  supabase: ReturnType<typeof createClient>,
+  tokenId: string,
+  wallet: string,
+): Promise<boolean> {
+  const n = Number(tokenId);
+  if (Number.isNaN(n)) return false;
+  const { data } = await supabase
+    .from("posts")
+    .select("creator_wallet_address")
+    .eq("token_id", n)
+    .maybeSingle();
+  return !!(data?.creator_wallet_address && data.creator_wallet_address.toLowerCase() === wallet.toLowerCase());
 }
 
 Deno.serve(async (req) => {
@@ -35,27 +34,14 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
-      { status: 405, headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: corsHeaders });
   }
 
   const walletAddress = req.headers.get("x-wallet-address")?.toLowerCase() || "";
-  const dehubToken = req.headers.get("x-dehub-token") || "";
-
-  if (!walletAddress || !dehubToken) {
+  if (!walletAddress) {
     return new Response(
-      JSON.stringify({ error: "x-wallet-address and x-dehub-token headers required" }),
-      { status: 401, headers: corsHeaders }
-    );
-  }
-
-  const isValid = await validateDeHubToken(dehubToken, walletAddress);
-  if (!isValid) {
-    return new Response(
-      JSON.stringify({ error: "Invalid or expired DeHub token" }),
-      { status: 401, headers: corsHeaders }
+      JSON.stringify({ error: "x-wallet-address header required" }),
+      { status: 401, headers: corsHeaders },
     );
   }
 
@@ -64,15 +50,17 @@ Deno.serve(async (req) => {
     const { tokenId, streamId } = body;
 
     if (!tokenId || typeof tokenId !== "string") {
-      return new Response(
-        JSON.stringify({ error: "tokenId is required" }),
-        { status: 400, headers: corsHeaders }
-      );
+      return new Response(JSON.stringify({ error: "tokenId is required" }), { status: 400, headers: corsHeaders });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const ok = await verifyPostOwner(supabase, tokenId, walletAddress);
+    if (!ok) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+    }
 
     const { error } = await supabase.from("live_stream_sessions").upsert(
       {
@@ -81,26 +69,17 @@ Deno.serve(async (req) => {
         address: walletAddress,
         started_at: new Date().toISOString(),
       },
-      { onConflict: "token_id" }
+      { onConflict: "token_id" },
     );
 
     if (error) {
       console.error("[mark-stream-live] Upsert error:", error);
-      return new Response(
-        JSON.stringify({ error: "Failed to mark stream live" }),
-        { status: 500, headers: corsHeaders }
-      );
+      return new Response(JSON.stringify({ error: "Failed to mark stream live" }), { status: 500, headers: corsHeaders });
     }
 
-    return new Response(
-      JSON.stringify({ success: true, tokenId }),
-      { status: 200, headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ success: true, tokenId }), { status: 200, headers: corsHeaders });
   } catch (err) {
     console.error("[mark-stream-live] Error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: corsHeaders }
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: corsHeaders });
   }
 });

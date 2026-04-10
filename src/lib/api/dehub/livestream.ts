@@ -22,7 +22,6 @@ export interface StartLiveStreamResponse { result: { streamId: string; streamKey
 export interface SendGiftData { amount: number; currency: string; message?: string; }
 
 export async function createLiveStream(data: CreateLiveStreamData): Promise<{ result: LiveStream }> { throw new Error('Not yet migrated'); }
-export async function getLiveStreams(params: GetLiveStreamsParams = {}): Promise<{ result: LiveStream[] }> { return { result: [] }; }
 export async function getUserLiveStreams(address: string): Promise<{ result: LiveStream[] }> { return { result: [] }; }
 export async function getUserScheduledStreams(address: string): Promise<{ result: LiveStream[] }> { return { result: [] }; }
 export async function getLiveStream(streamId: string): Promise<{ result: LiveStream }> { throw new Error('Not found'); }

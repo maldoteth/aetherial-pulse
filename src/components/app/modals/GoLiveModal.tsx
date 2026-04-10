@@ -8,13 +8,11 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LiquidGlassBubble2 } from '@/components/ui/liquid-glass-bubble-2';
 import { mintPost } from '@/lib/api/dehub/content';
-import { getWeb3AuthSigner, mintOnChain, BASE_CHAIN_ID } from '@/lib/contracts';
-import { getCategories, getNFTInfo } from '@/lib/api/dehub/feed';
-import { getStreamIngestUrl, startLiveStream, endLiveStream } from '@/lib/api/dehub/livestream';
+import { getWeb3AuthSigner, BASE_CHAIN_ID } from '@/lib/contracts';
+import { getCategories } from '@/lib/api/dehub/feed';
 import type { DeHubCategory } from '@/lib/api/dehub/types';
 import { createLogger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
-import { getAuthToken } from '@/lib/api/dehub/core';
 import { useAuth } from '@/contexts/AuthContext';
 
 const logger = createLogger('GoLiveModal');
@@ -101,25 +99,13 @@ export function GoLiveModal({ isOpen, onClose }: GoLiveModalProps) {
 
   const handleEndStream = async () => {
     if (!streamData?.tokenId) return;
-    const token = getAuthToken();
     const addr = walletAddress?.toLowerCase();
 
-    // Notify DeHub backend that stream has ended via PATCH /api/live/{streamId}/settings
-    if (streamData.streamId) {
-      try {
-        await endLiveStream(streamData.streamId);
-        logger.info('Stream ended via DeHub API', { streamId: streamData.streamId });
-      } catch (e) {
-        logger.warn('endLiveStream failed (non-blocking)', e);
-      }
-    }
-
-    // Remove from Supabase live sessions table
-    if (token && addr) {
+    if (addr) {
       try {
         await supabase.functions.invoke('end-stream-session', {
           body: { tokenId: streamData.tokenId },
-          headers: { 'x-wallet-address': addr, 'x-dehub-token': token },
+          headers: { 'x-wallet-address': addr },
         });
       } catch (e) {
         logger.warn('end-stream-session failed', e);
@@ -144,6 +130,8 @@ export function GoLiveModal({ isOpen, onClose }: GoLiveModalProps) {
       // Step 2: Mint the live post via /api/user_mint
       logger.info('Minting live post...', { title });
 
+      toast.loading('Creating live post & Cloudflare stream…', { id: 'golive-progress', duration: Infinity });
+
       const mintResponse = await mintPost({
         name: title.trim(),
         description: description.trim(),
@@ -159,140 +147,53 @@ export function GoLiveModal({ isOpen, onClose }: GoLiveModalProps) {
       });
 
       const tokenId = mintResponse.createdTokenId;
-      logger.info('NFT Minted via API', { tokenId });
+      logger.info('Live post created in Supabase', { tokenId });
 
-      // Step 3: Execute on-chain minting transaction
-      if (!mintResponse.v || !mintResponse.r || !mintResponse.s) {
-        throw new Error('Invalid signature data from backend');
-      }
+      const addr = (walletAddress || minterAddress).toLowerCase();
 
-      logger.info('Executing on-chain mint...', { tokenId });
-      toast.loading('Publishing to decentralized database...', { id: 'golive-progress', duration: Infinity });
-
-      const mintResult = await mintOnChain({
-        tokenId,
-        timestamp: mintResponse.timestamp,
-        v: mintResponse.v,
-        r: mintResponse.r,
-        s: mintResponse.s,
-        chainId: BASE_CHAIN_ID,
+      const { data: ingestData, error: ingestErr } = await supabase.functions.invoke('get-stream-ingest', {
+        body: { tokenId },
+        headers: { 'x-wallet-address': addr },
       });
 
-      const txHash = mintResult.hash;
-      logger.info('On-chain mint submitted', { tokenId, txHash });
       toast.dismiss('golive-progress');
 
-      // Background confirmation
-      mintResult.confirmed.catch((err) => {
-        logger.warn('Background mint confirmation failed', err);
-      });
-
-      // Step 4: Poll /api/nft_info/{tokenId} to get stream credentials
-      // Backend needs a moment to provision the stream after minting
-      logger.info('Fetching stream credentials from nft_info...', { tokenId });
-
-      let streamKey = '';
-      let streamId = '';
-      let playbackId = '';
-      let retryCount = 0;
-      const MAX_RETRIES = 8;
-
-      while (retryCount < MAX_RETRIES) {
-        try {
-          const nftInfo = await getNFTInfo(tokenId);
-          const stream = nftInfo?.stream;
-
-          if (stream?.streamKey) {
-            streamKey = stream.streamKey;
-            playbackId = stream.playbackId || '';
-            // Try to get the MongoDB ObjectId from stream (needed for some API calls)
-            const streamObj = stream as Record<string, unknown>;
-            streamId = (streamObj._id as string) || (streamObj.id as string) || stream.streamId || tokenId;
-            logger.info('Stream credentials obtained', { streamId, playbackId, hasKey: true, attempt: retryCount + 1 });
-            break;
-          }
-
-          logger.info('Stream not ready yet, retrying...', { attempt: retryCount + 1, status: stream?.status });
-        } catch (e) {
-          logger.warn('Failed to fetch nft_info, retrying...', { attempt: retryCount + 1 });
-        }
-        retryCount++;
-        await new Promise(r => setTimeout(r, 2000));
+      if (ingestErr || !ingestData?.ingestUrl || !ingestData?.streamKey) {
+        const msg =
+          (ingestData as { message?: string })?.message ||
+          ingestErr?.message ||
+          'Cloudflare Stream is not configured or ingest failed. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_API_TOKEN on the get-stream-ingest Edge Function.';
+        throw new Error(msg);
       }
 
-      if (!streamKey) {
-        throw new Error('Stream key not available yet. The backend may still be provisioning your stream. Please try again in a moment.');
-      }
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const playbackPath =
+        typeof ingestData.playbackUrl === 'string' && ingestData.playbackUrl.startsWith('http')
+          ? ingestData.playbackUrl
+          : `${origin}/post/${tokenId}`;
 
-      // Step 5: Activate stream in DeHub backend + get ingest URL
-      // Uses PATCH /api/live/{streamId}/settings to mark as live, GET /ingesturl for RTMP URL.
-      const LIVEPEER_RTMP_URL = 'rtmp://rtmp.livepeer.com/live';
-      let ingestUrl = '';
-      let playbackUrl = '';
-
-      // Step 5a: Get ingest URL from API
-      try {
-        const ingestRes = await getStreamIngestUrl(streamId);
-        ingestUrl = ingestRes?.result?.ingestUrl || '';
-        if (ingestUrl) logger.info('Ingest URL obtained', { ingestUrl });
-      } catch (e) {
-        logger.warn('getStreamIngestUrl failed, trying Edge Function...', e);
-        try {
-          const token = getAuthToken();
-          const { data, error } = await supabase.functions.invoke('get-stream-ingest', {
-            body: { tokenId },
-            ...(token && { headers: { Authorization: `Bearer ${token}` } }),
-          });
-          if (!error && data?.ingestUrl) {
-            ingestUrl = data.ingestUrl;
-            logger.info('Ingest URL obtained via Edge Function');
-          }
-        } catch (e2) {
-          logger.warn('Edge Function also failed, using standard RTMP', e2);
-        }
-      }
-
-      // Step 5b: Mark stream as live via PATCH /settings
-      try {
-        await startLiveStream({ streamId });
-        logger.info('Stream marked as live via settings', { streamId });
-      } catch (e) {
-        logger.warn('startLiveStream (settings) failed (non-blocking)', e);
-      }
-
-      // Final fallback: standard Livepeer RTMP URL
-      if (!ingestUrl) {
-        ingestUrl = LIVEPEER_RTMP_URL;
-        logger.info('Using standard Livepeer RTMP ingest URL');
-      }
-
-      const hlsUrl = playbackId ? `https://livepeercdn.studio/hls/${playbackId}/index.m3u8` : '';
-      
       const resultData = {
         tokenId,
-        streamId,
-        streamKey,
-        ingestUrl,
-        playbackUrl: playbackUrl || `https://fansite.app/post/${tokenId}`,
-        hlsUrl,
+        streamId: String(ingestData.streamId || ingestData.uid || tokenId),
+        streamKey: ingestData.streamKey as string,
+        ingestUrl: ingestData.ingestUrl as string,
+        playbackUrl: playbackPath,
+        hlsUrl: ingestData.hlsUrl as string | undefined,
       };
 
       setStreamData(resultData);
       setStep('ready');
-      logger.info('Stream setup ready', { streamId, tokenId });
+      logger.info('Cloudflare stream ready', { tokenId, streamId: resultData.streamId });
       toast.success('Live stream is ready!');
 
-      // Mark stream as live in Supabase (api.fansite.app /start fails with 404)
-      const token = getAuthToken();
-      const addr = walletAddress || minterAddress;
-      if (token && addr) {
-        supabase.functions.invoke('mark-stream-live', {
-          body: { tokenId, streamId },
-          headers: { 'x-wallet-address': addr.toLowerCase(), 'x-dehub-token': token },
-        }).then(({ error }) => {
+      supabase.functions
+        .invoke('mark-stream-live', {
+          body: { tokenId, streamId: resultData.streamId },
+          headers: { 'x-wallet-address': addr },
+        })
+        .then(({ error }) => {
           if (error) logger.warn('mark-stream-live failed (non-blocking)', error);
         });
-      }
     } catch (error) {
       toast.dismiss('golive-progress');
       logger.error('Failed to start stream', { title, selectedCategory }, error);
