@@ -37,7 +37,8 @@ CLAUDE.md
 GEMINI.md
 
 # Root scratch & notes (keep out of repo)
-AuthContext.tsx
+/AuthContext.tsx
+!src/contexts/AuthContext.tsx
 chat-system.md
 doc.md
 scripts/
