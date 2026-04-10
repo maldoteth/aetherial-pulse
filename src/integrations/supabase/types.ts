@@ -2563,6 +2563,10 @@ export type Database = {
       }
       get_request_wallet_address: { Args: never; Returns: string }
       increment_category_count: { Args: { p_name: string }; Returns: undefined }
+      increment_post_views_batch: {
+        Args: { p_token_ids: number[] }
+        Returns: undefined
+      }
       increment_stage_listens: {
         Args: { p_space_id: string }
         Returns: undefined
