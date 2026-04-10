@@ -10,7 +10,7 @@ import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/app/VerifiedBadge';
 import { getMediaUrl } from '@/lib/api/dehub/core';
-import { searchUsers } from '@/lib/api/dehub/users';
+import { searchUsers as searchUsersApi } from '@/lib/api/dehub/users';
 import { Search, Loader2, AtSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,7 +80,7 @@ export function UserMentionDropdown({
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const { data: items = [] } = await searchUsers({ q: searchQuery, limit: 10, page: 0 });
+        const { data: items = [] } = await searchUsersApi({ q: searchQuery, limit: 10, page: 0 });
 
         if (latestQueryRef.current !== searchQuery) return;
 
