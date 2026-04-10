@@ -111,7 +111,7 @@ export async function mintPost(
       ? { live: true as const, streamInfo: params.streamInfo || {} }
       : undefined;
 
-  const query = supabase.from('posts').insert({
+  const insertRow: Record<string, unknown> = {
     creator_wallet_address: wallet.toLowerCase(),
     title: params.name || '',
     description: params.description || '',
@@ -125,7 +125,9 @@ export async function mintPost(
     is_subscribers_only: isSubscribersOnly,
     visibility: 'public',
     ...(metadata ? { metadata } : {}),
-  }).select('id, token_id').single();
+  };
+
+  const query = supabase.from('posts').insert(insertRow as any).select('id, token_id').single();
 
   const { data: post, error } = await withWalletHeader(query, wallet);
 
