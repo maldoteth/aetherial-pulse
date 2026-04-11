@@ -13,7 +13,6 @@ import { PiPProvider } from '@/contexts/PiPContext';
 import { ChartPiPProvider } from '@/contexts/ChartPiPContext';
 import { FloatingPiPOverlay } from '@/components/app/tv/FloatingPiPOverlay';
 import { FloatingChartPiPOverlay } from '@/components/app/charts/FloatingChartPiPOverlay';
-import { UserFeedbackSurvey } from '@/components/app/UserFeedbackSurvey';
 import { PostModal } from '@/features/post/PostModal';
 import { DevelopmentNoticeModal } from './modals';
 import { RadioMiniPlayer } from '@/components/app/radio';
@@ -249,7 +248,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <AppLayoutContent>{children}</AppLayoutContent>
                     <FloatingPiPOverlay />
                     <FloatingChartPiPOverlay />
-                    <UserFeedbackSurvey />
                   </GlobalDropZoneProvider>
                 </CoinPlacementProvider>
               </RadioPlayerProvider>
