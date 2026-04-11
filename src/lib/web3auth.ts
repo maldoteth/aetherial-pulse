@@ -53,6 +53,22 @@ export const CONFIRMATION_STRATEGY = {
  * Detect if running on a mobile device based on user agent + touch support.
  * iPadOS 13+ reports a desktop UA, so we also check maxTouchPoints.
  */
+/**
+ * Hosts that send strict Cross-Origin-Opener-Policy (e.g. Lovable preview) break
+ * Web3Auth's OAuth popup flow: the SDK polls popup.closed and the browser blocks it.
+ * Full-page redirect avoids popups and works with the same dashboard whitelist.
+ */
+function hostRequiresSocialLoginRedirect(): boolean {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname.toLowerCase();
+  return (
+    h === 'lovable.dev' ||
+    h.endsWith('.lovable.dev') ||
+    h === 'lovable.app' ||
+    h.endsWith('.lovable.app')
+  );
+}
+
 export function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
 
@@ -257,6 +273,10 @@ if (import.meta.hot) {
  * Pre-fetch configurations as soon as the module is loaded.
  */
 let pendingPimlicoFetch: Promise<{ bundlerUrl: string; paymasterUrl: string }> | null = null;
+function getClientIdCacheKey(): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'server';
+  return `dehub_web3auth_client_id:${origin}`;
+}
 
 async function getPimlicoConfig(): Promise<{ bundlerUrl: string; paymasterUrl: string }> {
   if (cachedPimlicoConfig) return cachedPimlicoConfig;
@@ -289,10 +309,10 @@ async function getPimlicoConfig(): Promise<{ bundlerUrl: string; paymasterUrl: s
 function prewarmConfig() {
   if (typeof window === 'undefined') return;
   // Skip if both configs are already in sessionStorage
-  if (sessionStorage.getItem('dehub_web3auth_client_id') && sessionStorage.getItem('dehub_pimlico_config')) {
+  if (sessionStorage.getItem(getClientIdCacheKey()) && sessionStorage.getItem('dehub_pimlico_config')) {
     console.log("[Web3Auth] Configs already cached in sessionStorage, skipping prewarm");
     // Still populate in-memory caches from sessionStorage
-    cachedClientId = sessionStorage.getItem('dehub_web3auth_client_id')!;
+    cachedClientId = sessionStorage.getItem(getClientIdCacheKey())!;
     try { cachedPimlicoConfig = JSON.parse(sessionStorage.getItem('dehub_pimlico_config')!); } catch {}
     return;
   }
@@ -364,7 +384,7 @@ async function getWeb3AuthClientId(): Promise<string> {
   if (cachedClientId) return cachedClientId;
   
   // Check sessionStorage first to survive HMR/reloads without re-fetching
-  const stored = sessionStorage.getItem('dehub_web3auth_client_id');
+  const stored = sessionStorage.getItem(getClientIdCacheKey());
   if (stored) {
     cachedClientId = stored;
     return cachedClientId;
@@ -380,7 +400,7 @@ async function getWeb3AuthClientId(): Promise<string> {
     console.log("[Web3Auth] get-web3auth-config response:", { data, error });
     if (!error && data?.clientId) {
       cachedClientId = data.clientId;
-      sessionStorage.setItem('dehub_web3auth_client_id', data.clientId);
+      sessionStorage.setItem(getClientIdCacheKey(), data.clientId);
       return cachedClientId;
     }
     throw new Error(error?.message || "Web3Auth client ID not configured");
@@ -559,7 +579,7 @@ export async function connectToSocialProvider(
   }
 
   const mobile = isMobileDevice();
-  const useRedirect = mobile || forceRedirectMode;
+  const useRedirect = mobile || forceRedirectMode || hostRequiresSocialLoginRedirect();
   const uxMode = useRedirect ? UX_MODE.REDIRECT : UX_MODE.POPUP;
 
   // v10 API: `authConnection` replaced `loginProvider`; uxMode/redirectUrl are top-level.
@@ -567,7 +587,8 @@ export async function connectToSocialProvider(
   const params: any = {
     authConnection: authConnection,
     uxMode,
-    redirectUrl: window.location.origin + window.location.pathname,
+    // Keep redirect URL at origin so dashboard whitelist needs only domain, not every path.
+    redirectUrl: window.location.origin,
   };
 
   // Always pass provider-specific options to force the account picker / re-login screen.

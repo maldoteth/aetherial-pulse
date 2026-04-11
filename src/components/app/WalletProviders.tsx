@@ -12,6 +12,7 @@
 import type { ReactNode } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { wagmiConfig } from '@/lib/wagmi';
+import { base } from 'wagmi/chains';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -26,7 +27,11 @@ interface WalletProvidersProps {
 export function WalletProviders({ children }: WalletProvidersProps) {
   return (
     <WagmiProvider config={wagmiConfig}>
-      <RainbowKitProvider theme={darkTheme()} modalSize="compact">
+      <RainbowKitProvider
+        theme={darkTheme()}
+        modalSize="compact"
+        initialChain={base}
+      >
         <AuthProvider>
           <CallProvider>
             <StageProvider>
