@@ -50,25 +50,20 @@ export const CONFIRMATION_STRATEGY = {
 // if using NoModal SDK, or they are included by default in the Modal SDK.
 
 /**
+ * OAuth popup flow uses window.closed; strict Cross-Origin-Opener-Policy (Lovable,
+ * many hosts) blocks that and breaks social login. Full-page redirect is reliable
+ * in production; keep popup only on local dev where COOP is typically open.
+ */
+function allowSocialLoginPopupFlow(): boolean {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+}
+
+/**
  * Detect if running on a mobile device based on user agent + touch support.
  * iPadOS 13+ reports a desktop UA, so we also check maxTouchPoints.
  */
-/**
- * Hosts that send strict Cross-Origin-Opener-Policy (e.g. Lovable preview) break
- * Web3Auth's OAuth popup flow: the SDK polls popup.closed and the browser blocks it.
- * Full-page redirect avoids popups and works with the same dashboard whitelist.
- */
-function hostRequiresSocialLoginRedirect(): boolean {
-  if (typeof window === 'undefined') return false;
-  const h = window.location.hostname.toLowerCase();
-  return (
-    h === 'lovable.dev' ||
-    h.endsWith('.lovable.dev') ||
-    h === 'lovable.app' ||
-    h.endsWith('.lovable.app')
-  );
-}
-
 export function isMobileDevice(): boolean {
   if (typeof navigator === 'undefined') return false;
 
@@ -579,8 +574,12 @@ export async function connectToSocialProvider(
   }
 
   const mobile = isMobileDevice();
-  const useRedirect = mobile || forceRedirectMode || hostRequiresSocialLoginRedirect();
+  const useRedirect =
+    mobile || forceRedirectMode || !allowSocialLoginPopupFlow();
   const uxMode = useRedirect ? UX_MODE.REDIRECT : UX_MODE.POPUP;
+  if (useRedirect) {
+    console.log('[Web3Auth] Social login using full-page redirect (avoids COOP / popup issues)');
+  }
 
   // v10 API: `authConnection` replaced `loginProvider`; uxMode/redirectUrl are top-level.
   // email/phone hint goes in extraLoginOptions.login_hint (underscore), not top-level loginHint.
