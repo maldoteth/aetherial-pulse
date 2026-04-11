@@ -2,8 +2,8 @@
  * Fansite Content — Live Supabase + R2 Implementation
  */
 import { supabase } from '@/integrations/supabase/client';
-import { withWalletHeader } from '@/lib/supabase-wallet-client';
 import type { DeHubNFT } from './types';
+import { invokeDehubSocialApi } from './social-edge-client';
 
 export interface StreamInfo {
   isLockContent?: boolean;
@@ -111,8 +111,8 @@ export async function mintPost(
       ? { live: true as const, streamInfo: params.streamInfo || {} }
       : undefined;
 
-  const insertRow: Record<string, unknown> = {
-    creator_wallet_address: wallet.toLowerCase(),
+  const res = await invokeDehubSocialApi<{ ok: boolean; post?: { id: string; token_id: number }; error?: string }>({
+    action: 'post.create',
     title: params.name || '',
     description: params.description || '',
     media_url: mediaUrl,
@@ -125,15 +125,12 @@ export async function mintPost(
     is_subscribers_only: isSubscribersOnly,
     visibility: 'public',
     ...(metadata ? { metadata } : {}),
-  };
+  });
 
-  const query = supabase.from('posts').insert(insertRow as any).select('id, token_id').single();
-
-  const { data: post, error } = await withWalletHeader(query, wallet);
-
-  if (error) {
-    console.error('[mintPost] Insert failed:', error);
-    throw new Error(`Failed to create post: ${error.message}`);
+  const post = res.post;
+  if (!post?.token_id) {
+    console.error('[mintPost] Insert failed:', res);
+    throw new Error(res.error || 'Failed to create post');
   }
 
   onProgress?.(100);
@@ -162,8 +159,8 @@ export async function mintNFT(data: {
   const wallet = getWallet();
   if (!wallet) throw new Error('Authentication required');
 
-  const query = supabase.from('posts').insert({
-    creator_wallet_address: wallet.toLowerCase(),
+  const res = await invokeDehubSocialApi<{ post?: Record<string, unknown> }>({
+    action: 'post.create',
     title: data.title || '',
     description: data.description || '',
     media_url: data.media_url,
@@ -173,10 +170,10 @@ export async function mintNFT(data: {
     is_ppv: data.is_ppv ?? false,
     ppv_amount: data.ppv_price || null,
     visibility: 'public',
-  }).select('*').single();
+  });
 
-  const { data: post, error } = await withWalletHeader(query, wallet);
-  if (error) throw new Error(`Failed to create post: ${error.message}`);
+  const post = res.post as Record<string, unknown> | undefined;
+  if (!post) throw new Error('Failed to create post');
 
   return {
     tokenId: post.token_id,
@@ -223,10 +220,11 @@ export async function editPost(
   if (params.description !== undefined) updates.description = params.description;
   if (params.category !== undefined) updates.category = params.category.join(',');
 
-  const query = supabase.from('posts').update(updates).eq('token_id', Number(tokenId));
-  const { error } = await withWalletHeader(query, wallet);
-
-  if (error) throw new Error(`Failed to edit post: ${error.message}`);
+  await invokeDehubSocialApi({
+    action: 'post.update',
+    tokenId: Number(tokenId),
+    ...params,
+  });
   return { result: true, data: { tokenId: Number(tokenId), ...params } };
 }
 
@@ -234,10 +232,10 @@ export async function deletePost(tokenId: number | string): Promise<{ result: bo
   const wallet = getWallet();
   if (!wallet) throw new Error('Authentication required');
 
-  const query = supabase.from('posts').delete().eq('token_id', Number(tokenId));
-  const { error } = await withWalletHeader(query, wallet);
-
-  if (error) throw new Error(`Failed to delete post: ${error.message}`);
+  await invokeDehubSocialApi({
+    action: 'post.delete',
+    tokenId: Number(tokenId),
+  });
   return { result: true };
 }
 
@@ -261,10 +259,11 @@ export async function updateTokenVisibility(
   const wallet = getWallet();
   if (!wallet) throw new Error('Authentication required');
 
-  const query = supabase.from('posts').update({ visibility }).eq('token_id', Number(tokenId));
-  const { error } = await withWalletHeader(query, wallet);
-
-  if (error) throw new Error(`Failed to update visibility: ${error.message}`);
+  await invokeDehubSocialApi({
+    action: 'post.setVisibility',
+    tokenId: Number(tokenId),
+    visibility,
+  });
 
   return {
     status: true,

@@ -4,6 +4,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { withWalletHeader } from '@/lib/supabase-wallet-client';
 import { getAuthToken } from './core';
+import { invokeDehubSocialApi } from './social-edge-client';
 import type { DeHubNFT } from './types';
 
 export interface VoteResponse {
@@ -56,30 +57,28 @@ function getWallet(): string | null {
 export async function followUser(walletAddress: string): Promise<{ result: boolean }> {
   const wallet = getWallet();
   if (!wallet) return { result: false };
-  const query = supabase.from('follows').insert({
-    follower_address: wallet.toLowerCase(),
-    following_address: walletAddress.toLowerCase(),
-    status: 'accepted',
-  });
-  const { error } = await withWalletHeader(query, wallet);
-  return { result: !error };
+  try {
+    await invokeDehubSocialApi({ action: 'follow.follow', targetAddress: walletAddress });
+    return { result: true };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function unfollowUser(walletAddress: string): Promise<{ result: boolean }> {
   const wallet = getWallet();
   if (!wallet) return { result: false };
-  const query = supabase.from('follows').delete()
-    .eq('follower_address', wallet.toLowerCase())
-    .eq('following_address', walletAddress.toLowerCase());
-  const { error } = await withWalletHeader(query, wallet);
-  return { result: !error };
+  try {
+    await invokeDehubSocialApi({ action: 'follow.unfollow', targetAddress: walletAddress });
+    return { result: true };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function getFollowRequests(): Promise<FollowRequestItem[]> {
   const wallet = getWallet();
   if (!wallet) return [];
-  const query = supabase.from('follows').select('*, profiles!follows_follower_address_fkey(*)').eq('following_address', wallet.toLowerCase()).eq('status', 'pending');
-  // No FK join available yet — use simpler approach
   const { data } = await withWalletHeader(
     supabase.from('follows').select('*').eq('following_address', wallet.toLowerCase()).eq('status', 'pending'),
     wallet
@@ -94,41 +93,45 @@ export async function getFollowRequests(): Promise<FollowRequestItem[]> {
 export async function approveFollowRequest(requestId: string): Promise<{ result: boolean }> {
   const wallet = getWallet();
   if (!wallet) return { result: false };
-  const { error } = await withWalletHeader(
-    supabase.from('follows').update({ status: 'accepted' }).eq('id', requestId),
-    wallet
-  );
-  return { result: !error };
+  try {
+    await invokeDehubSocialApi({ action: 'follow.approveRequest', requestId });
+    return { result: true };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function rejectFollowRequest(requestId: string): Promise<{ result: boolean }> {
   const wallet = getWallet();
   if (!wallet) return { result: false };
-  const { error } = await withWalletHeader(
-    supabase.from('follows').delete().eq('id', requestId),
-    wallet
-  );
-  return { result: !error };
+  try {
+    await invokeDehubSocialApi({ action: 'follow.rejectRequest', requestId });
+    return { result: true };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function acceptAllFollowRequests(): Promise<{ result: boolean }> {
   const wallet = getWallet();
   if (!wallet) return { result: false };
-  const { error } = await withWalletHeader(
-    supabase.from('follows').update({ status: 'accepted' }).eq('following_address', wallet.toLowerCase()).eq('status', 'pending'),
-    wallet
-  );
-  return { result: !error };
+  try {
+    await invokeDehubSocialApi({ action: 'follow.acceptAll' });
+    return { result: true };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function rejectAllFollowRequests(): Promise<{ result: boolean }> {
   const wallet = getWallet();
   if (!wallet) return { result: false };
-  const { error } = await withWalletHeader(
-    supabase.from('follows').delete().eq('following_address', wallet.toLowerCase()).eq('status', 'pending'),
-    wallet
-  );
-  return { result: !error };
+  try {
+    await invokeDehubSocialApi({ action: 'follow.rejectAll' });
+    return { result: true };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function getFollowList(
@@ -182,22 +185,23 @@ export async function voteOnPost(params: { tokenId: number; voteType: 'for' | 'a
   const wallet = getWallet();
   if (!wallet) return { success: false, tokenId: params.tokenId, voteType: null };
 
-  // Find post by token_id
-  const { data: post } = await supabase.from('posts').select('id').eq('token_id', params.tokenId).maybeSingle();
-  if (!post) return { success: false, tokenId: params.tokenId, voteType: null };
-
-  if (params.voteType === 'for') {
-    const { error } = await withWalletHeader(
-      supabase.from('post_likes').insert({ post_id: post.id, wallet_address: wallet.toLowerCase() }),
-      wallet
-    );
-    return { success: !error, tokenId: params.tokenId, voteType: error ? null : 'for' };
-  } else {
-    const { error } = await withWalletHeader(
-      supabase.from('post_likes').delete().eq('post_id', post.id).eq('wallet_address', wallet.toLowerCase()),
-      wallet
-    );
-    return { success: !error, tokenId: params.tokenId, voteType: error ? null : null };
+  try {
+    const res = await invokeDehubSocialApi<{
+      success?: boolean;
+      tokenId?: number;
+      voteType?: 'for' | 'against' | null;
+    }>({
+      action: 'engagement.vote',
+      tokenId: params.tokenId,
+      voteType: params.voteType,
+    });
+    return {
+      success: res.success ?? false,
+      tokenId: res.tokenId ?? params.tokenId,
+      voteType: (res.voteType ?? null) as 'for' | 'against' | null,
+    };
+  } catch {
+    return { success: false, tokenId: params.tokenId, voteType: null };
   }
 }
 

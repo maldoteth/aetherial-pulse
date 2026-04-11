@@ -2,7 +2,7 @@
  * Fansite Users — Live Supabase Implementation
  */
 import { supabase } from '@/integrations/supabase/client';
-import { withWalletHeader } from '@/lib/supabase-wallet-client';
+import { invokeDehubSocialApi } from './social-edge-client';
 import type { DeHubUser, DeHubNFT, PaginatedResponse } from './types';
 import type { ApiCommentResponse } from './comments';
 
@@ -94,33 +94,30 @@ export async function updateProfile(data: UpdateProfileData): Promise<{ result: 
   const wallet = localStorage.getItem('dehub_wallet');
   if (!wallet) return { result: false };
 
-  const updateData: Record<string, any> = {};
-  if (data.username !== undefined) updateData.username = data.username;
-  if (data.displayName !== undefined) updateData.display_name = data.displayName;
-  if (data.bio !== undefined) updateData.bio = data.bio;
-  if (data.aboutMe !== undefined) updateData.about_me = data.aboutMe;
-  if (data.avatarImageUrl !== undefined) updateData.avatar_url = data.avatarImageUrl;
-  if (data.coverImageUrl !== undefined) updateData.cover_url = data.coverImageUrl;
-  if (data.isPrivate !== undefined) updateData.is_private = data.isPrivate;
-  if (data.customs !== undefined) updateData.customs = data.customs;
-  if (data.dmSettings !== undefined) updateData.dm_settings = data.dmSettings;
-  if (data.twitterLink !== undefined) updateData.twitter_link = data.twitterLink;
-  if (data.discordLink !== undefined) updateData.discord_link = data.discordLink;
-  if (data.instagramLink !== undefined) updateData.instagram_link = data.instagramLink;
-  if (data.tiktokLink !== undefined) updateData.tiktok_link = data.tiktokLink;
-  if (data.telegramLink !== undefined) updateData.telegram_link = data.telegramLink;
-  if (data.youtubeLink !== undefined) updateData.youtube_link = data.youtubeLink;
-  if (data.facebookLink !== undefined) updateData.facebook_link = data.facebookLink;
+  const payload: Record<string, unknown> = { action: 'profile.update' };
+  if (data.username !== undefined) payload.username = data.username;
+  if (data.displayName !== undefined) payload.display_name = data.displayName;
+  if (data.bio !== undefined) payload.bio = data.bio;
+  if (data.aboutMe !== undefined) payload.about_me = data.aboutMe;
+  if (data.avatarImageUrl !== undefined) payload.avatar_url = data.avatarImageUrl;
+  if (data.coverImageUrl !== undefined) payload.cover_url = data.coverImageUrl;
+  if (data.isPrivate !== undefined) payload.is_private = data.isPrivate;
+  if (data.customs !== undefined) payload.customs = data.customs;
+  if (data.dmSettings !== undefined) payload.dm_settings = data.dmSettings;
+  if (data.twitterLink !== undefined) payload.twitter_link = data.twitterLink;
+  if (data.discordLink !== undefined) payload.discord_link = data.discordLink;
+  if (data.instagramLink !== undefined) payload.instagram_link = data.instagramLink;
+  if (data.tiktokLink !== undefined) payload.tiktok_link = data.tiktokLink;
+  if (data.telegramLink !== undefined) payload.telegram_link = data.telegramLink;
+  if (data.youtubeLink !== undefined) payload.youtube_link = data.youtubeLink;
+  if (data.facebookLink !== undefined) payload.facebook_link = data.facebookLink;
 
-  // Upsert profile
-  const { error } = await withWalletHeader(
-    supabase.from('profiles').upsert({
-      wallet_address: wallet.toLowerCase(),
-      ...updateData,
-    }, { onConflict: 'wallet_address' }),
-    wallet
-  );
-  return { result: !error };
+  try {
+    await invokeDehubSocialApi(payload);
+    return { result: true };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function getUserNFTs(
