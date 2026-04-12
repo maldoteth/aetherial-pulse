@@ -188,8 +188,8 @@ export default function BridgePage() {
 
   return (
     <div className={cn("min-h-screen pb-24 px-3 sm:px-4 max-w-5xl mx-auto", isCollapsed && "pt-16 md:pt-0")}>
-      <SEOHead title="Bridge — Transfer DHB Cross-Chain" description="Bridge your DHB tokens between Base and BNB Chain seamlessly on DeHub. Fast, secure cross-chain transfers with live transaction tracking." url="https://fansite.app/bridge" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'DeHub Token Bridge', url: 'https://fansite.app/bridge', applicationCategory: 'FinanceApplication', description: 'Bridge DHB tokens between Base and BNB Chain.', operatingSystem: 'Web' }} />
-      <h1 className="sr-only">DeHub Bridge — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
+      <SEOHead title="Bridge — Transfer DHB Cross-Chain" description="Bridge your DHB tokens between Base and BNB Chain seamlessly on Fansite. Fast, secure cross-chain transfers with live transaction tracking." url="https://fansite.app/bridge" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Fansite Token Bridge', url: 'https://fansite.app/bridge', applicationCategory: 'FinanceApplication', description: 'Bridge DHB tokens between Base and BNB Chain.', operatingSystem: 'Web' }} />
+      <h1 className="sr-only">Fansite Bridge — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0 }}

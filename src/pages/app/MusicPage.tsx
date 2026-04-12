@@ -350,8 +350,8 @@ export default function MusicPage() {
 
   return (
     <div className="min-h-screen">
-      <SEOHead title="Music — Listen & Discover on DeHub" description="Stream music, discover new artists, listen to live radio and watch music videos on DeHub — the decentralized open source media platform." url="https://fansite.app/music" jsonLd={{ '@context': 'https://schema.org', '@type': 'MusicPlaylist', name: 'DeHub Music', url: 'https://fansite.app/music', description: 'Stream music, discover artists and listen to radio on DeHub.' }} />
-      <h1 className="sr-only">DeHub Music — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
+      <SEOHead title="Music — Listen & Discover on Fansite" description="Stream music, discover new artists, listen to live radio and watch music videos on Fansite — the decentralized open source media platform." url="https://fansite.app/music" jsonLd={{ '@context': 'https://schema.org', '@type': 'MusicPlaylist', name: 'Fansite Music', url: 'https://fansite.app/music', description: 'Stream music, discover artists and listen to radio on Fansite.' }} />
+      <h1 className="sr-only">Fansite Music — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Tab Navigation */}
       <div className="sticky top-11 lg:top-0 bg-black z-50 px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2">
         <div className="bg-zinc-900 rounded-2xl p-2 overflow-visible">
