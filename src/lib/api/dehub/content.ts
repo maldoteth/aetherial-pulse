@@ -176,14 +176,14 @@ export async function mintNFT(data: {
   if (!post) throw new Error('Failed to create post');
 
   return {
-    tokenId: post.token_id,
-    name: post.title,
-    description: post.description || '',
-    imageUrl: post.media_type === 'image' ? post.media_url : post.thumbnail_url || '',
-    videoUrl: post.media_type === 'video' ? post.media_url : undefined,
-    postType: (post.media_type || 'image') as 'video' | 'image' | 'audio',
-    minter: post.creator_wallet_address,
-    createdAt: post.created_at,
+    tokenId: post.token_id as number,
+    name: post.title as string,
+    description: (post.description as string) || '',
+    imageUrl: post.media_type === 'image' ? (post.media_url as string) : (post.thumbnail_url as string) || '',
+    videoUrl: post.media_type === 'video' ? (post.media_url as string) : undefined,
+    postType: ((post.media_type as string) || 'image') as 'video' | 'image' | 'audio',
+    minter: post.creator_wallet_address as string,
+    createdAt: post.created_at as string,
     likes: 0,
     views: 0,
     commentCount: 0,

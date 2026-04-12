@@ -127,6 +127,7 @@ export function useAuth() {
     connect: store.openLoginModal,
     disconnect: store.disconnect,
     refreshUser: store.refreshUser,
+    patchUser: store.patchUser,
     connectWithProvider: store.connectWithProvider,
     connectWithEmail: store.connectWithEmail,
     connectWithSMS: store.connectWithSMS,
