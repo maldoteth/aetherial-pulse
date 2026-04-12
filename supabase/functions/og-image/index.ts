@@ -71,7 +71,7 @@ serve(async (req) => {
         const rawText = (post.title || post.name || "").trim();
         if (!rawText) return Response.redirect(DEHUB_LOGO, 302);
 
-        const authorName = post.minterDisplayName || post.mintername || post.minterUsername || "DeHub";
+        const authorName = post.minterDisplayName || post.mintername || post.minterUsername || "Fansite";
         const username = post.minterUsername || "";
         const avatarUrl = post.minterUser ? buildAvatarUrl(post.minterUser) : DEHUB_LOGO;
 
@@ -247,7 +247,7 @@ serve(async (req) => {
                                                 type: "span",
                                                 props: {
                                                     style: { fontSize: "20px", fontWeight: 600, color: "#a78bfa", letterSpacing: "-0.3px" },
-                                                    children: "dehub.io",
+                                                    children: "fansite.app",
                                                 }
                                             },
                                         ],

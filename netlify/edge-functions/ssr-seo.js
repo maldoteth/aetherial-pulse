@@ -97,7 +97,7 @@ export default async (request, context) => {
           ? 'public, s-maxage=300, stale-while-revalidate=600'
           : 'no-store',
         'Vary': 'User-Agent',
-        'X-Powered-By': 'DeHub-Edge-SEO',
+        'X-Powered-By': 'Fansite-Edge-SEO',
       },
     });
   } catch (e) {

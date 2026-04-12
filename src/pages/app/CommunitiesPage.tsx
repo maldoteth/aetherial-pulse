@@ -44,8 +44,8 @@ export default function CommunitiesPage() {
   return (
     <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4">
       <SEOHead
-        title="Communities - DeHub"
-        description="Join and discover communities on DeHub"
+        title="Communities - Fansite"
+        description="Join and discover communities on Fansite"
       />
 
       {/* Header */}

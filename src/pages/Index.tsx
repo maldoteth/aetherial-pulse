@@ -6,14 +6,14 @@ const Index = () => {
     <>
       <SEOHead
         title="Open Source Social Media"
-        description="DeHub is open source, user owned and censorship resistant media. Join the decentralized future of social."
+        description="Fansite is open source, user owned and censorship resistant media. Join the decentralized future of social."
         url="https://fansite.app"
         jsonLd={{
           '@context': 'https://schema.org',
           '@graph': [
             {
               '@type': 'WebSite',
-              name: 'DeHub',
+              name: 'Fansite',
               url: 'https://fansite.app',
               description: 'Open source, user owned and censorship resistant media.',
               potentialAction: {
@@ -24,7 +24,7 @@ const Index = () => {
             },
             {
               '@type': 'Organization',
-              name: 'DeHub',
+              name: 'Fansite',
               url: 'https://fansite.app',
               logo: 'https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo/default-icon.png',
               sameAs: ['https://x.com/DeHubApp'],

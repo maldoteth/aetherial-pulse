@@ -613,8 +613,8 @@ export default function HomePage() {
 
   return (
     <div>
-      <SEOHead title="DeHub - Home Feed" description="Censorship resistant and chronological, with no shady algorithm. Your feed on DeHub — the open source, user owned social media platform." url="https://fansite.app/" jsonLd={{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'DeHub Home Feed', url: 'https://fansite.app/app', description: 'Censorship resistant, chronological social media feed with no algorithm.', isPartOf: { '@type': 'WebSite', name: 'DeHub', url: 'https://fansite.app' } }} />
-      <h1 className="sr-only">DeHub Home — Decentralised Social Media Feed, Censorship Resistant & Freedom of Speech</h1>
+      <SEOHead title="Fansite - Home Feed" description="Censorship resistant and chronological, with no shady algorithm. Your feed on Fansite — the open source, user owned social media platform." url="https://fansite.app/" jsonLd={{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Fansite Home Feed', url: 'https://fansite.app/app', description: 'Censorship resistant, chronological social media feed with no algorithm.', isPartOf: { '@type': 'WebSite', name: 'Fansite', url: 'https://fansite.app' } }} />
+      <h1 className="sr-only">Fansite Home — Decentralised Social Media Feed, Censorship Resistant & Freedom of Speech</h1>
       {/* Tab Navigation */}
       <div
         className={cn("sticky top-11 lg:top-0 bg-black z-50 px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2 lg:mt-0 transition-transform duration-300 ease-in-out", isCollapsed && "pl-2 pr-0", isCollapsed && "lg:hidden")}

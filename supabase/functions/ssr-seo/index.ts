@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const DEHUB_API_BASE = "https://api.dehub.io";
 const DEHUB_CDN_BASE = "https://dehubcdn.ams3.cdn.digitaloceanspaces.com/";
-const APP_URL = "https://dehub.io"; // Change to actual production URL if different
+const APP_URL = "https://fansite.app";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://aigxuutjaqsywioxjefr.supabase.co";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpZ3h1dXRqYXFzeXdpb3hqZWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MzY0MzIsImV4cCI6MjA4MzIxMjQzMn0.hjMx0kShuJlaZ26UoG7RFGu3OC_aLR0C1Sf1qdk3x0I";
@@ -240,7 +240,7 @@ function generateMetaHTML(data: {
   <meta name="twitter:description" content="${description}">
   <meta name="twitter:image" content="${twitterImageUrl}">
   <meta name="twitter:image:alt" content="${title}">
-  <meta name="twitter:site" content="@DeHubApp">${twitterVideoTags}
+  <meta name="twitter:site" content="@FansiteApp">${twitterVideoTags}
 
   ${!data.isBot
             ? `
@@ -260,7 +260,7 @@ function generateMetaHTML(data: {
     <h1>${title}</h1>
     <p>${description}</p>
     <img src="${imageUrl}" style="max-width: 100%; border-radius: 12px; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" alt="${title}" />
-    <p style="margin-top: 30px;"><a href="${data.url}" style="color: #00ff00; text-decoration: none; font-weight: bold; border: 1px solid #00ff00; padding: 10px 20px; border-radius: 5px;">View on DeHub</a></p>
+    <p style="margin-top: 30px;"><a href="${data.url}" style="color: #00ff00; text-decoration: none; font-weight: bold; border: 1px solid #00ff00; padding: 10px 20px; border-radius: 5px;">View on Fansite</a></p>
     <nav style="margin-top: 20px; font-size: 14px;">
       <a href="${APP_URL}/app/explore" style="color: #aaa; margin: 0 8px;">Explore</a>
       <a href="${APP_URL}/app/stages" style="color: #aaa; margin: 0 8px;">Stages</a>
@@ -347,14 +347,14 @@ serve(async (req) => {
             const user: DeHubUser = userData.result || userData;
 
             if (user && (user.username || user.address)) {
-                const displayName = user.displayName || user.username || "DeHub User";
+                const displayName = user.displayName || user.username || "Fansite User";
                 const profileUrl = `${APP_URL}/${user.username || username}`;
                 const avatarUrl = buildAvatarUrl(user);
                 const isLogoFallback = avatarUrl === DEHUB_LOGO;
                 const html = generateMetaHTML({
-                    title: `Join @${user.username || username} on DeHub today!`,
+                    title: `Join @${user.username || username} on Fansite today!`,
                     description:
-                        user.aboutMe || `Connect with ${displayName} on DeHub, the open source alternative to legacy media.`,
+                        user.aboutMe || `Connect with ${displayName} on Fansite, the open source alternative to legacy media.`,
                     image: avatarUrl,
                     url: profileUrl,
                     twitterCard: "summary",
@@ -387,11 +387,11 @@ serve(async (req) => {
                 const ogImage = community.avatar_url || DEHUB_LOGO;
                 const hasRealImage = !!community.avatar_url;
                 const twitterCard = "summary";
-                const title = `Join ${community.name}'s community on DeHub today`;
+                const title = `Join ${community.name}'s community on Fansite today`;
                 const memberText = community.member_count > 0 ? ` • ${community.member_count} members` : "";
                 const description = community.description
                     ? `${community.description}${memberText}`
-                    : `Join the ${community.name} community on DeHub — open source, censorship resistant media.${memberText}`;
+                    : `Join the ${community.name} community on Fansite — open source, censorship resistant media.${memberText}`;
 
                 const html = generateMetaHTML({
                     title,
@@ -429,8 +429,8 @@ serve(async (req) => {
                 const posterName = nft.minterDisplayName || nft.mintername || nft.minterUsername || "someone";
                 // trim() prevents nft.name=" " (whitespace-only) from being used as title —
                 // X/Twitter ignores cards with blank titles
-                const title = (nft.title || nft.name || "").trim() || `Post by ${posterName} on DeHub`;
-                const description = (`View this post by ${posterName} on DeHub` + (nft.description ? ` — ${nft.description}` : "")).trim();
+                const title = (nft.title || nft.name || "").trim() || `Post by ${posterName} on Fansite`;
+                const description = (`View this post by ${posterName} on Fansite` + (nft.description ? ` — ${nft.description}` : "")).trim();
                 const postUrl = `${APP_URL}/app/post/${postId}`;
 
                 const isAudio = nft.postType === "feed-audio";
@@ -487,7 +487,7 @@ serve(async (req) => {
                         description,
                         url: postUrl,
                         ...(nft.minterDisplayName && { author: { '@type': 'Person', name: nft.minterDisplayName } }),
-                        publisher: { '@type': 'Organization', name: 'DeHub', url: 'https://dehub.io' },
+                        publisher: { '@type': 'Organization', name: 'Fansite', url: 'https://fansite.app' },
                         ...(postImage && { image: postImage }),
                     },
                 });
@@ -497,9 +497,9 @@ serve(async (req) => {
 
         // Default Fallback
         const html = generateMetaHTML({
-            title: "DeHub — Open Source, User Owned & Censorship Resistant Media",
+            title: "Fansite — Open Source, User Owned & Censorship Resistant Media",
             description:
-                "dehub.io is open source, user owned and censorship resistant media. Join the future of free speech and reach.",
+                "fansite.app is open source, user owned and censorship resistant media. Join the future of free speech and reach.",
             image: "https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo//Screenshot%202026-03-20%20225233.png",
             url: canonicalUrl,
             twitterCard: "summary_large_image",
@@ -512,19 +512,19 @@ serve(async (req) => {
                 '@graph': [
                     {
                         '@type': 'WebSite',
-                        name: 'DeHub',
-                        url: 'https://dehub.io',
+                        name: 'Fansite',
+                        url: 'https://fansite.app',
                         description: 'Open source, user owned and censorship resistant media.',
                         potentialAction: {
                             '@type': 'SearchAction',
-                            target: 'https://dehub.io/app/explore?q={search_term_string}',
+                            target: 'https://fansite.app/app/explore?q={search_term_string}',
                             'query-input': 'required name=search_term_string',
                         },
                     },
                     {
                         '@type': 'Organization',
-                        name: 'DeHub',
-                        url: 'https://dehub.io',
+                        name: 'Fansite',
+                        url: 'https://fansite.app',
                         logo: 'https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo/default-icon.png',
                         sameAs: ['https://x.com/DeHubApp'],
                     },

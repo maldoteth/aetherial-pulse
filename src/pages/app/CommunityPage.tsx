@@ -80,8 +80,8 @@ export default function CommunityPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <SEOHead
-        title={`${community.name} - DeHub Community`}
-        description={community.description || `Join ${community.name} on DeHub`}
+        title={`${community.name} - Fansite Community`}
+        description={community.description || `Join ${community.name} on Fansite`}
       />
 
       <button

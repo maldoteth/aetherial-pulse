@@ -13,7 +13,7 @@ import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 export default function CreatorsPage() {
   return (
     <>
-      <SEOHead title="Become a Creator" description="Apply to become a creator on DeHub — the open source, censorship resistant media platform." url="https://fansite.app/creators" />
+      <SEOHead title="Become a Creator" description="Apply to become a creator on Fansite — the open source, censorship resistant media platform." url="https://fansite.app/creators" />
       <CreatorsPageInner />
     </>
   );
@@ -123,7 +123,7 @@ function CreatorsPageInner() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-center">{t('creators.title', 'Creator Application')}</h1>
-          <p className="text-zinc-400 text-sm text-center">{t('creators.subtitle', 'Join the DeHub creator network')}</p>
+          <p className="text-zinc-400 text-sm text-center">{t('creators.subtitle', 'Join the Fansite creator network')}</p>
         </div>
 
         {/* Form */}

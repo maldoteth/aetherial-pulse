@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const DEHUB_API_BASE = "https://api.dehub.io";
-const APP_URL = "https://dehub.io";
+const APP_URL = "https://fansite.app";
 
 const STATIC_ROUTES = [
   { loc: "/", changefreq: "daily", priority: "1.0" },

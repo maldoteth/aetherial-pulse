@@ -36,7 +36,7 @@ const DocsPage = () => {
       <iframe
         ref={iframeRef}
         src={iframeSrc}
-        title="DeHub Documentation"
+        title="Fansite Documentation"
         className="w-full h-full border-0"
         allow="clipboard-write"
         loading="eager"
