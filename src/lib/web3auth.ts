@@ -210,6 +210,9 @@ let lastConnectedConnector: string | null = null;
 // Track if we've detected that popups are blocked and should use redirect
 let forceRedirectMode = false;
 
+/** Serialize social/email/SMS Web3Auth connectTo — duplicate calls cause "Already connecting". */
+let socialConnectInFlight: Promise<unknown> | null = null;
+
 // Cached configs from edge functions
 let cachedClientId: string | null = null;
 let cachedPimlicoConfig: { bundlerUrl: string; paymasterUrl: string } | null = null;
@@ -248,6 +251,7 @@ export function resetWeb3AuthState(): void {
   web3authInstance = null;
   isInitializing = false;
   initPromise = null;
+  socialConnectInFlight = null;
   lastConnectedConnector = null;
   clearWeb3AuthStorage();
   // Don't reset cached configs or forceRedirectMode - persist across resets
@@ -538,6 +542,20 @@ function isPopupBlockedError(err: unknown): boolean {
  * Returns OAuth provider-specific options to force account selection / re-login.
  * Without these, cached OAuth cookies cause silent auto-login with the last used account.
  */
+/**
+ * Wait until the Modal SDK is idle enough for connectTo (avoids WalletInitializationError:
+ * "Wallet is not ready yet, Already connecting" when init/analytics races with login).
+ */
+async function waitUntilWeb3AuthConnectable(auth: Web3Auth): Promise<void> {
+  const deadline = Date.now() + 25_000;
+  while (Date.now() < deadline) {
+    const status = auth.status;
+    if (status === "ready" || status === "connected") return;
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  throw new Error("Web3Auth did not become ready in time for connect");
+}
+
 function getProviderForceLoginOptions(authConnection: AuthConnectionType): Record<string, string> {
   switch (authConnection) {
     case AUTH_CONNECTION.GOOGLE:
@@ -557,7 +575,7 @@ function getProviderForceLoginOptions(authConnection: AuthConnectionType): Recor
   }
 }
 
-export async function connectToSocialProvider(
+async function connectToSocialProviderInternal(
   authConnection: AuthConnectionType,
   loginHint?: string,
   skipConnectedCheck = false
@@ -565,6 +583,7 @@ export async function connectToSocialProvider(
   console.log(`[Web3Auth] connectToSocialProvider: ${authConnection}`);
 
   const web3auth = await getOrInitWeb3Auth();
+  await waitUntilWeb3AuthConnectable(web3auth);
 
   // If a previous failed session left Web3Auth in "connected" state, logout first.
   // Otherwise connectTo throws "Already connected".
@@ -578,7 +597,7 @@ export async function connectToSocialProvider(
       console.warn('[Web3Auth] Pre-connect logout failed - forcing full reset:', e);
       resetWeb3AuthState();
       await new Promise(r => setTimeout(r, 1000));
-      return connectToSocialProvider(authConnection, loginHint, true);
+      return connectToSocialProviderInternal(authConnection, loginHint, true);
     }
   }
 
@@ -614,16 +633,45 @@ export async function connectToSocialProvider(
     lastConnectedConnector = WALLET_CONNECTORS.AUTH;
     return provider;
   } catch (err) {
+    const errText = String(err).toLowerCase();
+    if (errText.includes("already connecting")) {
+      console.warn("[Web3Auth] connectTo raced with internal connect — waiting and retrying once");
+      await new Promise((r) => setTimeout(r, 500));
+      await waitUntilWeb3AuthConnectable(web3auth);
+      const provider = await web3auth.connectTo(WALLET_CONNECTORS.AUTH, params);
+      lastConnectedConnector = WALLET_CONNECTORS.AUTH;
+      return provider;
+    }
       if (isPopupBlockedError(err) && !forceRedirectMode) {
       console.warn('[Web3Auth] Popup blocked! Switching to REDIRECT mode...');
       forceRedirectMode = true;
       resetWeb3AuthState();
       const retryAuth = await initWeb3Auth();
+      await waitUntilWeb3AuthConnectable(retryAuth);
       params.uxMode = UX_MODE.REDIRECT;
       return await retryAuth.connectTo(WALLET_CONNECTORS.AUTH, params);
     }
     throw err;
   }
+}
+
+export async function connectToSocialProvider(
+  authConnection: AuthConnectionType,
+  loginHint?: string,
+  skipConnectedCheck = false
+): Promise<ReturnType<Web3Auth['connectTo']>> {
+  if (socialConnectInFlight) {
+    console.log('[Web3Auth] Social connect already in progress — joining existing attempt (prevents duplicate connectTo)');
+    return socialConnectInFlight as Promise<ReturnType<Web3Auth['connectTo']>>;
+  }
+  socialConnectInFlight = connectToSocialProviderInternal(
+    authConnection,
+    loginHint,
+    skipConnectedCheck
+  ).finally(() => {
+    socialConnectInFlight = null;
+  });
+  return socialConnectInFlight as Promise<ReturnType<Web3Auth['connectTo']>>;
 }
 
 export function getWeb3Auth(): Web3Auth {
@@ -670,6 +718,7 @@ export async function forceCleanupWeb3Auth(): Promise<void> {
   web3authInstance = null;
   isInitializing = false;
   initPromise = null;
+  socialConnectInFlight = null;
   clearWeb3AuthStorage();
 
   // Delayed re-init to avoid rate limiting (don't hammer api.web3auth.io)

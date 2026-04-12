@@ -84,6 +84,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   };
 
   const handleSocialLogin = async (provider: 'google' | 'twitter' | 'discord') => {
+    if (isConnecting) return;
     setActiveProvider(provider);
     try {
       await connectWithProvider(provider);
@@ -96,6 +97,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isConnecting) return;
     setEmailError('');
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -116,6 +118,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   const handleSMSSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isConnecting) return;
     setPhoneError('');
 
     const phoneRegex = /^\+?[1-9]\d{6,14}$/;

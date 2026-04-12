@@ -89,17 +89,42 @@ function normalizeUser(address: string, profile?: DeHubUser | null): DeHubUser {
   };
 }
 
-async function providerToAddress(provider: any): Promise<string | null> {
-  if (!provider?.request) return null;
-  // Ensure we're on Base (0x2105) — the only chain with AA support.
-  // If the provider is on Ethereum mainnet (0x1) the AA provider throws
-  // "Account Abstraction is not supported for the chain 0x1".
+const BASE_CHAIN_HEX = '0x2105';
+
+/** Base is required for Web3Auth + Pimlico AA; 0x1 triggers "Account Abstraction is not supported for the chain 0x1". */
+async function ensureProviderOnBase(provider: { request: (a: unknown, b?: unknown) => Promise<unknown> }): Promise<void> {
   try {
     await provider.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0x2105' }],
+      params: [{ chainId: BASE_CHAIN_HEX }],
     });
-  } catch { /* non-fatal — still attempt eth_accounts below */ }
+    return;
+  } catch (switchErr: unknown) {
+    const code = (switchErr as { code?: number })?.code;
+    if (code === 4902 || code === -32603) {
+      try {
+        await provider.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: BASE_CHAIN_HEX,
+              chainName: 'Base',
+              nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['https://base-rpc.publicnode.com'],
+              blockExplorerUrls: ['https://basescan.org'],
+            },
+          ],
+        });
+      } catch {
+        /* still try account methods */
+      }
+    }
+  }
+}
+
+async function providerToAddress(provider: any): Promise<string | null> {
+  if (!provider?.request) return null;
+  await ensureProviderOnBase(provider);
   try {
     const accounts = await provider.request({ method: 'eth_accounts' });
     if (Array.isArray(accounts) && accounts[0]) return String(accounts[0]).toLowerCase();
@@ -260,17 +285,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const web3auth = await initWeb3Auth();
         if (web3auth.connected && web3auth.provider) {
-          // AA provider only supports Base (0x2105). After an email/OAuth redirect the session
-          // can land on Ethereum mainnet (0x1), causing "Account Abstraction is not
-          // supported for the chain 0x1". Switch to Base first, then fetch accounts.
-          try {
-            await web3auth.provider.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0x2105' }],
-            });
-          } catch (switchErr) {
-            console.warn('[Auth] chain switch to Base before account fetch failed (non-fatal):', switchErr);
-          }
+          // AA provider only supports Base (0x2105). After redirect the session can be on 0x1.
+          await ensureProviderOnBase(web3auth.provider as { request: (a: unknown, b?: unknown) => Promise<unknown> });
           const accounts = await web3auth.provider.request({ method: 'eth_accounts' }) as string[];
           const socialAddress = accounts?.[0]?.toLowerCase();
           if (socialAddress) {
