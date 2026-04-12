@@ -16,6 +16,8 @@ import {
   CHAIN_NAMESPACES,
   WEB3AUTH_NETWORK,
 } from "@web3auth/modal";
+import type { IProvider } from "@web3auth/base";
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
