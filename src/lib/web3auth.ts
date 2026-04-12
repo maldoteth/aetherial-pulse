@@ -455,7 +455,16 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
           chains: [chainConfig],
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
           sessionTime: 86400,
-          uiConfig: { modalZIndex: "99999" } as any,
+          // uxMode MUST be set here in uiConfig — the auth connector reads it
+          // from coreOptions.uiConfig.uxMode at init time and ignores any uxMode
+          // passed later via connectTo() params. Default is POPUP which gets blocked
+          // by browsers on production hosts.
+          // forceRedirectMode is set when a popup-blocked error is caught, so even
+          // on localhost we switch to redirect if the user's browser blocks popups.
+          uiConfig: {
+            modalZIndex: "99999",
+            uxMode: (allowSocialLoginPopupFlow() && !forceRedirectMode) ? UX_MODE.POPUP : UX_MODE.REDIRECT,
+          } as any,
           walletServicesConfig: {
             confirmationStrategy: CONFIRMATION_STRATEGY.AUTO_APPROVE,
             modalZIndex: "99999",
