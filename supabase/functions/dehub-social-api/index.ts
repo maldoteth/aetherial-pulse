@@ -301,6 +301,21 @@ Deno.serve(async (req) => {
         return json({ ok: true, result: true });
       }
 
+      case "profile.check_username": {
+        const username = String(body.username || "").toLowerCase();
+        if (!username || username.length < 3) {
+          return json({ ok: true, available: false, message: "Username too short" });
+        }
+        const { data, error } = await admin
+          .from("profiles")
+          .select("username")
+          .ilike("username", username)
+          .maybeSingle();
+
+        if (error) throw error;
+        return json({ ok: true, available: !data });
+      }
+
       default:
         return json({ ok: false, error: `Unknown action: ${action}` }, 400);
     }
