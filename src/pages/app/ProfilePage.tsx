@@ -274,7 +274,7 @@ export default function ProfilePage() {
     >
       <SEOHead
         title={data.profile?.name || data.profile?.handle || 'Profile'}
-        description={data.profile?.bio || `View ${data.profile?.name || data.profile?.handle || 'this profile'} on DeHub`}
+        description={data.profile?.bio || `View ${data.profile?.name || data.profile?.handle || 'this profile'} on Fansite`}
         url={`https://fansite.app/${data.profile?.handle || ''}`}
         jsonLd={{
           '@context': 'https://schema.org',
