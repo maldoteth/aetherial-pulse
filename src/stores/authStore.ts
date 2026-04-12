@@ -250,12 +250,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   boot: async () => {
     // 1. Handle Web3Auth post-redirect result
-    if (hasRedirectResult()) {
+    // hasRedirectResult() checks for URL params (works for email OTP).
+    // For OAuth (Google/Twitter/etc.) the params may not be in the URL — Web3Auth
+    // stores the session internally. We fall back to checking whether we saved a
+    // pre-login path, which is only set immediately before a redirect is initiated.
+    const hasPendingRedirect = hasRedirectResult() || !!sessionStorage.getItem('dehub_pre_login_path');
+    if (hasPendingRedirect) {
       set({ isConnecting: true });
       try {
         const web3auth = await initWeb3Auth();
         if (web3auth.connected && web3auth.provider) {
-          // AA provider only supports Base (0x2105). After an email redirect the session
+          // AA provider only supports Base (0x2105). After an email/OAuth redirect the session
           // can land on Ethereum mainnet (0x1), causing "Account Abstraction is not
           // supported for the chain 0x1". Switch to Base first, then fetch accounts.
           try {
@@ -278,10 +283,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             set({ isLoading: false, isConnecting: false });
             return;
           }
+        } else {
+          // OAuth was cancelled or session was not created — clear the redirect marker
+          // so we don't re-enter this block on every subsequent page load.
+          sessionStorage.removeItem('dehub_pre_login_path');
         }
       } catch (err) {
         console.error('[Auth] redirect result processing failed:', err);
         toast.error('Login failed after redirect. Please try again.');
+        // Clear the pending-redirect marker so we don't retry on every page load
+        sessionStorage.removeItem('dehub_pre_login_path');
       } finally {
         set({ isConnecting: false });
       }
