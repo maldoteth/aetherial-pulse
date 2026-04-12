@@ -1948,6 +1948,51 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_addresses: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          city: string
+          country: string
+          created_at: string
+          full_name: string
+          id: string
+          is_default: boolean
+          label: string
+          postal_code: string
+          state: string
+          wallet_address: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          city: string
+          country: string
+          created_at?: string
+          full_name: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          postal_code: string
+          state?: string
+          wallet_address: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          postal_code?: string
+          state?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       space_participants: {
         Row: {
           avatar: string | null
@@ -2021,6 +2066,192 @@ export type Database = {
           created_at?: string
           id?: string
           tx_hash?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      store_listings: {
+        Row: {
+          category: string
+          condition: string
+          created_at: string
+          description: string | null
+          digital_file_url: string | null
+          id: string
+          images: string[] | null
+          is_digital: boolean
+          price: number
+          shipping_info: string | null
+          status: string
+          stock_quantity: number | null
+          store_id: string
+          title: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          category?: string
+          condition?: string
+          created_at?: string
+          description?: string | null
+          digital_file_url?: string | null
+          id?: string
+          images?: string[] | null
+          is_digital?: boolean
+          price?: number
+          shipping_info?: string | null
+          status?: string
+          stock_quantity?: number | null
+          store_id: string
+          title: string
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          category?: string
+          condition?: string
+          created_at?: string
+          description?: string | null
+          digital_file_url?: string | null
+          id?: string
+          images?: string[] | null
+          is_digital?: boolean
+          price?: number
+          shipping_info?: string | null
+          status?: string
+          stock_quantity?: number | null
+          store_id?: string
+          title?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_listings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_orders: {
+        Row: {
+          amount: number
+          buyer_address: string
+          created_at: string
+          id: string
+          listing_id: string
+          notes: string | null
+          seller_address: string
+          shipping_address: string | null
+          status: string
+          tx_hash: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          buyer_address: string
+          created_at?: string
+          id?: string
+          listing_id: string
+          notes?: string | null
+          seller_address: string
+          shipping_address?: string | null
+          status?: string
+          tx_hash: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          buyer_address?: string
+          created_at?: string
+          id?: string
+          listing_id?: string
+          notes?: string | null
+          seller_address?: string
+          shipping_address?: string | null
+          status?: string
+          tx_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "store_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          listing_id: string
+          rating: number
+          reviewer_address: string
+          seller_response: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id: string
+          rating?: number
+          reviewer_address: string
+          seller_response?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+          rating?: number
+          reviewer_address?: string
+          seller_response?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_reviews_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "store_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          avatar_url: string | null
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
           wallet_address?: string
         }
         Relationships: []
