@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeDehubPlatformApi } from '@/lib/api/dehub/social-edge-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast as sonnerToast } from 'sonner';
 import { simpleCallCheck, testCallDetection, debugAllCalls } from '@/utils/simple-call-check';
@@ -206,7 +207,11 @@ export const useCall = (): UseCallReturn => {
         // Other side hung up — auto end on our side
         const call = currentCallRef.current;
         if (call) {
-          await supabase.from('call_sessions').update({ status: 'ended' }).eq('id', call.id);
+          await invokeDehubPlatformApi({
+            action: 'call.updateStatus',
+            callId: call.id,
+            status: 'ended',
+          }).catch(() => {});
         }
         await cleanupAgora();
         stopCallTimer();
@@ -265,7 +270,11 @@ export const useCall = (): UseCallReturn => {
 
     const call = currentCallRef.current;
     if (call) {
-      await supabase.from('call_sessions').update({ status: 'ended' }).eq('id', call.id);
+      await invokeDehubPlatformApi({
+        action: 'call.updateStatus',
+        callId: call.id,
+        status: 'ended',
+      }).catch(() => {});
     }
 
     setIsCallActive(false);
@@ -290,33 +299,38 @@ export const useCall = (): UseCallReturn => {
       // (simple heuristic: if they have a connected call session < 5 min, assume online)
       // We skip the complex WebRTC offline check — just try and handle failure
 
-      // Create call session in Supabase for signaling
-      const { data: session, error } = await supabase
-        .from('call_sessions')
-        .insert({
-          caller_address: userAddress,
-          recipient_address: recipientAddress,
-          call_type: callType,
-          status: 'ringing',
-        })
-        .select()
-        .single();
-
-      if (error || !session) {
-        console.error('Failed to create call session:', error);
-        callToast({ title: 'Call failed', description: 'Could not initiate call', variant: 'destructive' });
+      let session: CallSession;
+      try {
+        const res = await invokeDehubPlatformApi<{ session: CallSession }>({
+          action: 'call.start',
+          recipientAddress: recipientAddress.toLowerCase(),
+          callType,
+        });
+        if (!res.session) throw new Error('No session');
+        session = res.session;
+      } catch (err) {
+        console.error('Failed to create call session:', err);
+        callToast({
+          title: 'Call failed',
+          description: err instanceof Error ? err.message : 'Could not initiate call',
+          variant: 'destructive',
+        });
         setIsConnecting(false);
         return;
       }
 
-      const callSession = session as CallSession;
+      const callSession = session;
       setCurrentCall(callSession);
       currentCallRef.current = callSession;
 
       // Join Agora channel (caller side — will publish, wait for callee)
       const joined = await joinAgoraChannel(callSession, callType);
       if (!joined) {
-        await supabase.from('call_sessions').update({ status: 'ended' }).eq('id', callSession.id);
+        await invokeDehubPlatformApi({
+          action: 'call.updateStatus',
+          callId: callSession.id,
+          status: 'ended',
+        }).catch(() => {});
         setCurrentCall(null);
         currentCallRef.current = null;
         setIsConnecting(false);
@@ -378,12 +392,25 @@ export const useCall = (): UseCallReturn => {
     setIsConnecting(true);
     setIsIncoming(false);
 
-    // Update status to connected so caller stops polling
-    await supabase.from('call_sessions').update({ status: 'connected' }).eq('id', call.id);
+    try {
+      await invokeDehubPlatformApi({
+        action: 'call.updateStatus',
+        callId: call.id,
+        status: 'connected',
+      });
+    } catch (e) {
+      console.error('acceptCall status update failed:', e);
+      setIsConnecting(false);
+      return;
+    }
 
     const joined = await joinAgoraChannel(call, call.call_type as 'audio' | 'video');
     if (!joined) {
-      await supabase.from('call_sessions').update({ status: 'ended' }).eq('id', call.id);
+      await invokeDehubPlatformApi({
+        action: 'call.updateStatus',
+        callId: call.id,
+        status: 'ended',
+      }).catch(() => {});
       setCurrentCall(null);
       currentCallRef.current = null;
       setIsConnecting(false);
@@ -395,7 +422,11 @@ export const useCall = (): UseCallReturn => {
   const rejectCall = useCallback(async () => {
     const call = currentCallRef.current;
     if (call) {
-      await supabase.from('call_sessions').update({ status: 'ended' }).eq('id', call.id);
+      await invokeDehubPlatformApi({
+        action: 'call.updateStatus',
+        callId: call.id,
+        status: 'ended',
+      }).catch(() => {});
     }
     setIsIncoming(false);
     setCurrentCall(null);

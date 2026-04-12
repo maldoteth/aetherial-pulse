@@ -375,11 +375,11 @@ export function useSendMessage(conversationId: string) {
         });
       }
 
-      // Send via Supabase insert
       return sendMessageToConversation(resolvedId, content, msgType, {
         mediaUrl: gifUrl,
         voiceDuration,
         replyToId: replyTo,
+        paymentTxHash: txHash,
       });
     },
 

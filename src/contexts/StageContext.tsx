@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeDehubPlatformApi } from '@/lib/api/dehub/social-edge-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useVoiceEffects } from '@/hooks/use-voice-effects';
@@ -188,11 +189,16 @@ export function StageProvider({ children }: { children: ReactNode }) {
             .getPublicUrl(path);
 
           if (urlData?.publicUrl) {
-            await supabase
-              .from('audio_spaces')
-              .update({ recording_url: urlData.publicUrl })
-              .eq('id', spaceId);
-            console.log('[Stage] Recording saved:', urlData.publicUrl);
+            try {
+              await invokeDehubPlatformApi({
+                action: 'stage.recording.save',
+                spaceId,
+                recordingUrl: urlData.publicUrl,
+              });
+              console.log('[Stage] Recording saved:', urlData.publicUrl);
+            } catch (e) {
+              console.error('[Stage] recording.save edge failed:', e);
+            }
           }
         } catch (err) {
           console.error('[Stage] Recording upload error:', err);
@@ -335,43 +341,25 @@ export function StageProvider({ children }: { children: ReactNode }) {
       if (!walletAddress) { toast.error('Please log in first'); return null; }
       setIsLoading(true);
       try {
-        const channelName = `stage_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-        const { data: space, error } = await supabase
-          .from('audio_spaces')
-          .insert({
-            channel_name: channelName,
-            title,
-            description,
-            host_wallet_address: walletAddress,
-            host_username: user?.username || null,
-            host_avatar: user?.avatarImageUrl || null,
-            status: 'live',
-            speaker_count: 1,
-            listener_count: 0,
-          })
-          .select()
-          .single();
-        if (error) throw error;
-
-        await supabase.from('space_participants').insert({
-          space_id: space.id,
-          wallet_address: walletAddress,
-          username: user?.username || null,
-          avatar: user?.avatarImageUrl || null,
-          role: 'host',
-          is_muted: true,
+        const res = await invokeDehubPlatformApi<{ space: AudioSpace }>({
+          action: 'stage.create',
+          title,
+          description,
+          hostUsername: user?.username || null,
+          hostAvatar: user?.avatarImageUrl || null,
         });
+        const space = res.space;
+        if (!space?.id || !space.channel_name) throw new Error('Failed to create stage');
 
-        const tokenData = await getAgoraToken(channelName, 'publisher');
+        const tokenData = await getAgoraToken(space.channel_name, 'publisher');
         if (!tokenData) {
-          await supabase.from('audio_spaces').update({ status: 'ended' }).eq('id', space.id);
+          await invokeDehubPlatformApi({ action: 'stage.rollbackCreate', spaceId: space.id }).catch(() => {});
           throw new Error('Failed to get audio token');
         }
 
         const connected = await initializeAgora(tokenData, 'host');
         if (!connected) {
-          await supabase.from('audio_spaces').update({ status: 'ended' }).eq('id', space.id);
+          await invokeDehubPlatformApi({ action: 'stage.rollbackCreate', spaceId: space.id }).catch(() => {});
           throw new Error('Failed to connect to audio');
         }
 
@@ -402,68 +390,18 @@ export function StageProvider({ children }: { children: ReactNode }) {
       if (!walletAddress) { toast.error('Please log in first'); return false; }
       setIsLoading(true);
       try {
-        const { data: space, error: spaceError } = await supabase
-          .from('audio_spaces')
-          .select('*')
-          .eq('id', spaceId)
-          .single();
-        if (spaceError || !space) throw new Error('Stage not found');
+        const joinRes = await invokeDehubPlatformApi<{ space: AudioSpace; role: string }>({
+          action: 'stage.join',
+          spaceId,
+          username: user?.username || null,
+          avatar: user?.avatarImageUrl || null,
+        });
+        const space = joinRes.space;
+        const rejoiningRole = joinRes.role as SpaceRole;
+        if (!space) throw new Error('Stage not found');
 
-        // Determine role: if this user is the host, preserve host/speaker role on rejoin
         const isHost = space.host_wallet_address === walletAddress;
-
-        // Check if user already has an active participant record (e.g. was speaker before disconnect)
-        const { data: existingParticipant } = await supabase
-          .from('space_participants')
-          .select('role')
-          .eq('space_id', spaceId)
-          .eq('wallet_address', walletAddress)
-          .is('left_at', null)
-          .maybeSingle();
-
-        const rejoiningRole = isHost
-          ? 'host'
-          : existingParticipant?.role === 'speaker' || existingParticipant?.role === 'host'
-            ? 'speaker'
-            : 'listener';
-
         const isSpeakerRole = rejoiningRole === 'host' || rejoiningRole === 'speaker';
-
-        await supabase.from('space_participants').upsert(
-          {
-            space_id: spaceId,
-            wallet_address: walletAddress,
-            username: user?.username || null,
-            avatar: user?.avatarImageUrl || null,
-            role: rejoiningRole,
-            is_muted: true,
-            left_at: null,
-          },
-          { onConflict: 'space_id,wallet_address' },
-        );
-
-        // Recount listeners from actual participants to avoid drift on rejoin
-        const { count: listenerCount } = await supabase
-          .from('space_participants')
-          .select('*', { count: 'exact', head: true })
-          .eq('space_id', spaceId)
-          .eq('role', 'listener')
-          .is('left_at', null);
-
-        const { count: speakerCount } = await supabase
-          .from('space_participants')
-          .select('*', { count: 'exact', head: true })
-          .eq('space_id', spaceId)
-          .in('role', ['host', 'speaker'])
-          .is('left_at', null);
-
-        await supabase
-          .from('audio_spaces')
-          .update({
-            listener_count: listenerCount ?? 0,
-            speaker_count: speakerCount ?? 1,
-          })
-          .eq('id', spaceId);
 
         const agoraRole = isSpeakerRole ? 'publisher' : 'subscriber';
         const tokenData = await getAgoraToken(space.channel_name, agoraRole);
@@ -512,34 +450,11 @@ export function StageProvider({ children }: { children: ReactNode }) {
       voiceEffectsHook.cleanup();
       setVoiceEffectState('none');
 
-      await supabase
-        .from('space_participants')
-        .update({ left_at: new Date().toISOString() })
-        .eq('space_id', currentSpace.id)
-        .eq('wallet_address', walletAddress);
-
-      // Recount from actual participants
-      const { count: remainingListeners } = await supabase
-        .from('space_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('space_id', currentSpace.id)
-        .eq('role', 'listener')
-        .is('left_at', null);
-
-      const { count: remainingSpeakers } = await supabase
-        .from('space_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('space_id', currentSpace.id)
-        .in('role', ['host', 'speaker'])
-        .is('left_at', null);
-
-      await supabase
-        .from('audio_spaces')
-        .update({
-          listener_count: remainingListeners ?? 0,
-          speaker_count: remainingSpeakers ?? 1,
-        })
-        .eq('id', currentSpace.id);
+      try {
+        await invokeDehubPlatformApi({ action: 'stage.leave', spaceId: currentSpace.id });
+      } catch (e) {
+        console.error('[Stage] leave edge failed:', e);
+      }
 
       setCurrentSpace(null);
       setIsConnected(false);
@@ -563,13 +478,10 @@ export function StageProvider({ children }: { children: ReactNode }) {
     hasHandledStageEndRef.current = true;
 
     try {
-      const { error: updateErr } = await supabase
-        .from('audio_spaces')
-        .update({ status: 'ended', ended_at: new Date().toISOString() })
-        .eq('id', currentSpace.id);
-
-      if (updateErr) {
-        console.warn('Direct end failed (will auto-end via trigger):', updateErr.message);
+      try {
+        await invokeDehubPlatformApi({ action: 'stage.end', spaceId: currentSpace.id });
+      } catch (updateErr) {
+        console.warn('stage.end failed (may auto-end via trigger):', updateErr);
       }
 
       await leaveSpace();
@@ -642,11 +554,11 @@ export function StageProvider({ children }: { children: ReactNode }) {
         ));
       }
       if (currentSpace && walletAddress) {
-        supabase
-          .from('space_participants')
-          .update({ is_muted: newMuted })
-          .eq('space_id', currentSpace.id)
-          .eq('wallet_address', walletAddress);
+        invokeDehubPlatformApi({
+          action: 'stage.setMuted',
+          spaceId: currentSpace.id,
+          isMuted: newMuted,
+        }).catch((e) => console.warn('[Stage] setMuted edge failed:', e));
       }
     }
   }, [isMuted, myRole, currentSpace, walletAddress]);
@@ -656,14 +568,12 @@ export function StageProvider({ children }: { children: ReactNode }) {
   const raiseHand = useCallback(async () => {
     if (!currentSpace || !walletAddress || myRole !== 'listener' || hasRaisedHand) return;
     try {
-      const { error } = await supabase.from('raise_hand_requests').insert({
-        space_id: currentSpace.id,
-        wallet_address: walletAddress,
+      await invokeDehubPlatformApi({
+        action: 'stage.raiseHand',
+        spaceId: currentSpace.id,
         username: user?.username || null,
         avatar: user?.avatarImageUrl || null,
-        status: 'pending',
       });
-      if (error) throw error;
       setHasRaisedHand(true);
       toast.success('Hand raised! Waiting for host approval.');
     } catch (err) {
@@ -675,12 +585,10 @@ export function StageProvider({ children }: { children: ReactNode }) {
   const lowerHand = useCallback(async () => {
     if (!currentSpace || !walletAddress) return;
     try {
-      await supabase
-        .from('raise_hand_requests')
-        .update({ status: 'rejected', resolved_at: new Date().toISOString() })
-        .eq('space_id', currentSpace.id)
-        .eq('wallet_address', walletAddress)
-        .eq('status', 'pending');
+      await invokeDehubPlatformApi({
+        action: 'stage.lowerHand',
+        spaceId: currentSpace.id,
+      });
       setHasRaisedHand(false);
     } catch (err) {
       console.error('Error lowering hand:', err);
@@ -693,26 +601,11 @@ export function StageProvider({ children }: { children: ReactNode }) {
     async (targetWallet: string) => {
       if (!currentSpace || myRole !== 'host') return;
       try {
-        await supabase
-          .from('raise_hand_requests')
-          .update({ status: 'approved', resolved_at: new Date().toISOString() })
-          .eq('space_id', currentSpace.id)
-          .eq('wallet_address', targetWallet)
-          .eq('status', 'pending');
-
-        await supabase
-          .from('space_participants')
-          .update({ role: 'speaker' })
-          .eq('space_id', currentSpace.id)
-          .eq('wallet_address', targetWallet);
-
-        await supabase
-          .from('audio_spaces')
-          .update({
-            speaker_count: (currentSpace.speaker_count || 1) + 1,
-            listener_count: Math.max(0, (currentSpace.listener_count || 1) - 1),
-          })
-          .eq('id', currentSpace.id);
+        await invokeDehubPlatformApi({
+          action: 'stage.approveSpeaker',
+          spaceId: currentSpace.id,
+          targetWallet,
+        });
 
         toast.success('Speaker approved');
       } catch (err) {
@@ -728,19 +621,11 @@ export function StageProvider({ children }: { children: ReactNode }) {
     async (targetWallet: string) => {
       if (!currentSpace || myRole !== 'host') return;
       try {
-        await supabase
-          .from('space_participants')
-          .update({ role: 'listener' })
-          .eq('space_id', currentSpace.id)
-          .eq('wallet_address', targetWallet);
-
-        await supabase
-          .from('audio_spaces')
-          .update({
-            speaker_count: Math.max(1, (currentSpace.speaker_count || 2) - 1),
-            listener_count: (currentSpace.listener_count || 0) + 1,
-          })
-          .eq('id', currentSpace.id);
+        await invokeDehubPlatformApi({
+          action: 'stage.removeSpeaker',
+          spaceId: currentSpace.id,
+          targetWallet,
+        });
 
         toast.success('Speaker removed');
       } catch (err) {
@@ -757,19 +642,11 @@ export function StageProvider({ children }: { children: ReactNode }) {
       if (!currentSpace || myRole !== 'host') return;
       try {
         // Directly promote listener to speaker (no hand-raise needed)
-        await supabase
-          .from('space_participants')
-          .update({ role: 'speaker' })
-          .eq('space_id', currentSpace.id)
-          .eq('wallet_address', targetWallet);
-
-        await supabase
-          .from('audio_spaces')
-          .update({
-            speaker_count: (currentSpace.speaker_count || 1) + 1,
-            listener_count: Math.max(0, (currentSpace.listener_count || 1) - 1),
-          })
-          .eq('id', currentSpace.id);
+        await invokeDehubPlatformApi({
+          action: 'stage.inviteSpeaker',
+          spaceId: currentSpace.id,
+          targetWallet,
+        });
 
         toast.success('Invited as speaker');
       } catch (err) {

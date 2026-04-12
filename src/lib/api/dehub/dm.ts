@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { DeHubUser, DeHubNFT } from './types';
+import { getAuthToken } from './core';
+import { invokeDehubPlatformApi } from './social-edge-client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -229,16 +231,12 @@ export async function createConversation(
   const otherAddr = recipientAddress.toLowerCase();
   if (!myAddr) throw new Error('Not authenticated');
 
-  // Sort addresses to ensure consistent unique constraint
-  const [a, b] = [myAddr, otherAddr].sort();
-
-  const { data, error } = await supabase
-    .from('dm_conversations')
-    .upsert({ participant_a: a, participant_b: b }, { onConflict: 'participant_a,participant_b' })
-    .select()
-    .single();
-
-  if (error) throw error;
+  const res = await invokeDehubPlatformApi<{ conversation: Record<string, string> }>({
+    action: 'dm.conversation.create',
+    recipientAddress: otherAddr,
+  });
+  const data = res.conversation;
+  if (!data?.id) throw new Error('Failed to create conversation');
 
   const otherUser: DeHubUser = {
     _id: recipientAddress,
@@ -301,35 +299,33 @@ export async function sendMessageToConversation(
   conversationId: string,
   content: string,
   msgType: DmMsgType = 'msg',
-  opts?: { mediaUrl?: string; voiceDuration?: number; replyToId?: string; tipAmount?: number }
+  opts?: {
+    mediaUrl?: string;
+    voiceDuration?: number;
+    replyToId?: string;
+    tipAmount?: number;
+    paymentTxHash?: string;
+  }
 ): Promise<DmMessage> {
   const myAddr = getWallet();
   if (!myAddr) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
-    .from('dm_messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_address: myAddr,
-      content,
-      msg_type: msgType,
-      media_url: opts?.mediaUrl,
-      voice_duration: opts?.voiceDuration,
-      reply_to_id: opts?.replyToId,
-      tip_amount: opts?.tipAmount,
-    })
-    .select()
-    .single();
+  const res = await invokeDehubPlatformApi<{ message: Record<string, unknown> }>({
+    action: 'dm.message.send',
+    conversationId,
+    content,
+    msgType,
+    mediaUrl: opts?.mediaUrl,
+    voiceDuration: opts?.voiceDuration,
+    replyToId: opts?.replyToId,
+    tipAmount: opts?.tipAmount,
+    paymentTxHash: opts?.paymentTxHash,
+  });
 
-  if (error) throw error;
+  const row = res.message;
+  if (!row) throw new Error('Failed to send message');
 
-  // Update last_message_at
-  await supabase
-    .from('dm_conversations')
-    .update({ last_message_at: new Date().toISOString() })
-    .eq('id', conversationId);
-
-  return dbMsgToDmMessage(data, myAddr);
+  return dbMsgToDmMessage(row, myAddr);
 }
 
 export async function uploadAndSendMedia(
@@ -342,9 +338,15 @@ export async function uploadAndSendMedia(
   const formData = new FormData();
   formData.append('file', file, file.name);
 
+  const token = getAuthToken();
+  if (!token) throw new Error('Not authenticated');
+
   const { data, error } = await supabase.functions.invoke('dm-upload-media', {
     body: formData,
-    headers: { 'x-wallet-address': walletAddress },
+    headers: {
+      'x-wallet-address': walletAddress,
+      'x-dehub-token': token,
+    },
   });
 
   if (error) throw error;
@@ -354,6 +356,7 @@ export async function uploadAndSendMedia(
     mediaUrl: data.url,
     voiceDuration: opts?.voiceDuration,
     replyToId: opts?.replyTo,
+    paymentTxHash: opts?.txHash,
   });
 }
 
@@ -364,9 +367,15 @@ export async function uploadChatImage(file: File): Promise<{ url: string }> {
   const formData = new FormData();
   formData.append('file', file, file.name);
 
+  const token = getAuthToken();
+  if (!token) throw new Error('Not authenticated');
+
   const { data, error } = await supabase.functions.invoke('dm-upload-media', {
     body: formData,
-    headers: { 'x-wallet-address': walletAddress },
+    headers: {
+      'x-wallet-address': walletAddress,
+      'x-dehub-token': token,
+    },
   });
 
   if (error) throw error;
@@ -378,14 +387,12 @@ export async function markConversationAsRead(conversationId: string): Promise<{ 
   const myAddr = getWallet();
   if (!myAddr || !conversationId) return { success: false };
 
-  await supabase
-    .from('dm_messages')
-    .update({ is_read: true })
-    .eq('conversation_id', conversationId)
-    .neq('sender_address', myAddr)
-    .eq('is_read', false);
-
-  return { success: true };
+  try {
+    await invokeDehubPlatformApi({ action: 'dm.messages.markRead', conversationId });
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
 }
 
 // ─── User search ──────────────────────────────────────────────────────────────
