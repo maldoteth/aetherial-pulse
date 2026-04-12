@@ -459,16 +459,7 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
           chains: [chainConfig],
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
           sessionTime: 86400,
-          // uxMode MUST be set here in uiConfig — the auth connector reads it
-          // from coreOptions.uiConfig.uxMode at init time and ignores any uxMode
-          // passed later via connectTo() params. Default is POPUP which gets blocked
-          // by browsers on production hosts.
-          // forceRedirectMode is set when a popup-blocked error is caught, so even
-          // on localhost we switch to redirect if the user's browser blocks popups.
-          uiConfig: {
-            modalZIndex: "99999",
-            uxMode: (allowSocialLoginPopupFlow() && !forceRedirectMode) ? UX_MODE.POPUP : UX_MODE.REDIRECT,
-          } as any,
+          uiConfig: { modalZIndex: "99999" } as any,
           walletServicesConfig: {
             confirmationStrategy: CONFIRMATION_STRATEGY.AUTO_APPROVE,
             modalZIndex: "99999",
@@ -607,6 +598,24 @@ async function connectToSocialProviderInternal(
   const uxMode = useRedirect ? UX_MODE.REDIRECT : UX_MODE.POPUP;
   if (useRedirect) {
     console.log('[Web3Auth] Social login using full-page redirect (avoids COOP / popup issues)');
+  }
+
+  // Web3Auth v10: uxMode in connectTo() params is IGNORED by the auth connector —
+  // it only reads uxMode from its own authOptions (set at init time, defaulting to POPUP).
+  // We must mutate authOptions.uxMode on the live connector before each connectTo call
+  // so the correct redirect/popup behaviour is used.
+  try {
+    const authConnector = (web3auth as any).getConnector?.(WALLET_CONNECTORS.AUTH);
+    if (authConnector?.authOptions) {
+      authConnector.authOptions.uxMode = uxMode;
+      // authInstance.options.uxMode controls what uxMode is sent to Web3Auth's servers
+      if (authConnector.authInstance?.options) {
+        authConnector.authInstance.options.uxMode = uxMode;
+      }
+      console.log(`[Web3Auth] Auth connector uxMode set to: ${uxMode}`);
+    }
+  } catch (connectorErr) {
+    console.warn('[Web3Auth] Could not set connector uxMode (non-fatal):', connectorErr);
   }
 
   // v10 API: `authConnection` replaced `loginProvider`; uxMode/redirectUrl are top-level.
