@@ -218,18 +218,29 @@ let cachedClientId: string | null = null;
 let cachedPimlicoConfig: { bundlerUrl: string; paymasterUrl: string } | null = null;
 
 /**
- * Clear Web3Auth/Torus persisted session from storage to prevent stale "connected" state
+ * Clear Web3Auth/Torus persisted session from storage to prevent stale "connected" state.
+ *
+ * IMPORTANT: 'auth_store' MUST be in this list.
+ * @web3auth/auth stores the Sapphire sessionId under localStorage key "auth_store"
+ * (via BrowserStorage with _storageBaseKey = "auth_store"). Without clearing this,
+ * the next Auth.init() will find the old sessionId, contact the Sapphire server,
+ * restore the old session (Google's privKey), and all subsequent logins with ANY
+ * provider will return the SAME private key as the first login — session bleeding.
  */
 function clearWeb3AuthStorage(): void {
   if (typeof window === 'undefined') return;
-  // 'openlogin' is Web3Auth v10's internal auth layer — must be included so
-  // cached OAuth sessions don't silently re-authenticate on the next login click.
-  const prefixes = ['torus', 'web3auth', 'tkey', 'openlogin'];
+  const prefixes = ['torus', 'web3auth', 'tkey', 'openlogin', 'auth_store'];
+  // Exclude our own custom dehub_* keys — they contain 'web3auth' as a substring
+  // (e.g. 'dehub_web3auth_client_id') and would be wrongly cleared by the prefix check.
+  const excludePrefixes = ['dehub_'];
   for (const storage of [localStorage, sessionStorage]) {
     const keysToRemove: string[] = [];
     for (let i = 0; i < storage.length; i++) {
       const key = storage.key(i);
-      if (key && prefixes.some(p => key.toLowerCase().includes(p))) {
+      if (!key) continue;
+      const lk = key.toLowerCase();
+      if (excludePrefixes.some(p => lk.startsWith(p))) continue;
+      if (prefixes.some(p => lk.includes(p))) {
         keysToRemove.push(key);
       }
     }
@@ -238,6 +249,27 @@ function clearWeb3AuthStorage(): void {
       console.log('[Web3Auth] Cleared storage keys:', keysToRemove);
     }
   }
+}
+
+/**
+ * Properly invalidate the Auth (openlogin) session — bypasses the connector's status check.
+ */
+async function clearAuthInstance(authInstance: any): Promise<void> {
+  if (!authInstance) return;
+  try {
+    await authInstance.logout();
+    console.log('[Web3Auth] authInstance.logout() succeeded — Sapphire session invalidated');
+  } catch (e) {
+    try { authInstance.state = {}; } catch {}
+    console.warn('[Web3Auth] authInstance.logout() failed, state cleared manually:', String(e).slice(0, 80));
+  }
+  try {
+    const BrowserStorageClass = authInstance.currentStorage?.constructor;
+    if (BrowserStorageClass?.instanceMap instanceof Map) {
+      BrowserStorageClass.instanceMap.clear();
+      console.log('[Web3Auth] BrowserStorage.instanceMap cleared');
+    }
+  } catch {}
 }
 
 /**
@@ -456,10 +488,14 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
 
         const initOptions: any = {
           clientId,
-          chains: [chainConfig],
+          chainConfig, // Explicitly set the default chain to Base (0x2105)
+          chains: [chainConfig], // Pass as array for v10 plural support
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
           sessionTime: 86400,
-          uiConfig: { modalZIndex: "99999" } as any,
+          uiConfig: { 
+            modalZIndex: "99999",
+            uxMode: isMobileDevice() ? UX_MODE.REDIRECT : UX_MODE.POPUP,
+          } as any,
           walletServicesConfig: {
             confirmationStrategy: CONFIRMATION_STRATEGY.AUTO_APPROVE,
             modalZIndex: "99999",
@@ -481,10 +517,6 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
         web3authInstance = new Web3Auth(initOptions);
 
         // If we're returning from a login redirect, tell the auth connector BEFORE init()
-        // so its init() processes the redirect-result URL params and sets connected = true.
-        // (The default connector uxMode is POPUP; in popup mode init() ignores redirect params.)
-        // This is safe — mutating authOptions on the connector object, NOT uiConfig.uxMode
-        // in the Web3Auth constructor (which breaks init entirely).
         const hasPendingRedirect =
           hasRedirectResult() || !!sessionStorage.getItem('dehub_pre_login_path');
         if (hasPendingRedirect) {
@@ -509,7 +541,9 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
           )
         ]);
 
-        // Polling for ready state if stuck in not_ready (faster: 200ms × 15 = 3s max)
+        console.log(`[Web3Auth] Initialized successfully. Status: ${web3authInstance.status}, Connected: ${web3authInstance.connected}`);
+
+        // Polling for ready state if stuck in not_ready
         if (web3authInstance.status === "not_ready") {
           for (let i = 0; i < 15; i++) {
             await new Promise(r => setTimeout(r, 200));
@@ -645,8 +679,8 @@ async function connectToSocialProviderInternal(
   const params: any = {
     authConnection: authConnection,
     uxMode,
-    // Keep redirect URL at origin so dashboard whitelist needs only domain, not every path.
-    redirectUrl: window.location.origin,
+    // Use origin + pathname to ensure better compatibility with dashboard whitelists
+    redirectUrl: window.location.origin + window.location.pathname,
   };
 
   // Always pass provider-specific options to force the account picker / re-login screen.
@@ -657,13 +691,27 @@ async function connectToSocialProviderInternal(
     ...(loginHint ? { login_hint: loginHint } : {}),
   };
 
-  savePreLoginPath();
+  // Pre-flight: clear any stale openlogin/Auth session before starting a new OAuth flow.
+  if (!skipConnectedCheck) {
+    const authConnector = (web3auth as any).getConnector?.(WALLET_CONNECTORS.AUTH);
+    if (authConnector) {
+      try {
+        await authConnector.disconnect?.();
+      } catch (connErr) {
+        console.warn('[Web3Auth] Pre-flight: auth connector disconnect failed (non-blocking):', String(connErr).slice(0, 80));
+      }
+      if (authConnector.authInstance) {
+        await clearAuthInstance(authConnector.authInstance);
+      }
+    }
+    clearWeb3AuthStorage();
+  }
 
   try {
     const provider = await web3auth.connectTo(WALLET_CONNECTORS.AUTH, params);
     lastConnectedConnector = WALLET_CONNECTORS.AUTH;
     return provider;
-  } catch (err) {
+  } catch (err: any) {
     const errText = String(err).toLowerCase();
     if (errText.includes("already connecting")) {
       console.warn("[Web3Auth] connectTo raced with internal connect — waiting and retrying once");
@@ -673,7 +721,8 @@ async function connectToSocialProviderInternal(
       lastConnectedConnector = WALLET_CONNECTORS.AUTH;
       return provider;
     }
-      if (isPopupBlockedError(err) && !forceRedirectMode) {
+
+    if (isPopupBlockedError(err) && !forceRedirectMode) {
       console.warn('[Web3Auth] Popup blocked! Switching to REDIRECT mode...');
       forceRedirectMode = true;
       resetWeb3AuthState();
@@ -682,8 +731,62 @@ async function connectToSocialProviderInternal(
       params.uxMode = UX_MODE.REDIRECT;
       return await retryAuth.connectTo(WALLET_CONNECTORS.AUTH, params);
     }
+
+    // Fallback: If DKG completed but WsEmbed verify failed, recover via private key.
+    // This handles cases where Web3Auth's server rejects internal signatures (Safe smart account issue).
+    const privKey = extractPrivKeyFromConnector(web3auth);
+    if (privKey) {
+      console.log('[Web3Auth] Connection failed but key recovered — constructing fallback provider...');
+      const authConnector = (web3auth as any).getConnector?.(WALLET_CONNECTORS.AUTH);
+      if (authConnector?.authInstance) {
+        await clearAuthInstance(authConnector.authInstance);
+      }
+      web3authInstance = null;
+      isInitializing = false;
+      initPromise = null;
+      clearWeb3AuthStorage();
+      const eoaProvider = await buildProviderFromPrivKey(privKey);
+      lastConnectedConnector = WALLET_CONNECTORS.AUTH;
+      return eoaProvider;
+    }
+
     throw err;
   }
+}
+
+/**
+ * Extract the reconstructed private key from the auth connector's authInstance.
+ */
+function extractPrivKeyFromConnector(w3a: Web3Auth): string | null {
+  try {
+    const connector = (w3a as any).getConnector?.(WALLET_CONNECTORS.AUTH);
+    const authInstance = connector?.authInstance;
+    const privKey = authInstance?.privKey || authInstance?.coreKitKey;
+    return privKey && privKey.length >= 32 ? privKey : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a full Ethereum-compatible IProvider from a raw hex private key.
+ */
+async function buildProviderFromPrivKey(privKey: string): Promise<IProvider> {
+  const pkProvider = new EthereumPrivateKeyProvider({
+    config: {
+      chainConfig: {
+        chainNamespace: CHAIN_NAMESPACES.EIP155,
+        chainId: "0x2105",
+        rpcTarget: "https://base-rpc.publicnode.com",
+        displayName: "Base Mainnet",
+        blockExplorerUrl: "https://basescan.org",
+        ticker: "ETH",
+        tickerName: "Ethereum",
+      },
+    },
+  });
+  await pkProvider.setupProvider(privKey);
+  return pkProvider;
 }
 
 export async function connectToSocialProvider(
