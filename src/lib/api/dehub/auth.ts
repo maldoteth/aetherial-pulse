@@ -3,6 +3,7 @@
  * Auth is handled via Web3Auth/Wagmi; these functions are stubs.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { invokeDehubSocialApi } from './social-edge-client';
 import { setAuthToken, setRefreshToken, setTokenExpiresAt, getRefreshToken, getAuthToken, clearAuthSession } from './core';
 import type { AuthResponse } from './types';
 
