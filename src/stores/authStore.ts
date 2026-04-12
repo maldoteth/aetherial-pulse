@@ -68,6 +68,7 @@ export interface AuthState {
    */
   disconnect: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  patchUser: (patch: Partial<DeHubUser>) => void;
 
   /** Boot: restore session from localStorage + process Web3Auth redirect if present */
   boot: () => Promise<void>;
@@ -146,6 +147,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.setItem('dehub_user', JSON.stringify(normalizedUser));
       set({ requiresUsername: !normalizedUser.username || !normalizedUser.displayName });
     } catch { /* noop */ }
+  },
+
+  patchUser: (patch) => {
+    const { user } = get();
+    if (!user) return;
+    const patched = { ...user, ...patch };
+    set({ user: patched });
+    localStorage.setItem('dehub_user', JSON.stringify(patched));
   },
 
   connectWithProvider: async (provider) => {
