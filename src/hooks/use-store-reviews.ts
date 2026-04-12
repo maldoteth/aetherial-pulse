@@ -74,6 +74,6 @@ export function useCreateReview() {
 export function useListingAvgRating(listingId: string | undefined) {
   const { data: reviews } = useListingReviews(listingId);
   if (!reviews || reviews.length === 0) return { avg: 0, count: 0 };
-  const avg = reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length;
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
   return { avg, count: reviews.length };
 }

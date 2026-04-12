@@ -1,3 +1,9 @@
+/**
+ * Edit Listing Drawer
+ * ====================
+ * Drawer for editing an existing store listing.
+ */
+
 import { useState, useEffect } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -74,7 +80,10 @@ export function EditListingDrawer({ open, onClose, listing }: Props) {
   };
 
   const handleSubmit = () => {
-    if (!title.trim() || !price) { toast.error('Title and price are required'); return; }
+    if (!title.trim() || !price) {
+      toast.error('Title and price are required');
+      return;
+    }
     updateListing.mutate({
       id: listing.id,
       title: title.trim(),
@@ -87,14 +96,19 @@ export function EditListingDrawer({ open, onClose, listing }: Props) {
       condition,
       shipping_info: shippingInfo.trim() || null,
     }, {
-      onSuccess: () => { toast.success('Listing updated!'); onClose(); },
+      onSuccess: () => {
+        toast.success('Listing updated!');
+        onClose();
+      },
     });
   };
 
   return (
     <Drawer open={open} onOpenChange={v => !v && onClose()}>
-      <DrawerContent glass className="border-t border-white/10">
-        <DrawerHeader><DrawerTitle className="text-white">Edit Listing</DrawerTitle></DrawerHeader>
+      <DrawerContent className="border-t border-white/10 bg-black/40 backdrop-blur-2xl">
+        <DrawerHeader>
+          <DrawerTitle className="text-white">Edit Listing</DrawerTitle>
+        </DrawerHeader>
         <div className="px-4 pb-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
             <Label className="text-zinc-300">Title *</Label>
@@ -119,7 +133,9 @@ export function EditListingDrawer({ open, onClose, listing }: Props) {
               <Label className="text-zinc-300">Category</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-white/10">{CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="text-white hover:bg-white/10">{c.label}</SelectItem>)}</SelectContent>
+                <SelectContent className="bg-zinc-900 border-white/10">
+                  {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="text-white hover:bg-white/10">{c.label}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -144,13 +160,16 @@ export function EditListingDrawer({ open, onClose, listing }: Props) {
               <Input value={shippingInfo} onChange={e => setShippingInfo(e.target.value)} placeholder="e.g. Free worldwide shipping" className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500" />
             </div>
           )}
+
           <div>
             <Label className="text-zinc-300">Images (up to 5)</Label>
             <div className="flex flex-wrap gap-2 mt-1">
               {images.map((url, i) => (
                 <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10">
                   <img src={url} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl"><X className="w-3 h-3 text-white" /></button>
+                  <button onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl">
+                    <X className="w-3 h-3 text-white" />
+                  </button>
                 </div>
               ))}
               {images.length < 5 && (
@@ -161,6 +180,7 @@ export function EditListingDrawer({ open, onClose, listing }: Props) {
               )}
             </div>
           </div>
+
           <Button onClick={handleSubmit} disabled={updateListing.isPending} className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10">
             {updateListing.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Save Changes

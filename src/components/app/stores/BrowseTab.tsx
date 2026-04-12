@@ -1,3 +1,9 @@
+/**
+ * Browse Tab
+ * ===========
+ * Public marketplace grid with category filters, search, sort, and price range.
+ */
+
 import { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -61,8 +67,15 @@ export function BrowseTab() {
     setMaxPrice(preset.max === Infinity ? '' : String(preset.max));
   };
 
-  const clearPrice = () => { setMinPrice(''); setMaxPrice(''); };
-  const clearAll = () => { clearPrice(); setSort('newest'); };
+  const clearPrice = () => {
+    setMinPrice('');
+    setMaxPrice('');
+  };
+
+  const clearAll = () => {
+    clearPrice();
+    setSort('newest');
+  };
 
   const priceLabel = hasPriceFilter
     ? `$${minPrice || '0'}${maxPrice ? ` – $${maxPrice}` : '+'}`
@@ -70,31 +83,43 @@ export function BrowseTab() {
 
   return (
     <div className="space-y-4">
+      {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search listings..." className="pl-9 bg-black/60 backdrop-blur-2xl border-white/10 rounded-xl text-white placeholder:text-zinc-500" />
+        <Input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search listings..."
+          className="pl-9 bg-black/60 backdrop-blur-2xl border-white/10 rounded-xl text-white placeholder:text-zinc-500"
+        />
       </div>
 
+      {/* Category chips + filter button */}
       <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar items-center">
         {CATEGORIES.map(c => (
           <LiquidGlassBubble
             key={c.value}
-            shimmer noBorder
+            shimmer
+            noBorder
             onClick={() => setCategory(c.value)}
             className={`cursor-pointer flex-shrink-0 [&>div]:!rounded-xl [&>div]:!h-full [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center [&>div]:before:!rounded-xl [&>div]:after:!rounded-xl ${
               category === c.value ? 'ring-1 ring-primary/50' : 'opacity-60'
             }`}
             style={{ height: '32px', width: 'auto' }}
           >
-            <span className="text-white text-xs font-medium px-3 whitespace-nowrap">{c.label}</span>
+            <span className="text-white text-xs font-medium px-3 whitespace-nowrap">
+              {c.label}
+            </span>
           </LiquidGlassBubble>
         ))}
 
+        {/* Filter/Sort button */}
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
           <PopoverTrigger asChild>
             <div className="flex-shrink-0">
               <LiquidGlassBubble
-                shimmer noBorder
+                shimmer
+                noBorder
                 onClick={() => setFilterOpen(!filterOpen)}
                 className={`cursor-pointer [&>div]:!rounded-xl [&>div]:!h-full [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center [&>div]:before:!rounded-xl [&>div]:after:!rounded-xl ${
                   hasActiveFilters ? 'ring-1 ring-primary/50' : 'opacity-60'
@@ -103,67 +128,120 @@ export function BrowseTab() {
               >
                 <span className="flex items-center gap-1.5 text-white text-xs font-medium px-3 whitespace-nowrap">
                   <SlidersHorizontal className="w-3.5 h-3.5" />
-                  {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                  {hasActiveFilters && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  )}
                 </span>
               </LiquidGlassBubble>
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-72 bg-black/80 backdrop-blur-2xl border-white/10 p-4 space-y-4" align="end">
+            {/* Sort */}
             <div className="space-y-2">
               <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Sort By</p>
               <div className="flex flex-wrap gap-1.5">
                 {SORT_OPTIONS.map(o => (
-                  <button key={o.value} onClick={() => setSort(o.value)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${sort === o.value ? 'bg-white/15 text-white' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}>
+                  <button
+                    key={o.value}
+                    onClick={() => setSort(o.value)}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                      sort === o.value
+                        ? 'bg-white/15 text-white'
+                        : 'bg-white/5 text-muted-foreground hover:bg-white/10'
+                    }`}
+                  >
                     {o.label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Price range */}
             <div className="space-y-2">
               <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Price Range (USD)</p>
               <div className="flex flex-wrap gap-1.5">
                 {PRICE_PRESETS.map(p => (
-                  <button key={p.label} onClick={() => applyPreset(p)} className={`px-2 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${minPrice === String(p.min) && (p.max === Infinity ? maxPrice === '' : maxPrice === String(p.max)) ? 'bg-white/15 text-white' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}>
+                  <button
+                    key={p.label}
+                    onClick={() => applyPreset(p)}
+                    className={`px-2 py-1.5 rounded-lg text-[10px] font-medium transition-colors ${
+                      minPrice === String(p.min) && (p.max === Infinity ? maxPrice === '' : maxPrice === String(p.max))
+                        ? 'bg-white/15 text-white'
+                        : 'bg-white/5 text-muted-foreground hover:bg-white/10'
+                    }`}
+                  >
                     {p.label}
                   </button>
                 ))}
               </div>
+
+              {/* Custom inputs */}
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <Label className="text-[10px] text-zinc-400">Min</Label>
-                  <Input type="number" placeholder="0" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="h-8 text-xs bg-white/5 border-white/10" />
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={minPrice}
+                    onChange={e => setMinPrice(e.target.value)}
+                    className="h-8 text-xs bg-white/5 border-white/10"
+                  />
                 </div>
                 <span className="text-zinc-500 mt-4">–</span>
                 <div className="flex-1">
                   <Label className="text-[10px] text-zinc-400">Max</Label>
-                  <Input type="number" placeholder="Any" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="h-8 text-xs bg-white/5 border-white/10" />
+                  <Input
+                    type="number"
+                    placeholder="Any"
+                    value={maxPrice}
+                    onChange={e => setMaxPrice(e.target.value)}
+                    className="h-8 text-xs bg-white/5 border-white/10"
+                  />
                 </div>
               </div>
             </div>
+
+            {/* Actions */}
             <div className="flex gap-2 pt-1">
-              <Button size="sm" variant="ghost" onClick={clearAll} className="flex-1 text-xs h-7 text-muted-foreground">Reset</Button>
-              <Button size="sm" onClick={() => setFilterOpen(false)} className="flex-1 text-xs h-7">Done</Button>
+              <Button size="sm" variant="ghost" onClick={clearAll} className="flex-1 text-xs h-7 text-muted-foreground">
+                Reset
+              </Button>
+              <Button size="sm" onClick={() => setFilterOpen(false)} className="flex-1 text-xs h-7">
+                Done
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
       </div>
 
+      {/* Active filter chips */}
       {hasActiveFilters && (
         <div className="flex items-center gap-2 flex-wrap">
           {sort !== 'newest' && (
-            <button onClick={() => setSort('newest')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-white">
-              {SORT_OPTIONS.find(o => o.value === sort)?.label}<X className="w-3 h-3" />
+            <button
+              onClick={() => setSort('newest')}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-white"
+            >
+              {SORT_OPTIONS.find(o => o.value === sort)?.label}
+              <X className="w-3 h-3" />
             </button>
           )}
           {hasPriceFilter && (
-            <button onClick={clearPrice} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-white">
-              {priceLabel}<X className="w-3 h-3" />
+            <button
+              onClick={clearPrice}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-white"
+            >
+              {priceLabel}
+              <X className="w-3 h-3" />
             </button>
           )}
-          <button onClick={clearAll} className="text-[11px] text-muted-foreground hover:text-white transition-colors">Clear all</button>
+          <button onClick={clearAll} className="text-[11px] text-muted-foreground hover:text-white transition-colors">
+            Clear all
+          </button>
         </div>
       )}
 
+      {/* Grid */}
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -183,12 +261,20 @@ export function BrowseTab() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filteredListings.map((listing: any) => (
-            <StoreListingCard key={listing.id} listing={listing} onClick={() => setSelectedListing(listing)} />
+            <StoreListingCard
+              key={listing.id}
+              listing={listing}
+              onClick={() => setSelectedListing(listing)}
+            />
           ))}
         </div>
       )}
 
-      <ListingDetailDrawer listing={selectedListing} open={!!selectedListing} onClose={() => setSelectedListing(null)} />
+      <ListingDetailDrawer
+        listing={selectedListing}
+        open={!!selectedListing}
+        onClose={() => setSelectedListing(null)}
+      />
     </div>
   );
 }

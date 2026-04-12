@@ -1,4 +1,10 @@
-import { useState, useEffect } from 'react';
+/**
+ * Edit Store Drawer
+ * ==================
+ * Allows store owner to edit name, description, avatar, and banner.
+ */
+
+import { useState, useEffect, useRef } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,6 +31,8 @@ export function EditStoreDrawer({ store, open, onClose }: Props) {
   const [bannerUrl, setBannerUrl] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (store) {
@@ -60,46 +68,74 @@ export function EditStoreDrawer({ store, open, onClose }: Props) {
       description: description.trim(),
       avatar_url: avatarUrl || null,
       banner_url: bannerUrl || null,
-    }, { onSuccess: onClose });
+    } as any, { onSuccess: () => onClose() });
   };
 
   return (
     <Drawer open={open} onOpenChange={v => !v && onClose()}>
       <DrawerContent className={GLASS_STYLES.drawer}>
-        <DrawerHeader><DrawerTitle>Edit Store</DrawerTitle></DrawerHeader>
+        <DrawerHeader>
+          <DrawerTitle>Edit Store</DrawerTitle>
+        </DrawerHeader>
         <div className="px-4 pb-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {/* Banner */}
           <div>
-            <Label className="text-zinc-300 text-xs">Banner</Label>
-            <label className="block mt-1 relative w-full aspect-[3/1] rounded-xl overflow-hidden bg-white/5 border border-white/10 cursor-pointer group">
-              {bannerUrl ? <img src={bannerUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-gradient-to-br from-white/5 to-white/[0.02] flex items-center justify-center"><Camera className="w-6 h-6 text-zinc-500" /></div>}
+            <Label className="text-zinc-300 text-xs mb-1.5 block">Banner Image</Label>
+            <div
+              onClick={() => bannerInputRef.current?.click()}
+              className="relative w-full aspect-[3/1] rounded-xl overflow-hidden bg-white/5 border border-white/10 cursor-pointer group"
+            >
+              {bannerUrl ? (
+                <img src={bannerUrl} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-white/5 to-white/[0.02]" />
+              )}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 {uploadingBanner ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Camera className="w-5 h-5 text-white" />}
               </div>
-              <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'banner')} />
-            </label>
+            </div>
+            <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'banner')} />
           </div>
 
-          {/* Avatar + Name row */}
-          <div className="flex items-start gap-4">
-            <label className="relative w-16 h-16 rounded-full overflow-hidden bg-white/10 border border-white/10 cursor-pointer group shrink-0">
-              {avatarUrl ? <img src={avatarUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center"><Store className="w-6 h-6 text-zinc-500" /></div>}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
-                {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Camera className="w-4 h-4 text-white" />}
+          {/* Avatar */}
+          <div className="flex items-center gap-4">
+            <div>
+              <Label className="text-zinc-300 text-xs mb-1.5 block">Avatar</Label>
+              <div
+                onClick={() => avatarInputRef.current?.click()}
+                className="relative w-16 h-16 rounded-full overflow-hidden bg-white/10 border border-white/10 cursor-pointer group"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Store className="w-6 h-6 text-zinc-500" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
+                  {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Camera className="w-4 h-4 text-white" />}
+                </div>
               </div>
-              <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'avatar')} />
-            </label>
+              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'avatar')} />
+            </div>
             <div className="flex-1">
               <Label className="text-zinc-300 text-xs">Store Name *</Label>
               <Input value={name} onChange={e => setName(e.target.value)} className="bg-white/5 border-white/10 text-primary-foreground" />
             </div>
           </div>
 
+          {/* Description */}
           <div>
             <Label className="text-zinc-300 text-xs">Description</Label>
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} className="bg-white/5 border-white/10 text-primary-foreground min-h-[80px]" />
+            <Textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="What do you sell?"
+              className="bg-white/5 border-white/10 min-h-[80px] resize-none text-primary-foreground"
+            />
           </div>
 
+          {/* Save */}
           <LiquidGlassBubble2
             label="Save Changes"
             loading={updateStore.isPending}

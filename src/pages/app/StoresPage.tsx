@@ -1,3 +1,9 @@
+/**
+ * Stores Page
+ * ============
+ * Peer-to-peer marketplace: Browse listings and manage your store.
+ */
+
 import { useState } from 'react';
 import { Store, ShoppingBag, Plus, PackagePlus } from 'lucide-react';
 import { SEOHead } from '@/components/SEOHead';
@@ -27,6 +33,7 @@ export default function StoresPage() {
           <h1 className="text-xl font-bold text-muted">Stores</h1>
         </div>
 
+        {/* Tab buttons + create menu */}
         <div className="flex items-center gap-2">
           <LiquidGlassBubble2
             label="Browse"

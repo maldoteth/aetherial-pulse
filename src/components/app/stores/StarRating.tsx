@@ -1,3 +1,7 @@
+/**
+ * StarRating — Interactive & display star rating component
+ */
+
 import { useState } from 'react';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -44,7 +48,8 @@ export function StarRating({ value, onChange, size = 'md', readonly = false, sho
                 <Star
                   className={cn(
                     SIZES[size],
-                    'absolute inset-0 text-amber-400 fill-amber-400 transition-colors'
+                    'absolute inset-0 text-amber-400 fill-amber-400 transition-colors',
+                    halfFilled && 'clip-half'
                   )}
                   style={halfFilled ? { clipPath: 'inset(0 50% 0 0)' } : undefined}
                 />

@@ -1,3 +1,9 @@
+/**
+ * Store Listing Card
+ * ===================
+ * Grid card for a single listing in the browse view.
+ */
+
 import { memo } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { useTokenPrices } from '@/hooks/use-token-prices';
@@ -39,6 +45,7 @@ export const StoreListingCard = memo(function StoreListingCard({ listing, onClic
           </div>
         )}
       </div>
+
       <div className="p-3 space-y-0.5">
         <h3 className="text-sm font-medium text-white truncate">{listing.title}</h3>
         <p className="text-xs text-zinc-400 truncate">{storeName}</p>

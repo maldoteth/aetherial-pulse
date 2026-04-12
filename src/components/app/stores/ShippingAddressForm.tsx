@@ -153,7 +153,13 @@ export function ShippingAddressForm({ onChange }: Props) {
             </Select>
           </div>
           {selectedId !== 'new' && (
-            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => handleDelete(selectedId)} disabled={deleteAddress.isPending}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:text-destructive/80"
+              onClick={() => handleDelete(selectedId)}
+              disabled={deleteAddress.isPending}
+            >
               {deleteAddress.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             </Button>
           )}
@@ -202,13 +208,23 @@ export function ShippingAddressForm({ onChange }: Props) {
           {wantSave && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
               <div className="flex items-center gap-2">
-                <Input value={saveLabel} onChange={e => setSaveLabel(e.target.value)} placeholder="Label (e.g. Home, Work)" className={`${inputClass} flex-1 h-8 text-sm`} />
+                <Input
+                  value={saveLabel}
+                  onChange={e => setSaveLabel(e.target.value)}
+                  placeholder="Label (e.g. Home, Work)"
+                  className={`${inputClass} flex-1 h-8 text-sm`}
+                />
                 <div className="flex items-center gap-1.5">
                   <Checkbox id="set-default" className={checkboxClass} checked={isDefault} onCheckedChange={v => setIsDefault(!!v)} />
                   <label htmlFor="set-default" className="text-xs text-primary-foreground whitespace-nowrap cursor-pointer">Default</label>
                 </div>
               </div>
-              <Button size="sm" onClick={handleSave} disabled={saveAddress.isPending} className="w-full">
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={saveAddress.isPending}
+                className="w-full"
+              >
                 {saveAddress.isPending ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> Saving...</>
                 ) : saveAddress.isSuccess && justSaved ? (

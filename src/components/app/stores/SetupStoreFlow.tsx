@@ -1,3 +1,9 @@
+/**
+ * Setup Store Flow
+ * ================
+ * Store creation form — supports creating additional stores with avatar.
+ */
+
 import { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,7 +60,7 @@ export function SetupStoreFlow({ onComplete, onCancel }: SetupStoreFlowProps) {
   const handleCreate = () => {
     if (!name.trim()) return;
     createStore.mutate(
-      { name: name.trim(), description: description.trim(), avatar_url: avatarUrl || undefined, banner_url: bannerUrl || undefined },
+      { name: name.trim(), description: description.trim(), avatar_url: avatarUrl || undefined, banner_url: bannerUrl || undefined } as any,
       { onSuccess: () => onComplete?.() }
     );
   };
@@ -67,10 +73,20 @@ export function SetupStoreFlow({ onComplete, onCancel }: SetupStoreFlowProps) {
         </button>
       )}
 
+      {/* Banner upload */}
       <div>
         <Label className="text-zinc-300 text-xs mb-1.5 block">Banner Image</Label>
-        <div onClick={() => bannerRef.current?.click()} className="relative w-full aspect-[3/1] rounded-xl overflow-hidden bg-white/5 border border-white/10 cursor-pointer group">
-          {bannerUrl ? <img src={bannerUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-gradient-to-br from-white/5 to-white/[0.02] flex items-center justify-center"><Camera className="w-6 h-6 text-zinc-500" /></div>}
+        <div
+          onClick={() => bannerRef.current?.click()}
+          className="relative w-full aspect-[3/1] rounded-xl overflow-hidden bg-white/5 border border-white/10 cursor-pointer group"
+        >
+          {bannerUrl ? (
+            <img src={bannerUrl} className="w-full h-full object-cover" alt="" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-white/5 to-white/[0.02] flex items-center justify-center">
+              <Camera className="w-6 h-6 text-zinc-500" />
+            </div>
+          )}
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             {uploadingBanner ? <Loader2 className="w-5 h-5 animate-spin text-primary-foreground" /> : <Camera className="w-5 h-5 text-primary-foreground" />}
           </div>
@@ -78,8 +94,18 @@ export function SetupStoreFlow({ onComplete, onCancel }: SetupStoreFlowProps) {
         <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleBannerUpload(e.target.files[0])} />
       </div>
 
-      <div onClick={() => fileRef.current?.click()} className="relative w-20 h-20 rounded-full overflow-hidden bg-white/10 border border-white/10 cursor-pointer group">
-        {avatarUrl ? <img src={avatarUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center"><Store className="w-8 h-8 text-zinc-500" /></div>}
+      {/* Avatar upload */}
+      <div
+        onClick={() => fileRef.current?.click()}
+        className="relative w-20 h-20 rounded-full overflow-hidden bg-white/10 border border-white/10 cursor-pointer group"
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} className="w-full h-full object-cover" alt="" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Store className="w-8 h-8 text-zinc-500" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
           {uploading ? <Loader2 className="w-5 h-5 animate-spin text-primary-foreground" /> : <Camera className="w-5 h-5 text-primary-foreground" />}
         </div>

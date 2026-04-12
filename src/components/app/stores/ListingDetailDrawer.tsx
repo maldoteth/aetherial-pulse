@@ -1,3 +1,9 @@
+/**
+ * Listing Detail Drawer
+ * =====================
+ * Shows full listing details with Buy Now flow.
+ */
+
 import { useState } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useTokenPrices } from '@/hooks/use-token-prices';
@@ -90,6 +96,7 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
           <DrawerTitle className="truncate">{listing.title}</DrawerTitle>
         </DrawerHeader>
         <div className="px-4 pb-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          {/* Image carousel */}
           {images.length > 0 && (
             <div className="relative aspect-square rounded-xl overflow-hidden bg-white/5 max-h-[40vh]">
               <img src={images[imgIdx]} alt={listing.title} className="w-full h-full object-cover" />
@@ -102,7 +109,7 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
                     <ChevronRight className="w-4 h-4" />
                   </button>
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                    {images.map((_: string, i: number) => (
+                    {images.map((_, i) => (
                       <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === imgIdx ? 'bg-white' : 'bg-white/40'}`} />
                     ))}
                   </div>
@@ -111,6 +118,7 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
             </div>
           )}
 
+          {/* Price & meta */}
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xl font-bold flex items-center gap-1.5 text-primary-foreground">
@@ -125,13 +133,18 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
             </div>
           </div>
 
-          {listing.description && <p className="text-sm whitespace-pre-wrap text-primary-foreground">{listing.description}</p>}
+          {/* Description */}
+          {listing.description && (
+            <p className="text-sm whitespace-pre-wrap text-primary-foreground">{listing.description}</p>
+          )}
 
+          {/* Stock */}
           <div className="flex items-center gap-2 text-xs text-primary-foreground">
             <Package className="w-3.5 h-3.5" />
             {listing.stock_quantity === null ? 'Unlimited stock' : listing.stock_quantity === 0 ? 'Sold out' : `${listing.stock_quantity} available`}
           </div>
 
+          {/* Shipping */}
           {!listing.is_digital && listing.shipping_info && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Truck className="w-3.5 h-3.5" />
@@ -139,8 +152,9 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
             </div>
           )}
 
+          {/* Seller */}
           <button
-            onClick={() => { onClose(); navigate(`/stores/${listing.store_id}`); }}
+            onClick={() => { onClose(); navigate(`/store`); }}
             className="flex items-center gap-2 text-sm transition-colors text-primary-foreground"
           >
             {listing.stores?.avatar_url ? (
@@ -153,11 +167,15 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
             {listing.stores?.name || 'Store'}
           </button>
 
+          {/* Reviews */}
           <ReviewSection listingId={listing.id} sellerAddress={sellerAddress} />
 
+          {/* Buy form */}
           {!isSelf && !soldOut && (
             <>
-              {!listing.is_digital && <ShippingAddressForm onChange={setShippingAddress} />}
+              {!listing.is_digital && (
+                <ShippingAddressForm onChange={setShippingAddress} />
+              )}
               <div>
                 <Label>Note to seller (optional)</Label>
                 <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any special requests..." className="bg-white/5 border-white/10" />
@@ -165,6 +183,7 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
             </>
           )}
 
+          {/* Actions */}
           <div className="flex gap-2">
             {!isSelf && (
               <Button onClick={handleBuy} disabled={buying || soldOut} className="flex-1">
@@ -172,7 +191,7 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
                 {soldOut ? 'Sold Out' : 'Buy Now'}
               </Button>
             )}
-            <Button variant="outline" onClick={() => { onClose(); navigate(`/messages/${sellerAddress}`); }} className="flex-1">
+            <Button variant="outline" onClick={() => { onClose(); navigate(`/messages`); }} className="flex-1">
               <MessageSquare className="w-4 h-4 mr-2" />
               Message Seller
             </Button>

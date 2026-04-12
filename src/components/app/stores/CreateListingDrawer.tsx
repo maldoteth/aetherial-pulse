@@ -1,3 +1,9 @@
+/**
+ * Create Listing Drawer
+ * =====================
+ * Drawer for creating a new store listing with image and video uploads.
+ */
+
 import { useState } from 'react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -67,7 +73,10 @@ export function CreateListingDrawer({ open, onClose, storeId }: Props) {
     setUploadingVideo(true);
     try {
       for (const file of Array.from(files).slice(0, 2 - videos.length)) {
-        if (file.size > 50 * 1024 * 1024) { toast.error('Video must be under 50MB'); continue; }
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error('Video must be under 50MB');
+          continue;
+        }
         const ext = file.name.split('.').pop();
         const path = `listings/videos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error } = await supabase.storage.from('store-media').upload(path, file);
@@ -83,7 +92,10 @@ export function CreateListingDrawer({ open, onClose, storeId }: Props) {
   };
 
   const handleSubmit = () => {
-    if (!title.trim() || !price) { toast.error('Title and price are required'); return; }
+    if (!title.trim() || !price) {
+      toast.error('Title and price are required');
+      return;
+    }
     createListing.mutate({
       store_id: storeId,
       title: title.trim(),
@@ -108,8 +120,10 @@ export function CreateListingDrawer({ open, onClose, storeId }: Props) {
 
   return (
     <Drawer open={open} onOpenChange={v => !v && onClose()}>
-      <DrawerContent glass className="border-t border-white/10">
-        <DrawerHeader><DrawerTitle className="text-white">Create Listing</DrawerTitle></DrawerHeader>
+      <DrawerContent className="border-t border-white/10 bg-black/40 backdrop-blur-2xl">
+        <DrawerHeader>
+          <DrawerTitle className="text-white">Create Listing</DrawerTitle>
+        </DrawerHeader>
         <div className="px-4 pb-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div>
             <Label className="text-zinc-300">Title *</Label>
@@ -134,7 +148,9 @@ export function CreateListingDrawer({ open, onClose, storeId }: Props) {
               <Label className="text-zinc-300">Category</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent>{CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div>
@@ -160,13 +176,16 @@ export function CreateListingDrawer({ open, onClose, storeId }: Props) {
             </div>
           )}
 
+          {/* Images */}
           <div>
             <Label className="text-zinc-300">Images (up to 5)</Label>
             <div className="flex flex-wrap gap-2 mt-1">
               {images.map((url, i) => (
                 <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10">
                   <img src={url} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl"><X className="w-3 h-3 text-white" /></button>
+                  <button onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl">
+                    <X className="w-3 h-3 text-white" />
+                  </button>
                 </div>
               ))}
               {images.length < 5 && (
@@ -178,13 +197,16 @@ export function CreateListingDrawer({ open, onClose, storeId }: Props) {
             </div>
           </div>
 
+          {/* Videos */}
           <div>
             <Label className="text-zinc-300">Videos (up to 2, max 50MB each)</Label>
             <div className="flex flex-wrap gap-2 mt-1">
               {videos.map((url, i) => (
                 <div key={i} className="relative w-24 h-16 rounded-lg overflow-hidden border border-white/10">
                   <video src={url} className="w-full h-full object-cover" muted />
-                  <button onClick={() => setVideos(prev => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl"><X className="w-3 h-3 text-white" /></button>
+                  <button onClick={() => setVideos(prev => prev.filter((_, j) => j !== i))} className="absolute top-0 right-0 bg-black/60 p-0.5 rounded-bl">
+                    <X className="w-3 h-3 text-white" />
+                  </button>
                 </div>
               ))}
               {videos.length < 2 && (

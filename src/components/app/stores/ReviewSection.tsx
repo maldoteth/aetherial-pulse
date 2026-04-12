@@ -1,3 +1,7 @@
+/**
+ * ReviewSection — Full review system for store listings
+ */
+
 import { useState } from 'react';
 import { Star, MessageSquarePlus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { StarRating } from './StarRating';
@@ -26,17 +30,17 @@ export function ReviewSection({ listingId, sellerAddress }: ReviewSectionProps) 
 
   const isSeller = walletAddress?.toLowerCase() === sellerAddress?.toLowerCase();
   const alreadyReviewed = reviews.some(
-    (r: any) => r.reviewer_address.toLowerCase() === walletAddress?.toLowerCase()
+    r => r.reviewer_address.toLowerCase() === walletAddress?.toLowerCase()
   );
   const canReview = hasPurchased && !isSeller && !alreadyReviewed;
 
   const avgRating = reviews.length > 0
-    ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
   const distribution = [5, 4, 3, 2, 1].map(star => ({
     star,
-    count: reviews.filter((r: any) => r.rating === star).length,
-    pct: reviews.length > 0 ? (reviews.filter((r: any) => r.rating === star).length / reviews.length) * 100 : 0,
+    count: reviews.filter(r => r.rating === star).length,
+    pct: reviews.length > 0 ? (reviews.filter(r => r.rating === star).length / reviews.length) * 100 : 0,
   }));
 
   const handleSubmit = async () => {
@@ -85,7 +89,13 @@ export function ReviewSection({ listingId, sellerAddress }: ReviewSectionProps) 
           )}
 
           {canReview && !showForm && (
-            <LiquidGlassBubble2 label="Write a Review" icon={<MessageSquarePlus className="w-4 h-4" />} onClick={() => setShowForm(true)} width="100%" height="40px" />
+            <LiquidGlassBubble2
+              label="Write a Review"
+              icon={<MessageSquarePlus className="w-4 h-4" />}
+              onClick={() => setShowForm(true)}
+              width="100%"
+              height="40px"
+            />
           )}
 
           {showForm && (
@@ -95,12 +105,32 @@ export function ReviewSection({ listingId, sellerAddress }: ReviewSectionProps) 
                 <div className="flex justify-center">
                   <StarRating value={rating} onChange={setRating} size="lg" />
                 </div>
-                <Textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Share your experience..." className="bg-white/5 border-white/10 min-h-[80px] text-sm resize-none" maxLength={500} />
+                <Textarea
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  placeholder="Share your experience with this product..."
+                  className="bg-white/5 border-white/10 min-h-[80px] text-sm resize-none"
+                  maxLength={500}
+                />
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-zinc-500">{comment.length}/500</span>
                   <div className="flex gap-2">
-                    <LiquidGlassBubble2 label="Cancel" onClick={() => { setShowForm(false); setRating(0); setComment(''); }} width="80px" height="36px" />
-                    <LiquidGlassBubble2 label="Submit" icon={<Star className="w-3.5 h-3.5" />} loading={createReview.isPending} loadingLabel="Posting..." disabled={rating === 0} onClick={handleSubmit} width="100px" height="36px" />
+                    <LiquidGlassBubble2
+                      label="Cancel"
+                      onClick={() => { setShowForm(false); setRating(0); setComment(''); }}
+                      width="80px"
+                      height="36px"
+                    />
+                    <LiquidGlassBubble2
+                      label="Submit"
+                      icon={<Star className="w-3.5 h-3.5" />}
+                      loading={createReview.isPending}
+                      loadingLabel="Posting..."
+                      disabled={rating === 0}
+                      onClick={handleSubmit}
+                      width="100px"
+                      height="36px"
+                    />
                   </div>
                 </div>
               </div>
@@ -108,12 +138,14 @@ export function ReviewSection({ listingId, sellerAddress }: ReviewSectionProps) 
           )}
 
           {isLoading ? (
-            <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-zinc-500" /></div>
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-500" />
+            </div>
           ) : reviews.length === 0 ? (
             <p className="text-xs text-zinc-500 text-center py-3">No reviews yet — be the first!</p>
           ) : (
             <div className="space-y-2">
-              {reviews.map((review: any) => (
+              {reviews.map(review => (
                 <LiquidGlassBubble key={review.id} shimmer noBorder className="[&>div]:!rounded-xl">
                   <div className="p-3 space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -130,7 +162,9 @@ export function ReviewSection({ listingId, sellerAddress }: ReviewSectionProps) 
                       </span>
                     </div>
                     <StarRating value={review.rating} readonly size="sm" />
-                    {review.comment && <p className="text-sm text-primary-foreground leading-relaxed">{review.comment}</p>}
+                    {review.comment && (
+                      <p className="text-sm text-primary-foreground leading-relaxed">{review.comment}</p>
+                    )}
                     {review.seller_response && (
                       <div className="mt-2 pl-3 border-l-2 border-amber-400/30">
                         <p className="text-[10px] text-amber-400 font-medium mb-0.5">Seller Response</p>

@@ -1,3 +1,9 @@
+/**
+ * My Store Tab
+ * =============
+ * Seller dashboard: manage listings and view orders across multiple stores.
+ */
+
 import { useState, useCallback } from 'react';
 import { Package, ShoppingBag, MoreVertical, Archive, CheckCircle, Pencil, Settings, Store as StoreIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,8 +55,8 @@ export function MyStoreTab({ createListingOpen = false, onCreateListingClose, cr
     setTimeout(() => setEnableTransition(false), 450);
   }, []);
 
-  const activeStore = stores.find((s: any) => s.id === selectedStoreId) || stores[0] || null;
-  const activeStoreId = (activeStore as any)?.id;
+  const activeStore = stores.find(s => s.id === selectedStoreId) || stores[0] || null;
+  const activeStoreId = activeStore?.id;
 
   const storeListings = activeStoreId ? listings.filter((l: any) => l.store_id === activeStoreId) : listings;
 
@@ -92,10 +98,11 @@ export function MyStoreTab({ createListingOpen = false, onCreateListingClose, cr
 
   return (
     <div className="space-y-4">
+      {/* Store header */}
       <div className="relative rounded-xl overflow-hidden border border-white/[0.12]">
         <div className="absolute inset-0">
-          {(activeStore as any)?.banner_url ? (
-            <img src={(activeStore as any).banner_url} className="w-full h-full object-cover" alt="" />
+          {activeStore?.banner_url ? (
+            <img src={activeStore.banner_url} className="w-full h-full object-cover" alt="" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-white/5 to-white/[0.02]" />
           )}
@@ -103,42 +110,59 @@ export function MyStoreTab({ createListingOpen = false, onCreateListingClose, cr
         </div>
 
         <div className="relative z-10 p-4 flex items-center gap-3">
-          {(activeStore as any)?.avatar_url ? (
-            <img src={(activeStore as any).avatar_url} className="w-14 h-14 rounded-full object-cover border-2 border-white/10 shrink-0" alt="" />
+          {activeStore?.avatar_url ? (
+            <img src={activeStore.avatar_url} className="w-14 h-14 rounded-full object-cover border-2 border-white/10 shrink-0" alt="" />
           ) : (
             <div className="w-14 h-14 rounded-full bg-black/40 border-2 border-white/10 flex items-center justify-center text-lg font-bold text-white shrink-0">
-              {((activeStore as any)?.name || 'S')[0].toUpperCase()}
+              {(activeStore?.name || 'S')[0].toUpperCase()}
             </div>
           )}
           <div className="flex-1 min-w-0">
             {stores.length > 1 ? (
               <Select value={activeStoreId || ''} onValueChange={setSelectedStoreId}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-white w-full h-8 text-sm"><SelectValue placeholder="Select store" /></SelectTrigger>
+                <SelectTrigger className="bg-white/5 border-white/10 text-white w-full h-8 text-sm">
+                  <SelectValue placeholder="Select store" />
+                </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-white/10">
-                  {stores.map((s: any) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
+                  {stores.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             ) : (
-              <h2 className="text-sm font-semibold text-white truncate">{(activeStore as any)?.name}</h2>
+              <h2 className="text-sm font-semibold text-white truncate">{activeStore?.name}</h2>
             )}
             <p className="text-[10px] text-zinc-300 mt-0.5 flex items-center gap-2">
               <span>{storeListings.length} listing{storeListings.length !== 1 ? 's' : ''}</span>
               <span>·</span>
               <span>{sellerOrders.reduce((sum: number, o: any) => sum + Number(o.amount || 0), 0).toLocaleString()} DHB earned</span>
+              <span>·</span>
+              <span>Since {activeStore?.created_at ? new Date(activeStore.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</span>
             </p>
           </div>
-          <button onClick={() => setEditStore(activeStore)} className="shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+          <button
+            onClick={() => setEditStore(activeStore)}
+            className="shrink-0 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+          >
             <Settings className="w-4 h-4 text-white" />
           </button>
         </div>
       </div>
 
+      {/* Toggle bar */}
       <div className="bg-zinc-900 rounded-xl p-1">
         <div ref={layerRef} className="relative">
           <GlassIndicator rect={rect} borderRadius="0.5rem" enableTransition={enableTransition} />
           <div className="relative z-20 flex">
             {TABS.map(t => (
-              <button key={t.key} ref={setRef(t.key)} onClick={() => handleTabClick(t.key)} className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${subTab === t.key ? 'text-white' : 'text-zinc-400'}`}>
+              <button
+                key={t.key}
+                ref={setRef(t.key)}
+                onClick={() => handleTabClick(t.key)}
+                className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                  subTab === t.key ? 'text-white' : 'text-zinc-400'
+                }`}
+              >
                 {t.label} ({t.count})
               </button>
             ))}
@@ -146,9 +170,12 @@ export function MyStoreTab({ createListingOpen = false, onCreateListingClose, cr
         </div>
       </div>
 
+      {/* Content */}
       {subTab === 'listings' && (
         storeListings.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">No listings yet. Create your first one!</div>
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No listings yet. Create your first one!
+          </div>
         ) : (
           <div className="space-y-2">
             {storeListings.map((l: any) => (
@@ -168,11 +195,19 @@ export function MyStoreTab({ createListingOpen = false, onCreateListingClose, cr
                   </p>
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setEditListing(l)}><Pencil className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleMarkSold(l.id)}><CheckCircle className="w-4 h-4 mr-2" /> Mark Sold</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleArchive(l.id)}><Archive className="w-4 h-4 mr-2" /> Archive</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditListing(l)}>
+                      <Pencil className="w-4 h-4 mr-2" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleMarkSold(l.id)}>
+                      <CheckCircle className="w-4 h-4 mr-2" /> Mark Sold
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleArchive(l.id)}>
+                      <Archive className="w-4 h-4 mr-2" /> Archive
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
