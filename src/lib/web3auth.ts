@@ -479,7 +479,29 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
         }
 
         web3authInstance = new Web3Auth(initOptions);
-        
+
+        // If we're returning from a login redirect, tell the auth connector BEFORE init()
+        // so its init() processes the redirect-result URL params and sets connected = true.
+        // (The default connector uxMode is POPUP; in popup mode init() ignores redirect params.)
+        // This is safe — mutating authOptions on the connector object, NOT uiConfig.uxMode
+        // in the Web3Auth constructor (which breaks init entirely).
+        const hasPendingRedirect =
+          hasRedirectResult() || !!sessionStorage.getItem('dehub_pre_login_path');
+        if (hasPendingRedirect) {
+          try {
+            const authConnector = (web3authInstance as any).getConnector?.(WALLET_CONNECTORS.AUTH);
+            if (authConnector?.authOptions) {
+              authConnector.authOptions.uxMode = UX_MODE.REDIRECT;
+              if (authConnector.authInstance?.options) {
+                authConnector.authInstance.options.uxMode = UX_MODE.REDIRECT;
+              }
+              console.log('[Web3Auth] Pre-init: connector uxMode set to redirect (pending redirect detected)');
+            }
+          } catch (connectorErr) {
+            console.warn('[Web3Auth] Could not set pre-init connector uxMode (non-fatal):', connectorErr);
+          }
+        }
+
         await Promise.race([
           web3authInstance.init(),
           new Promise<never>((_, reject) =>

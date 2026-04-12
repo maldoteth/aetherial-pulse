@@ -63,6 +63,14 @@ const CURRENT_CACHE_VERSION = '2';
   if (typeof window === 'undefined') return;
   if (localStorage.getItem('dehub_cache_version') === CURRENT_CACHE_VERSION) return;
 
+  // If we're returning from a Web3Auth redirect, skip migration entirely so the
+  // session data (openlogin_*, Web3Auth*) survives long enough for init() to restore it.
+  // boot() will complete the session; migration will run on the next clean page load.
+  if (sessionStorage.getItem('dehub_pre_login_path')) {
+    console.log('[CacheMigration] Skipping — pending login redirect detected');
+    return;
+  }
+
   console.log('[CacheMigration] Clearing stale data for version', CURRENT_CACHE_VERSION);
 
   ['dehub_token', 'dehub_token_timestamp', 'dehub_wallet', 'dehub_user',
@@ -73,8 +81,9 @@ const CURRENT_CACHE_VERSION = '2';
     const key = localStorage.key(i);
     if (key && (
       key.startsWith('wagmi') || key.startsWith('@appkit') || key.startsWith('@w3m') ||
-      key.startsWith('wc@') || key.startsWith('WCM@') || key.startsWith('W3M') ||
-      key.startsWith('Web3Auth') || key.startsWith('openlogin')
+      key.startsWith('wc@') || key.startsWith('WCM@') || key.startsWith('W3M')
+      // NOTE: Do NOT clear Web3Auth / openlogin keys here — they hold live auth sessions.
+      // Those keys are cleared on explicit disconnect() instead.
     )) {
       keysToRemove.push(key);
     }
