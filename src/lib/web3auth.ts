@@ -56,8 +56,9 @@ export const CONFIRMATION_STRATEGY = {
  */
 function allowSocialLoginPopupFlow(): boolean {
   if (typeof window === 'undefined') return false;
-  const h = window.location.hostname;
-  return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+  // Always permit popups; connectToSocialProviderInternal handles the fallback
+  // to REDIRECT if a popup is explicitly blocked or if UA is mobile.
+  return true;
 }
 
 /**
@@ -503,16 +504,11 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
           } as any,
         };
 
-        if (pimlicoConfig?.bundlerUrl && pimlicoConfig?.paymasterUrl) {
-          initOptions.accountAbstractionConfig = {
-            smartAccountType: "safe",
-            chains: [{
-              chainId: "0x2105",
-              bundlerConfig: { url: pimlicoConfig.bundlerUrl },
-              paymasterConfig: { url: pimlicoConfig.paymasterUrl },
-            }],
-          };
-        }
+        // NOTE: accountAbstractionConfig is intentionally omitted from the constructor.
+        // It causes the internal SDK initialization to crash or get stuck in 'not_ready'
+        // when the default chain is Ethereum (0x1) while AA is only configured for Base.
+        // Removing it ensures successful init() for standard social login.
+        // AA address can be derived post-login if needed.
 
         web3authInstance = new Web3Auth(initOptions);
 
