@@ -6,6 +6,7 @@ import { dhbText } from '@/lib/dhb-toast';
 import { createLogger } from '@/lib/logger';
 
 const mintLogger = createLogger('PostForm.handlePost');
+import { convertToWebP } from '@/lib/media-optimization';
 import { mintPost, type StreamInfo } from '@/lib/api/dehub';
 import { 
   mintOnChain, 
