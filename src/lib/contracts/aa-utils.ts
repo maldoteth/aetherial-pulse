@@ -211,16 +211,25 @@ export async function isSmartAccountSession(): Promise<boolean> {
  * Get the current wallet address from Web3Auth provider
  */
 export async function getWalletAddress(): Promise<string> {
-  // Try Web3Auth first
-  const web3authProvider = getWeb3AuthProvider();
-  if (web3authProvider) {
-    const accounts = await web3authProvider.request({ method: 'eth_accounts' }) as string[];
-    if (accounts?.length) return accounts[0];
+  try {
+    const { provider } = await getActiveProvider();
+    
+    // Web3Auth provider
+    if (provider?.request) {
+      const accounts = await provider.request({ method: 'eth_accounts' }) as string[];
+      if (accounts?.[0]) return accounts[0].toLowerCase();
+    }
+  } catch (err) {
+    console.warn('[AA] getActiveProvider failed in getWalletAddress:', err);
   }
 
-  // Fall back to wagmi
+  // Final fallback to wagmi account info (direct access)
   const account = getAccount(wagmiConfig);
-  if (account.address) return account.address;
+  if (account.address) return account.address.toLowerCase();
+
+  // Last-ditch effort: return the stored wallet address if we are "authenticated" in Zustand/localStorage
+  const storedWallet = localStorage.getItem('dehub_wallet');
+  if (storedWallet) return storedWallet.toLowerCase();
 
   throw new Error('No wallet connected. Please sign in first.');
 }

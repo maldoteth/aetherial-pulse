@@ -825,8 +825,16 @@ export function getWeb3AuthInstance(): Web3Auth | null {
 }
 
 export function getWeb3AuthProvider() {
-  if (web3authInstance?.connected && web3authInstance.provider) {
-    return web3authInstance.provider;
+  if (web3authInstance?.provider) {
+    // If we're already connected, return the provider
+    if (web3authInstance.connected) return web3authInstance.provider;
+    
+    // If we're in 'ready' state and this is a known web3auth session, return provider anyway.
+    // Sometimes the 'connected' flag lags behind 'ready' during session restoration.
+    const storedSource = typeof window !== 'undefined' ? localStorage.getItem('dehub_connection_source') : null;
+    if (web3authInstance.status === "ready" && storedSource === 'web3auth') {
+      return web3authInstance.provider;
+    }
   }
   return null;
 }
