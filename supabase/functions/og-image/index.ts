@@ -14,7 +14,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // deno-lint-ignore-file no-explicit-any
 import satori from "npm:satori@0.10.13";
-import { Resvg } from "npm:@resvg/resvg-js@2.6.0";
+import { Resvg, initWasm } from "npm:@resvg/resvg-wasm@2.6.0";
+
+let wasmInitialized = false;
 
 const DEHUB_API_BASE = "https://api.dehub.io";
 const DEHUB_CDN_BASE = "https://dehubcdn.ams3.cdn.digitaloceanspaces.com/";
@@ -278,7 +280,12 @@ serve(async (req) => {
             ],
         });
 
-        // SVG → PNG via resvg
+        // SVG → PNG via resvg-wasm
+        if (!wasmInitialized) {
+            const wasmResponse = await fetch("https://unpkg.com/@resvg/resvg-wasm@2.6.0/index_bg.wasm");
+            await initWasm(wasmResponse);
+            wasmInitialized = true;
+        }
         const resvg = new Resvg(svg, { fitTo: { mode: "width", value: 1200 } });
         const png = resvg.render().asPng();
 
