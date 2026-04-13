@@ -13,7 +13,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://aigxuutjaqsywioxje
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpZ3h1dXRqYXFzeXdpb3hqZWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MzY0MzIsImV4cCI6MjA4MzIxMjQzMn0.hjMx0kShuJlaZ26UoG7RFGu3OC_aLR0C1Sf1qdk3x0I";
 const IMAGE_PROXY_BASE = `${SUPABASE_URL}/functions/v1/ssr-seo`;
 const OG_IMAGE_BASE = `${SUPABASE_URL}/functions/v1/og-image`;
-const DEHUB_LOGO = "https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo/default-icon.png";
+const DEFAULT_BRAND_LOGO = "https://fansiteapp.com/assets/fansite-logo-Bu7bx-CF.png";
 const AUDIO_OG_IMAGE = "https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo/audio-wave%20(1).png";
 
 interface DeHubUser {
@@ -78,7 +78,7 @@ function getExtension(path: string): string {
 }
 
 function ensureAbsoluteUrl(url: string): string {
-    if (!url) return DEHUB_LOGO;
+    if (!url) return DEFAULT_BRAND_LOGO;
     if (url.startsWith("http")) return url;
     return `${DEHUB_CDN_BASE}${url.replace(/^statics\//, "")}`;
 }
@@ -88,7 +88,7 @@ function ensureAbsoluteUrl(url: string): string {
  */
 function buildAvatarUrl(user: DeHubUser): string {
     const apiPath = user.avatarImageUrl;
-    if (!apiPath) return DEHUB_LOGO;
+    if (!apiPath) return DEFAULT_BRAND_LOGO;
     if (apiPath.startsWith("http")) return apiPath;
 
     // Frontend logic: cdn/avatars/{address}.{ext}
@@ -291,6 +291,7 @@ serve(async (req) => {
 
     try {
         const url = new URL(req.url);
+        const brandLogo = ensureAbsoluteUrl(url.searchParams.get("brand_logo") || DEFAULT_BRAND_LOGO);
 
         // Facebook/Twitter scrapers need proper MIME types to display images
         const proxyImageUrl = url.searchParams.get("image_url");
@@ -350,7 +351,7 @@ serve(async (req) => {
                 const displayName = user.displayName || user.username || "Fansite User";
                 const profileUrl = `${APP_URL}/${user.username || username}`;
                 const avatarUrl = buildAvatarUrl(user);
-                const isLogoFallback = avatarUrl === DEHUB_LOGO;
+                const isLogoFallback = avatarUrl === DEFAULT_BRAND_LOGO;
                 const html = generateMetaHTML({
                     title: `Join @${user.username || username} on Fansite today!`,
                     description:
@@ -368,7 +369,7 @@ serve(async (req) => {
                         name: displayName,
                         url: profileUrl,
                         ...(user.aboutMe && { description: user.aboutMe }),
-                        ...(avatarUrl !== DEHUB_LOGO && { image: avatarUrl }),
+                        ...(avatarUrl !== DEFAULT_BRAND_LOGO && { image: avatarUrl }),
                         sameAs: profileUrl,
                     },
                 });
@@ -384,7 +385,7 @@ serve(async (req) => {
             if (community) {
                 const communityUrl = `${APP_URL}/app/communities/${community.slug}`;
                 // Use avatar (profile image) for community OG card
-                const ogImage = community.avatar_url || DEHUB_LOGO;
+                const ogImage = community.avatar_url || brandLogo;
                 const hasRealImage = !!community.avatar_url;
                 const twitterCard = "summary";
                 const title = `Join ${community.name}'s community on Fansite today`;
@@ -442,7 +443,7 @@ serve(async (req) => {
                     postImage = buildProxiedImageUrl(IMAGE_PROXY_BASE, AUDIO_OG_IMAGE);
                     hasRealImage = true;
                 } else if (videoUrl) {
-                    postImage = ensureAbsoluteUrl(nft.thumbnail_url || nft.imageUrl || "") || DEHUB_LOGO;
+                    postImage = ensureAbsoluteUrl(nft.thumbnail_url || nft.imageUrl || "") || brandLogo;
                     hasRealImage = !!(nft.thumbnail_url || nft.imageUrl);
                 } else {
                     const builtImage = buildPostImageUrl(nft);
@@ -460,7 +461,7 @@ serve(async (req) => {
                         } else {
                             // Absolute fallback: minter avatar (no text to render)
                             const minter = nft.minterUser;
-                            postImage = minter ? buildAvatarUrl(minter) : DEHUB_LOGO;
+                            postImage = minter ? buildAvatarUrl(minter) : brandLogo;
                             hasRealImage = false;
                         }
                     }
@@ -500,7 +501,7 @@ serve(async (req) => {
             title: "Fansite — Open Source, User Owned & Censorship Resistant Media",
             description:
                 "fansite.app is open source, user owned and censorship resistant media. Join the future of free speech and reach.",
-            image: "https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo//Screenshot%202026-03-20%20225233.png",
+            image: brandLogo,
             url: canonicalUrl,
             twitterCard: "summary_large_image",
             imageWidth: 1200,
@@ -525,7 +526,7 @@ serve(async (req) => {
                         '@type': 'Organization',
                         name: 'Fansite',
                         url: 'https://fansite.app',
-                        logo: 'https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo/default-icon.png',
+                        logo: brandLogo,
                         sameAs: ['https://x.com/DeHubApp'],
                     },
                 ],
