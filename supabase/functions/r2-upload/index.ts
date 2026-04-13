@@ -2,13 +2,95 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-wallet-address, x-dehub-token',
 };
-import { S3Client, PutObjectCommand } from 'npm:@aws-sdk/client-s3@3.600.0';
 
 const R2_ACCOUNT_ID = Deno.env.get('R2_ACCOUNT_ID') ?? '';
 const R2_ACCESS_KEY_ID = Deno.env.get('R2_ACCESS_KEY_ID') ?? '';
 const R2_SECRET_ACCESS_KEY = Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '';
 const R2_BUCKET_NAME = Deno.env.get('R2_BUCKET_NAME') ?? '';
 const R2_PUBLIC_URL = Deno.env.get('R2_PUBLIC_URL') ?? '';
+
+// ── AWS Signature V4 using Web Crypto (native in Deno) ──────────────────────
+
+async function sha256Hex(data: BufferSource): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hmacSha256(key: BufferSource, msg: string): Promise<ArrayBuffer> {
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  return crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(msg));
+}
+
+async function getSigningKey(secret: string, date: string, region: string, service: string): Promise<ArrayBuffer> {
+  const enc = new TextEncoder();
+  const kDate    = await hmacSha256(enc.encode('AWS4' + secret), date);
+  const kRegion  = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  return hmacSha256(kService, 'aws4_request');
+}
+
+async function buildAuthHeader(
+  method: string,
+  endpoint: string,
+  key: string,
+  body: Uint8Array,
+  contentType: string,
+): Promise<Record<string, string>> {
+  const now = new Date();
+  // e.g. "20260413T123456Z"
+  const amzDate  = now.toISOString().replace(/[:\-]/g, '').replace(/\.\d{3}/, '');
+  const dateOnly = amzDate.slice(0, 8);
+  const region   = 'auto';
+  const service  = 's3';
+
+  const url      = new URL(`${endpoint}/${R2_BUCKET_NAME}/${key}`);
+  const host     = url.host;
+  const bodyHash = await sha256Hex(body);
+
+  // Canonical headers (must be sorted)
+  const canonicalHeaders =
+    `content-type:${contentType}\n` +
+    `host:${host}\n` +
+    `x-amz-content-sha256:${bodyHash}\n` +
+    `x-amz-date:${amzDate}\n`;
+  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+
+  const canonicalRequest = [
+    method,
+    url.pathname,
+    '', // no query string
+    canonicalHeaders,
+    signedHeaders,
+    bodyHash,
+  ].join('\n');
+
+  const credentialScope = `${dateOnly}/${region}/${service}/aws4_request`;
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    await sha256Hex(new TextEncoder().encode(canonicalRequest)),
+  ].join('\n');
+
+  const signingKey  = await getSigningKey(R2_SECRET_ACCESS_KEY, dateOnly, region, service);
+  const sigBuf      = await hmacSha256(signingKey, stringToSign);
+  const signature   = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  const authorization =
+    `AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY_ID}/${credentialScope}, ` +
+    `SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  return {
+    'Authorization':        authorization,
+    'x-amz-date':           amzDate,
+    'x-amz-content-sha256': bodyHash,
+    'Content-Type':         contentType,
+  };
+}
+
+// ── Handler ──────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -19,93 +101,68 @@ Deno.serve(async (req) => {
   console.log('[r2-upload] Request received');
 
   try {
-    // --- ENV check ---
-    console.log('[r2-upload] ENV check:', {
-      hasAccountId: !!R2_ACCOUNT_ID,
-      hasAccessKey: !!R2_ACCESS_KEY_ID,
-      hasSecretKey: !!R2_SECRET_ACCESS_KEY,
-      hasBucket: !!R2_BUCKET_NAME,
-      hasPublicUrl: !!R2_PUBLIC_URL,
-      endpoint: R2_ACCOUNT_ID ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com` : 'MISSING',
-      bucket: R2_BUCKET_NAME || 'MISSING',
-    });
-
     const walletAddress = req.headers.get('x-wallet-address')?.toLowerCase() || '';
-    const dehubToken = req.headers.get('x-dehub-token') || '';
+    const dehubToken    = req.headers.get('x-dehub-token') || '';
 
     if (!walletAddress || !dehubToken) {
-      console.warn('[r2-upload] Missing auth headers');
       return new Response(JSON.stringify({ error: 'Authentication required' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('[r2-upload] Auth headers present, wallet:', walletAddress.slice(0, 10) + '...');
-
-    // --- Parse FormData ---
     console.log('[r2-upload] Parsing formData...');
     const formData = await req.formData();
     console.log(`[r2-upload] formData parsed (${Date.now() - t0}ms)`);
 
-    const file = formData.get('file') as File | null;
+    const file   = formData.get('file') as File | null;
     const folder = (formData.get('folder') as string) || 'uploads';
 
     if (!file) {
-      console.error('[r2-upload] No file in formData');
       return new Response(JSON.stringify({ error: 'No file provided' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('[r2-upload] File info:', { name: file.name, type: file.type, size: file.size, folder });
-
-    // --- Generate key ---
-    const ext = file.name.split('.').pop() || 'bin';
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8);
-    const key = `${folder}/${timestamp}-${random}.${ext}`;
+    const ext         = file.name.split('.').pop() || 'bin';
+    const key         = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const contentType = file.type || 'application/octet-stream';
 
-    console.log('[r2-upload] Key:', key, '| ContentType:', contentType);
+    console.log(`[r2-upload] File: ${file.name} (${file.size} bytes) → key: ${key}`);
 
-    // --- Read file ---
-    console.log('[r2-upload] Reading arrayBuffer...');
-    const arrayBuffer = await file.arrayBuffer();
-    console.log(`[r2-upload] arrayBuffer ready, ${arrayBuffer.byteLength} bytes (${Date.now() - t0}ms)`);
+    const body     = new Uint8Array(await file.arrayBuffer());
+    const endpoint = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
-    // --- S3 client ---
-    console.log('[r2-upload] Creating S3 client...');
-    const s3 = new S3Client({
-      region: 'auto',
-      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID,
-        secretAccessKey: R2_SECRET_ACCESS_KEY,
-      },
+    console.log('[r2-upload] Signing request...');
+    const authHeaders = await buildAuthHeader('PUT', endpoint, key, body, contentType);
+
+    const uploadUrl = `${endpoint}/${R2_BUCKET_NAME}/${key}`;
+    console.log(`[r2-upload] PUT ${uploadUrl}`);
+
+    const r2Res = await fetch(uploadUrl, {
+      method:  'PUT',
+      headers: authHeaders,
+      body:    body,
     });
 
-    // --- Upload ---
-    console.log('[r2-upload] Sending PutObjectCommand...');
-    await s3.send(new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
-      Key: key,
-      Body: new Blob([arrayBuffer], { type: contentType }),
-      ContentType: contentType,
-    }));
-    console.log(`[r2-upload] S3 upload done (${Date.now() - t0}ms)`);
+    console.log(`[r2-upload] R2 response: ${r2Res.status} (${Date.now() - t0}ms)`);
+
+    if (!r2Res.ok) {
+      const errText = await r2Res.text();
+      console.error('[r2-upload] R2 error body:', errText);
+      throw new Error(`R2 returned ${r2Res.status}: ${errText}`);
+    }
 
     const publicUrl = `${R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`;
-    console.log('[r2-upload] Public URL:', publicUrl);
+    console.log('[r2-upload] Done. URL:', publicUrl);
 
     return new Response(JSON.stringify({ url: publicUrl, key }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error(`[r2-upload] Error after ${Date.now() - t0}ms:`, error);
-    console.error('[r2-upload] Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    console.error(`[r2-upload] Error after ${Date.now() - t0}ms:`, String(error));
     return new Response(JSON.stringify({ error: 'Upload failed', details: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
