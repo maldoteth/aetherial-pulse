@@ -122,74 +122,40 @@ export async function getContacts(
   address: string, page: number = 0, limit: number = 50
 ): Promise<DeHubConversation[]> {
   if (!address) return [];
-  const addr = address.toLowerCase();
 
-  const { data, error } = await supabase
-    .from('dm_conversations')
-    .select('*')
-    .or(`participant_a.eq.${addr},participant_b.eq.${addr}`)
-    .order('last_message_at', { ascending: false })
-    .range(page * limit, (page + 1) * limit - 1);
+  const res = await invokeDehubPlatformApi<{ items: any[] }>({
+    action: 'dm.conversations.list',
+    page,
+    limit,
+  });
 
-  if (error || !data) return [];
+  if (!res.items?.length) return [];
 
-  // Fetch profiles for the other participant
-  const otherAddresses = data.map(c =>
-    c.participant_a.toLowerCase() === addr ? c.participant_b : c.participant_a
-  );
+  return res.items.map((item: any) => {
+    const profile = item.other_profile;
+    const otherUser: DeHubUser = profile
+      ? profileToUser(profile)
+      : { _id: item.other_address, address: item.other_address } as DeHubUser;
 
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('wallet_address, username, display_name, avatar_url, is_verified')
-    .in('wallet_address', otherAddresses);
+    const lastMsg = item.last_message;
 
-  const profileMap = new Map((profiles || []).map(p => [p.wallet_address.toLowerCase(), p]));
-
-  // Get last message and unread count for each conversation
-  const convos: DeHubConversation[] = [];
-  for (const conv of data) {
-    const otherAddr = conv.participant_a.toLowerCase() === addr ? conv.participant_b : conv.participant_a;
-    const profile = profileMap.get(otherAddr.toLowerCase());
-    const otherUser = profile ? profileToUser(profile) : { _id: otherAddr, address: otherAddr } as DeHubUser;
-
-    // Unread count
-    const { count } = await supabase
-      .from('dm_messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('conversation_id', conv.id)
-      .neq('sender_address', addr)
-      .eq('is_read', false);
-
-    // Last message
-    const { data: lastMsgs } = await supabase
-      .from('dm_messages')
-      .select('*')
-      .eq('conversation_id', conv.id)
-      .eq('is_deleted', false)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    const lastMsg = lastMsgs?.[0];
-
-    convos.push({
-      id: conv.id,
+    return {
+      id: item.id,
       participants: [otherUser],
       otherUser,
       lastMessage: lastMsg ? {
         id: lastMsg.id,
-        conversationId: conv.id,
+        conversationId: item.id,
         sender: otherUser,
         content: lastMsg.content,
-        type: 'text',
+        type: (lastMsg.msg_type === 'media' ? 'image' : lastMsg.msg_type === 'gif' ? 'gif' : 'text') as any,
         createdAt: lastMsg.created_at,
       } : undefined,
-      unreadCount: count || 0,
-      createdAt: conv.created_at,
-      updatedAt: conv.updated_at,
-    });
-  }
-
-  return convos;
+      unreadCount: item.unread_count || 0,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+    };
+  });
 }
 
 export async function getConversations(
@@ -210,18 +176,23 @@ export async function getConversation(conversationId: string): Promise<DeHubConv
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
   }
-  const { data } = await supabase.from('dm_conversations').select('*').eq('id', conversationId).maybeSingle();
-  if (!data) {
+  try {
+    const res = await invokeDehubPlatformApi<{ conversation: any; other_profile: any }>({
+      action: 'dm.conversation.get',
+      conversationId,
+    });
+    const data = res.conversation;
+    const profile = res.other_profile;
+    const addr = getWallet();
+    const otherAddr = data.participant_a.toLowerCase() === addr ? data.participant_b : data.participant_a;
+    const otherUser = profile ? profileToUser(profile) : { _id: otherAddr, address: otherAddr } as DeHubUser;
+    return {
+      id: data.id, participants: [otherUser], otherUser, unreadCount: 0,
+      createdAt: data.created_at, updatedAt: data.updated_at,
+    };
+  } catch {
     return { id: conversationId, participants: [], unreadCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   }
-  const addr = getWallet();
-  const otherAddr = data.participant_a.toLowerCase() === addr ? data.participant_b : data.participant_a;
-  const { data: profile } = await supabase.from('profiles').select('*').eq('wallet_address', otherAddr).maybeSingle();
-  const otherUser = profile ? profileToUser(profile) : { _id: otherAddr, address: otherAddr } as DeHubUser;
-  return {
-    id: data.id, participants: [otherUser], otherUser, unreadCount: 0,
-    createdAt: data.created_at, updatedAt: data.updated_at,
-  };
 }
 
 export async function createConversation(
@@ -267,32 +238,18 @@ export async function getMessages(
     return { items: [], totalCount: 0, hasMore: false };
   }
 
-  const myAddr = getWallet();
-  const { data, error, count } = await supabase
-    .from('dm_messages')
-    .select('*', { count: 'exact' })
-    .eq('conversation_id', conversationId)
-    .eq('is_deleted', false)
-    .order('created_at', { ascending: false })
-    .range(page * limit, (page + 1) * limit - 1);
-
-  if (error) return { items: [], totalCount: 0, hasMore: false };
-
-  // Fetch sender profiles
-  const senderAddresses = [...new Set((data || []).map(m => m.sender_address))];
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('wallet_address, username, display_name, avatar_url')
-    .in('wallet_address', senderAddresses);
-
-  const profileMap = new Map((profiles || []).map(p => [p.wallet_address.toLowerCase(), p]));
-
-  const items = (data || []).map(row => {
-    const profile = profileMap.get(row.sender_address.toLowerCase());
-    return dbMsgToDmMessage({ ...row, sender_profile: profile }, myAddr);
+  const res = await invokeDehubPlatformApi<{
+    items: any[]; totalCount: number; hasMore: boolean; myAddress: string;
+  }>({
+    action: 'dm.messages.list',
+    conversationId,
+    page,
+    limit,
   });
 
-  return { items, totalCount: count || 0, hasMore: (count || 0) > (page + 1) * limit };
+  const myAddr = res.myAddress || getWallet();
+  const items = (res.items || []).map(row => dbMsgToDmMessage(row, myAddr));
+  return { items, totalCount: res.totalCount || 0, hasMore: res.hasMore || false };
 }
 
 export async function sendMessageToConversation(

@@ -104,6 +104,78 @@ Deno.serve(async (req) => {
     switch (action) {
       // ─── DM ─────────────────────────────────────────────────────────────
 
+      case "dm.conversations.list": {
+        const page = Number(body.page ?? 0);
+        const limit = Math.min(Number(body.limit ?? 50), 100);
+        const offset = page * limit;
+
+        const { data: convRows, error: convErr } = await admin
+          .from("dm_conversations")
+          .select("*")
+          .or(`participant_a.eq.${wallet},participant_b.eq.${wallet}`)
+          .order("last_message_at", { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (convErr) throw convErr;
+        if (!convRows || convRows.length === 0) return json({ ok: true, items: [] });
+
+        // Fetch other participants' profiles
+        const otherAddresses = convRows.map((c) =>
+          c.participant_a.toLowerCase() === wallet ? c.participant_b : c.participant_a
+        );
+
+        const { data: profiles } = await admin
+          .from("profiles")
+          .select("wallet_address, username, display_name, avatar_url, is_verified")
+          .in("wallet_address", otherAddresses);
+
+        const profileMap = new Map(
+          (profiles || []).map((p: any) => [p.wallet_address.toLowerCase(), p])
+        );
+
+        // Build conversations with last message + unread count
+        const items = await Promise.all(
+          convRows.map(async (conv: any) => {
+            const otherAddr =
+              conv.participant_a.toLowerCase() === wallet ? conv.participant_b : conv.participant_a;
+            const profile = profileMap.get(otherAddr.toLowerCase());
+
+            const [{ count: unreadCount }, { data: lastMsgs }] = await Promise.all([
+              admin
+                .from("dm_messages")
+                .select("id", { count: "exact", head: true })
+                .eq("conversation_id", conv.id)
+                .neq("sender_address", wallet)
+                .eq("is_read", false),
+              admin
+                .from("dm_messages")
+                .select("id, conversation_id, sender_address, content, msg_type, media_url, created_at")
+                .eq("conversation_id", conv.id)
+                .eq("is_deleted", false)
+                .order("created_at", { ascending: false })
+                .limit(1),
+            ]);
+
+            const lastMsg = lastMsgs?.[0] ?? null;
+
+            return {
+              id: conv.id,
+              participant_a: conv.participant_a,
+              participant_b: conv.participant_b,
+              other_address: otherAddr,
+              other_profile: profile ?? null,
+              last_message: lastMsg,
+              unread_count: unreadCount ?? 0,
+              created_at: conv.created_at,
+              updated_at: conv.updated_at,
+              last_message_at: conv.last_message_at,
+            };
+          })
+        );
+
+        return json({ ok: true, items });
+      }
+
       case "dm.conversation.create": {
         const raw = String(body.recipientAddress || "").trim();
         if (!isEthAddress(raw)) return json({ ok: false, error: "Invalid recipientAddress" }, 400);
@@ -183,6 +255,79 @@ Deno.serve(async (req) => {
         );
 
         return json({ ok: true, message: row });
+      }
+
+      case "dm.messages.list": {
+        const conversationId = String(body.conversationId || "");
+        if (!UUID_RE.test(conversationId)) {
+          return json({ ok: false, error: "Invalid conversationId" }, 400);
+        }
+        const conv = await getDmConversation(admin, conversationId);
+        if (!conv) return json({ ok: false, error: "Conversation not found" }, 404);
+        if (!isDmParticipant(conv, wallet)) {
+          return json({ ok: false, error: "Not a participant" }, 403);
+        }
+
+        const page = Number(body.page ?? 0);
+        const limit = Math.min(Number(body.limit ?? 30), 100);
+        const offset = page * limit;
+
+        const { data: msgRows, error: msgErr, count } = await admin
+          .from("dm_messages")
+          .select("*", { count: "exact" })
+          .eq("conversation_id", conversationId)
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (msgErr) throw msgErr;
+
+        // Fetch sender profiles
+        const senderAddresses = [...new Set((msgRows || []).map((m: any) => m.sender_address))];
+        const { data: profiles } = senderAddresses.length
+          ? await admin
+              .from("profiles")
+              .select("wallet_address, username, display_name, avatar_url")
+              .in("wallet_address", senderAddresses)
+          : { data: [] };
+
+        const profileMap = new Map(
+          (profiles || []).map((p: any) => [p.wallet_address.toLowerCase(), p])
+        );
+
+        const items = (msgRows || []).map((row: any) => {
+          const profile = profileMap.get(row.sender_address.toLowerCase());
+          return { ...row, sender_profile: profile ?? null };
+        });
+
+        return json({
+          ok: true,
+          items,
+          totalCount: count ?? 0,
+          hasMore: (count ?? 0) > offset + limit,
+          myAddress: wallet,
+        });
+      }
+
+      case "dm.conversation.get": {
+        const conversationId = String(body.conversationId || "");
+        if (!UUID_RE.test(conversationId)) {
+          return json({ ok: false, error: "Invalid conversationId" }, 400);
+        }
+        const conv = await getDmConversation(admin, conversationId);
+        if (!conv) return json({ ok: false, error: "Conversation not found" }, 404);
+        if (!isDmParticipant(conv, wallet)) {
+          return json({ ok: false, error: "Not a participant" }, 403);
+        }
+
+        const otherAddr = conv.participant_a.toLowerCase() === wallet ? conv.participant_b : conv.participant_a;
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("wallet_address, username, display_name, avatar_url, is_verified")
+          .eq("wallet_address", otherAddr)
+          .maybeSingle();
+
+        return json({ ok: true, conversation: conv, other_profile: profile ?? null });
       }
 
       case "dm.messages.markRead": {
