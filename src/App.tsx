@@ -1,7 +1,7 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { OptimisticPostsProvider } from "@/hooks/use-optimistic-posts";
 import { UsernameRequiredModal } from "@/components/app/modals";
 import { LoginModal } from "@/components/app/LoginModal";
@@ -54,6 +54,17 @@ if (typeof window !== 'undefined') {
 const PageLoader = () => (
   <div className="min-h-screen bg-black" />
 );
+
+/**
+ * Redirect /app/* → /*  (preserves search params and hash).
+ * Many internal navigate() calls use the /app/ prefix; this strips it so the
+ * actual routes match, both for client-side navigation and direct URL access.
+ */
+function AppPrefixRedirect() {
+  const location = useLocation();
+  const newPath = location.pathname.replace(/^\/app/, '') || '/';
+  return <Navigate to={newPath + location.search + location.hash} replace />;
+}
 
 /**
  * One-time cache migration for existing testers.
@@ -169,6 +180,9 @@ function AppContent() {
             {/* Username profiles — inside shared layout so header never remounts */}
             <Route path=":username" element={<Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>} />
           </Route>
+
+          {/* Strip /app/ prefix — many navigate() calls use it but routes live at root */}
+          <Route path="app/*" element={<AppPrefixRedirect />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

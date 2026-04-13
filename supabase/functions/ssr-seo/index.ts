@@ -527,7 +527,7 @@ serve(async (req) => {
                         name: 'Fansite',
                         url: 'https://fansite.app',
                         logo: brandLogo,
-                        sameAs: ['https://x.com/DeHubApp'],
+                        sameAs: ['https://x.com/FansiteApp'],
                     },
                 ],
             },
