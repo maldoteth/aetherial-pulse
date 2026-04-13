@@ -97,8 +97,9 @@ Deno.serve(async (req) => {
   // Skip auth for public actions
   let wallet = "";
   if (!PUBLIC_ACTIONS.has(action)) {
-    const rawWallet = req.headers.get("x-wallet-address")?.toLowerCase() || "";
-    const dehubToken = req.headers.get("x-dehub-token") || "";
+    // Support wallet/token from headers OR body (headers may be stripped by gateway)
+    const rawWallet = (req.headers.get("x-wallet-address") || String(body._wallet || "")).toLowerCase().trim();
+    const dehubToken = req.headers.get("x-dehub-token") || String(body._token || "");
     if (!rawWallet) return json({ ok: false, error: "x-wallet-address required" }, 401);
     if (!dehubToken) return json({ ok: false, error: "x-dehub-token required" }, 401);
     if (!(await validateDeHubToken(dehubToken, rawWallet))) {
