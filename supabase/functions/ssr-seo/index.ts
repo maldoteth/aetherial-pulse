@@ -11,6 +11,7 @@ const APP_URL = "https://fansite.app";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://sukqmkvncogkfnthvfnv.supabase.co";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const R2_PUBLIC_URL = (Deno.env.get("R2_PUBLIC_URL") || "").replace(/\/$/, "");
 const IMAGE_PROXY_BASE = `${SUPABASE_URL}/functions/v1/ssr-seo`;
 const OG_IMAGE_BASE = `${SUPABASE_URL}/functions/v1/og-image`;
 const DEFAULT_BRAND_LOGO = "https://fansiteapp.com/assets/fansite-logo-Bu7bx-CF.png";
@@ -141,6 +142,18 @@ function getMimeType(url: string): string {
 function buildProxiedImageUrl(functionBaseUrl: string, imageUrl: string): string {
   // Use our own edge function as image proxy to serve correct Content-Type
   return `${functionBaseUrl}?image_url=${encodeURIComponent(imageUrl)}`;
+}
+
+/**
+ * Only DeHub CDN (DigitalOcean Spaces) images need proxying — their server
+ * returns wrong/missing Content-Type headers which Facebook rejects.
+ * Cloudflare R2 and Supabase Storage already serve correct Content-Type.
+ */
+function maybeProxy(imageUrl: string): string {
+  if (imageUrl.startsWith(DEHUB_CDN_BASE)) {
+    return buildProxiedImageUrl(IMAGE_PROXY_BASE, imageUrl);
+  }
+  return imageUrl;
 }
 
 function buildVideoUrl(nft: DeHubNFT): string | null {
@@ -315,11 +328,13 @@ serve(async (req) => {
     // Facebook/Twitter scrapers need proper MIME types to display images
     const proxyImageUrl = url.searchParams.get("image_url");
     if (proxyImageUrl) {
-      if (
-        !proxyImageUrl.startsWith(DEHUB_CDN_BASE) &&
-        !proxyImageUrl.startsWith("https://dehub.io/") &&
-        !proxyImageUrl.startsWith("https://aigxuutjaqsywioxjefr.supabase.co/storage/")
-      ) {
+      const isAllowedProxy =
+        proxyImageUrl.startsWith(DEHUB_CDN_BASE) ||
+        proxyImageUrl.startsWith("https://dehub.io/") ||
+        proxyImageUrl.startsWith("https://sukqmkvncogkfnthvfnv.supabase.co/storage/") ||
+        proxyImageUrl.startsWith("https://aigxuutjaqsywioxjefr.supabase.co/storage/") ||
+        (R2_PUBLIC_URL !== "" && proxyImageUrl.startsWith(R2_PUBLIC_URL));
+      if (!isAllowedProxy) {
         return new Response("Forbidden", { status: 403 });
       }
       const imgResp = await fetch(proxyImageUrl);
@@ -471,12 +486,13 @@ serve(async (req) => {
           postImage = buildProxiedImageUrl(IMAGE_PROXY_BASE, AUDIO_OG_IMAGE);
           hasRealImage = true;
         } else if (videoUrl) {
-          postImage = ensureAbsoluteUrl(nft.thumbnail_url || nft.imageUrl || "") || brandLogo;
+          const rawThumb = ensureAbsoluteUrl(nft.thumbnail_url || nft.imageUrl || "");
           hasRealImage = !!(nft.thumbnail_url || nft.imageUrl);
+          postImage = hasRealImage ? maybeProxy(rawThumb) : brandLogo;
         } else {
           const builtImage = buildPostImageUrl(nft);
           if (builtImage) {
-            postImage = builtImage;
+            postImage = maybeProxy(builtImage);
             hasRealImage = true;
           } else {
             // Text post (no image, no video) — generate a dynamic OG card
