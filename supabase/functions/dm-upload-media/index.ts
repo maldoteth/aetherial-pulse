@@ -1,12 +1,27 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { S3Client, PutObjectCommand } from 'npm:@aws-sdk/client-s3@3.600.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-wallet-address, x-dehub-token, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-request-id, prefer',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-wallet-address, x-dehub-token',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-function jsonResponse(data: Record<string, unknown>, status = 200): Response {
+const R2_ACCOUNT_ID = Deno.env.get('R2_ACCOUNT_ID')!;
+const R2_ACCESS_KEY_ID = Deno.env.get('R2_ACCESS_KEY_ID')!;
+const R2_SECRET_ACCESS_KEY = Deno.env.get('R2_SECRET_ACCESS_KEY')!;
+const R2_BUCKET_NAME = Deno.env.get('R2_BUCKET_NAME')!;
+const R2_PUBLIC_URL = Deno.env.get('R2_PUBLIC_URL')!;
+
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: R2_ACCESS_KEY_ID,
+    secretAccessKey: R2_SECRET_ACCESS_KEY,
+  },
+});
+
+function jsonResponse(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -32,80 +47,48 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return jsonResponse({ ok: false, error: 'Method not allowed' }, 405);
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-  const walletAddress = req.headers.get('x-wallet-address')?.toLowerCase() || '';
-  const dehubToken = req.headers.get('x-dehub-token') || '';
-
-  if (!walletAddress) {
-    return jsonResponse({ ok: false, error: 'x-wallet-address header is required' }, 401);
-  }
-
-  if (!dehubToken) {
-    return jsonResponse({ ok: false, error: 'x-dehub-token header is required' }, 401);
-  }
-
   try {
-    // Validate DeHub JWT
+    const walletAddress = req.headers.get('x-wallet-address')?.toLowerCase() || '';
+    const dehubToken = req.headers.get('x-dehub-token') || '';
+
+    if (!walletAddress || !dehubToken) {
+      return jsonResponse({ ok: false, error: 'Authentication required' }, 401);
+    }
+
+    // Validate DeHub session
     const isValid = await validateDeHubToken(dehubToken, walletAddress);
     if (!isValid) {
-      return jsonResponse({ ok: false, error: 'Invalid or expired DeHub token' }, 401);
+      return jsonResponse({ ok: false, error: 'Invalid session' }, 401);
     }
 
-    // Parse multipart form data
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
+    const folder = (formData.get('folder') as string) || 'dm-media';
 
     if (!file) {
-      return jsonResponse({ ok: false, error: 'No file provided. Send a file with field name "file".' }, 400);
-    }
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg'];
-    if (!allowedTypes.includes(file.type)) {
-      return jsonResponse({ ok: false, error: `Invalid file type: ${file.type}. Allowed: ${allowedTypes.join(', ')}` }, 400);
-    }
-
-    // Max 10MB
-    if (file.size > 10 * 1024 * 1024) {
-      return jsonResponse({ ok: false, error: 'File too large. Max 10MB.' }, 400);
+      return jsonResponse({ ok: false, error: 'No file provided' }, 400);
     }
 
     // Generate unique filename
     const ext = file.name.split('.').pop() || 'jpg';
-    const fileName = `${walletAddress}/${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${ext}`;
+    const fileName = `${folder}/${walletAddress}/${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${ext}`;
 
-    console.log(`[dm-upload-media] Uploading ${file.name} (${file.size} bytes) as ${fileName}`);
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Upload to R2
+    await s3.send(new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: fileName,
+      Body: new Uint8Array(arrayBuffer),
+      ContentType: file.type,
+    }));
 
-    const { data, error } = await supabase.storage
-      .from('chat-media')
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-
-    if (error) {
-      console.error('[dm-upload-media] Upload error:', error);
-      return jsonResponse({ ok: false, error: `Upload failed: ${error.message}` }, 500);
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('chat-media')
-      .getPublicUrl(fileName);
-
-    console.log(`[dm-upload-media] Upload success: ${publicUrl}`);
+    const publicUrl = `${R2_PUBLIC_URL}/${fileName}`;
+    console.log(`[dm-upload-media] Uploaded to R2: ${publicUrl}`);
 
     return jsonResponse({ ok: true, url: publicUrl });
   } catch (err) {
-    console.error('[dm-upload-media] Unexpected error:', err);
+    console.error('[dm-upload-media] Error:', err);
     return jsonResponse({ ok: false, error: String(err) }, 500);
   }
 });
