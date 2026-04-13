@@ -337,15 +337,27 @@ serve(async (req) => {
       if (!isAllowedProxy) {
         return new Response("Forbidden", { status: 403 });
       }
-      const imgResp = await fetch(proxyImageUrl);
+      const imgResp = await fetch(proxyImageUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; Fansite/1.0; +https://fansite.app)",
+          "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+        },
+      });
       if (!imgResp.ok) {
-        return new Response("Image not found", { status: 404 });
+        // Redirect to brand logo so Facebook gets a valid image instead of a text error
+        return Response.redirect(DEFAULT_BRAND_LOGO, 302);
       }
+      // Use Content-Type from the CDN response if it's a valid image type,
+      // otherwise derive it from the URL extension
+      const cdnContentType = imgResp.headers.get("content-type") || "";
+      const contentType = cdnContentType.startsWith("image/")
+        ? cdnContentType
+        : getMimeType(proxyImageUrl);
       const body = await imgResp.arrayBuffer();
       return new Response(body, {
         headers: {
           ...corsHeaders,
-          "Content-Type": getMimeType(proxyImageUrl),
+          "Content-Type": contentType,
           "Cache-Control": "public, max-age=86400",
         },
       });
