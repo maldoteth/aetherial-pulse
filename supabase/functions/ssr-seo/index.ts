@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const DEHUB_API_BASE = "https://api.dehub.io";
@@ -17,200 +17,206 @@ const DEFAULT_BRAND_LOGO = "https://fansiteapp.com/assets/fansite-logo-Bu7bx-CF.
 const AUDIO_OG_IMAGE = "https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo/audio-wave%20(1).png";
 
 interface DeHubUser {
-    username?: string;
-    displayName?: string;
-    avatarImageUrl?: string;
-    aboutMe?: string;
-    address?: string;
+  username?: string;
+  displayName?: string;
+  avatarImageUrl?: string;
+  aboutMe?: string;
+  address?: string;
 }
 
 interface DeHubNFT {
-    tokenId: number;
-    name: string;
-    title?: string;
-    description?: string;
-    imageUrl?: string;
-    imageUrls?: string[];
-    videoUrl?: string;
-    audioUrl?: string;
-    thumbnail_url?: string;
-    postType?: string;
-    minterUsername?: string;
-    mintername?: string;
-    minterDisplayName?: string;
-    minterAvatarUrl?: string;
-    minterUser?: DeHubUser;
+  tokenId: number;
+  name: string;
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  videoUrl?: string;
+  audioUrl?: string;
+  thumbnail_url?: string;
+  postType?: string;
+  minterUsername?: string;
+  mintername?: string;
+  minterDisplayName?: string;
+  minterAvatarUrl?: string;
+  minterUser?: DeHubUser;
 }
 
 interface DeHubCommunity {
-    id: string;
-    name: string;
-    slug: string;
-    description: string | null;
-    avatar_url: string | null;
-    banner_url: string | null;
-    member_count: number;
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  avatar_url: string | null;
+  banner_url: string | null;
+  member_count: number;
 }
 
 async function fetchCommunity(slug: string): Promise<DeHubCommunity | null> {
-    try {
-        const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/communities?slug=eq.${encodeURIComponent(slug)}&select=id,name,slug,description,avatar_url,banner_url,member_count&limit=1`,
-            {
-                headers: {
-                    "apikey": SUPABASE_ANON_KEY,
-                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-                },
-            }
-        );
-        if (!res.ok) return null;
-        const rows: DeHubCommunity[] = await res.json();
-        return rows[0] ?? null;
-    } catch {
-        return null;
-    }
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/communities?slug=eq.${encodeURIComponent(slug)}&select=id,name,slug,description,avatar_url,banner_url,member_count&limit=1`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      },
+    );
+    if (!res.ok) return null;
+    const rows: DeHubCommunity[] = await res.json();
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function getExtension(path: string): string {
-    const match = path.match(/\.([a-zA-Z0-9-]+)$/);
-    if (!match) return "png";
-    return match[1].toLowerCase();
+  const match = path.match(/\.([a-zA-Z0-9-]+)$/);
+  if (!match) return "png";
+  return match[1].toLowerCase();
 }
 
 function ensureAbsoluteUrl(url: string): string {
-    if (!url) return DEFAULT_BRAND_LOGO;
-    if (url.startsWith("http")) return url;
-    return `${DEHUB_CDN_BASE}${url.replace(/^statics\//, "")}`;
+  if (!url) return DEFAULT_BRAND_LOGO;
+  if (url.startsWith("http")) return url;
+  return `${DEHUB_CDN_BASE}${url.replace(/^statics\//, "")}`;
 }
 
 /**
  * Sync with frontend src/lib/media-url.ts
  */
 function buildAvatarUrl(user: DeHubUser): string {
-    const apiPath = user.avatarImageUrl;
-    if (!apiPath) return DEFAULT_BRAND_LOGO;
-    if (apiPath.startsWith("http")) return apiPath;
+  const apiPath = user.avatarImageUrl;
+  if (!apiPath) return DEFAULT_BRAND_LOGO;
+  if (apiPath.startsWith("http")) return apiPath;
 
-    // Frontend logic: cdn/avatars/{address}.{ext}
-    if (user.address) {
-        const ext = getExtension(apiPath);
-        return `${DEHUB_CDN_BASE}avatars/${user.address}.${ext}`;
-    }
+  // Frontend logic: cdn/avatars/{address}.{ext}
+  if (user.address) {
+    const ext = getExtension(apiPath);
+    return `${DEHUB_CDN_BASE}avatars/${user.address}.${ext}`;
+  }
 
-    // Fallback: strip statics/ and append relative path
-    return `${DEHUB_CDN_BASE}${apiPath.replace(/^statics\//, "")}`;
+  // Fallback: strip statics/ and append relative path
+  return `${DEHUB_CDN_BASE}${apiPath.replace(/^statics\//, "")}`;
 }
 
 function buildPostImageUrl(nft: DeHubNFT): string | null {
-    // 1. Multi-image feed posts: imageUrls array → cdn/feed-images/{filename}
-    if (nft.imageUrls && nft.imageUrls.length > 0) {
-        const firstImg = nft.imageUrls[0];
-        if (firstImg.startsWith("http")) return firstImg;
-        const filename = firstImg.split("/").pop() || "";
-        if (filename) return `${DEHUB_CDN_BASE}feed-images/${filename}`;
-    }
+  // 1. Multi-image feed posts: imageUrls array → cdn/feed-images/{filename}
+  if (nft.imageUrls && nft.imageUrls.length > 0) {
+    const firstImg = nft.imageUrls[0];
+    if (firstImg.startsWith("http")) return firstImg;
+    const filename = firstImg.split("/").pop() || "";
+    if (filename) return `${DEHUB_CDN_BASE}feed-images/${filename}`;
+  }
 
-    // 2. Single NFT image: imageUrl → cdn/images/{tokenId}.{ext}
-    const apiPath = nft.imageUrl || nft.thumbnail_url;
-    if (!apiPath) return null; // No image — caller should fall back to minter avatar
-    if (apiPath.startsWith("http")) return apiPath;
-    const ext = getExtension(apiPath);
-    return `${DEHUB_CDN_BASE}images/${nft.tokenId}.${ext}`;
+  // 2. Single NFT image: imageUrl → cdn/images/{tokenId}.{ext}
+  const apiPath = nft.imageUrl || nft.thumbnail_url;
+  if (!apiPath) return null; // No image — caller should fall back to minter avatar
+  if (apiPath.startsWith("http")) return apiPath;
+  const ext = getExtension(apiPath);
+  return `${DEHUB_CDN_BASE}images/${nft.tokenId}.${ext}`;
 }
 
 function getMimeType(url: string): string {
-    const ext = url.split("?")[0].match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
-    switch (ext) {
-        case "jpg":
-        case "jpeg":
-            return "image/jpeg";
-        case "gif":
-            return "image/gif";
-        case "webp":
-            return "image/webp";
-        case "svg":
-            return "image/svg+xml";
-        default:
-            return "image/png";
-    }
+  const ext = url
+    .split("?")[0]
+    .match(/\.([a-zA-Z0-9]+)$/)?.[1]
+    ?.toLowerCase();
+  switch (ext) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "gif":
+      return "image/gif";
+    case "webp":
+      return "image/webp";
+    case "svg":
+      return "image/svg+xml";
+    default:
+      return "image/png";
+  }
 }
 
 function buildProxiedImageUrl(functionBaseUrl: string, imageUrl: string): string {
-    // Use our own edge function as image proxy to serve correct Content-Type
-    return `${functionBaseUrl}?image_url=${encodeURIComponent(imageUrl)}`;
+  // Use our own edge function as image proxy to serve correct Content-Type
+  return `${functionBaseUrl}?image_url=${encodeURIComponent(imageUrl)}`;
 }
 
 function buildVideoUrl(nft: DeHubNFT): string | null {
-    const videoPath = nft.videoUrl;
-    if (!videoPath) return null;
-    if (videoPath.startsWith("http")) return videoPath;
-    return `${DEHUB_CDN_BASE}videos/${nft.tokenId}.mp4`;
+  const videoPath = nft.videoUrl;
+  if (!videoPath) return null;
+  if (videoPath.startsWith("http")) return videoPath;
+  return `${DEHUB_CDN_BASE}videos/${nft.tokenId}.mp4`;
 }
 
 function getVideoMimeType(url: string): string {
-    const ext = url.split("?")[0].match(/\.([a-zA-Z0-9]+)$/)?.[1]?.toLowerCase();
-    switch (ext) {
-        case "webm":
-            return "video/webm";
-        case "mov":
-            return "video/quicktime";
-        default:
-            return "video/mp4";
-    }
+  const ext = url
+    .split("?")[0]
+    .match(/\.([a-zA-Z0-9]+)$/)?.[1]
+    ?.toLowerCase();
+  switch (ext) {
+    case "webm":
+      return "video/webm";
+    case "mov":
+      return "video/quicktime";
+    default:
+      return "video/mp4";
+  }
 }
 
 function generateMetaHTML(data: {
-    title: string;
-    description: string;
-    image: string;
-    url: string;
-    type?: string;
-    twitterCard?: string;
-    imageWidth?: number;
-    imageHeight?: number;
-    functionBaseUrl?: string;
-    isBot: boolean;
-    videoUrl?: string | null;
-    jsonLd?: Record<string, unknown>;
+  title: string;
+  description: string;
+  image: string;
+  url: string;
+  type?: string;
+  twitterCard?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  functionBaseUrl?: string;
+  isBot: boolean;
+  videoUrl?: string | null;
+  jsonLd?: Record<string, unknown>;
 }): string {
-    const title = data.title.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const description = data.description.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const imageUrl = ensureAbsoluteUrl(data.image);
-    // Use direct CDN URL for both og:image and twitter:image.
-    // Proxied Supabase URLs lack image extensions → validators reject them, and CDN already serves correct Content-Type.
-    const ogImageUrl = imageUrl;
-    const twitterImageUrl = imageUrl;
-    const imgWidth = data.imageWidth;
-    const imgHeight = data.imageHeight;
-    const mimeType = getMimeType(imageUrl);
+  const title = data.title.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const description = data.description.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const imageUrl = ensureAbsoluteUrl(data.image);
+  // Use direct CDN URL for both og:image and twitter:image.
+  // Proxied Supabase URLs lack image extensions → validators reject them, and CDN already serves correct Content-Type.
+  const ogImageUrl = imageUrl;
+  const twitterImageUrl = imageUrl;
+  const imgWidth = data.imageWidth;
+  const imgHeight = data.imageHeight;
+  const mimeType = getMimeType(imageUrl);
 
-    const isVideo = !!data.videoUrl;
-    const ogType = isVideo ? "video.other" : (data.type || "website");
-    const twitterCard = isVideo ? "player" : (data.twitterCard || "summary_large_image");
+  const isVideo = !!data.videoUrl;
+  const ogType = isVideo ? "video.other" : data.type || "website";
+  const twitterCard = isVideo ? "player" : data.twitterCard || "summary_large_image";
 
-    // Build video-specific OG tags
-    let videoTags = "";
-    if (isVideo && data.videoUrl) {
-        const videoMime = getVideoMimeType(data.videoUrl);
-        videoTags = `
+  // Build video-specific OG tags
+  let videoTags = "";
+  if (isVideo && data.videoUrl) {
+    const videoMime = getVideoMimeType(data.videoUrl);
+    videoTags = `
   <!-- Video OG Tags -->
   <meta property="og:video" content="${data.videoUrl}">
   <meta property="og:video:secure_url" content="${data.videoUrl}">
   <meta property="og:video:type" content="${videoMime}">
   <meta property="og:video:width" content="1280">
   <meta property="og:video:height" content="720">`;
-    }
+  }
 
-    // Build Twitter player tags for video
-    let twitterVideoTags = "";
-    if (isVideo && data.videoUrl) {
-        twitterVideoTags = `
+  // Build Twitter player tags for video
+  let twitterVideoTags = "";
+  if (isVideo && data.videoUrl) {
+    twitterVideoTags = `
   <meta name="twitter:player" content="${data.videoUrl}">
   <meta name="twitter:player:width" content="1280">
   <meta name="twitter:player:height" content="720">`;
-    }
+  }
 
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -227,9 +233,17 @@ function generateMetaHTML(data: {
   <meta property="og:description" content="${description}">
   <meta property="og:image" content="${ogImageUrl}">
   <meta property="og:image:secure_url" content="${ogImageUrl}">
-  <meta property="og:image:type" content="${mimeType}">${imgWidth ? `
-  <meta property="og:image:width" content="${imgWidth}">` : ""}${imgHeight ? `
-  <meta property="og:image:height" content="${imgHeight}">` : ""}
+  <meta property="og:image:type" content="${mimeType}">${
+    imgWidth
+      ? `
+  <meta property="og:image:width" content="${imgWidth}">`
+      : ""
+  }${
+    imgHeight
+      ? `
+  <meta property="og:image:height" content="${imgHeight}">`
+      : ""
+  }
   <meta property="og:image:alt" content="${title}">
   <meta property="fb:app_id" content="966242223397117">${videoTags}
 
@@ -242,18 +256,23 @@ function generateMetaHTML(data: {
   <meta name="twitter:image:alt" content="${title}">
   <meta name="twitter:site" content="@FansiteApp">${twitterVideoTags}
 
-  ${!data.isBot
-            ? `
+  ${
+    !data.isBot
+      ? `
   <meta http-equiv="refresh" content="0; url=${data.url}">
   <script>window.location.href = '${data.url}';</script>
   `
-            : ""
-        }
+      : ""
+  }
 
-  ${data.jsonLd ? `
+  ${
+    data.jsonLd
+      ? `
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">${JSON.stringify(data.jsonLd)}</script>
-  ` : ""}
+  `
+      : ""
+  }
 </head>
 <body style="font-family: sans-serif; background: black; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
   <div style="max-width: 600px; text-align: center; padding: 20px;">
@@ -285,256 +304,263 @@ function generateMetaHTML(data: {
 }
 
 serve(async (req) => {
-    if (req.method === "OPTIONS") {
-        return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const brandLogo = ensureAbsoluteUrl(url.searchParams.get("brand_logo") || DEFAULT_BRAND_LOGO);
+
+    // Facebook/Twitter scrapers need proper MIME types to display images
+    const proxyImageUrl = url.searchParams.get("image_url");
+    if (proxyImageUrl) {
+      if (
+        !proxyImageUrl.startsWith(DEHUB_CDN_BASE) &&
+        !proxyImageUrl.startsWith("https://dehub.io/") &&
+        !proxyImageUrl.startsWith("https://aigxuutjaqsywioxjefr.supabase.co/storage/")
+      ) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      const imgResp = await fetch(proxyImageUrl);
+      if (!imgResp.ok) {
+        return new Response("Image not found", { status: 404 });
+      }
+      const body = await imgResp.arrayBuffer();
+      return new Response(body, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": getMimeType(proxyImageUrl),
+          "Cache-Control": "public, max-age=86400",
+        },
+      });
     }
 
-    try {
-        const url = new URL(req.url);
-        const brandLogo = ensureAbsoluteUrl(url.searchParams.get("brand_logo") || DEFAULT_BRAND_LOGO);
+    const userAgent = req.headers.get("user-agent") || "";
+    // X-Is-Bot header set by Netlify edge function (more reliable than UA sniffing here)
+    // because the edge function always serves SSR HTML for shareable routes — it knows
+    // whether the original requester was a bot and tells us via this header.
+    const xIsBot = req.headers.get("x-is-bot");
+    const isBot =
+      xIsBot !== null
+        ? xIsBot === "1"
+        : /bot|facebook|twitter|linkedin|whatsapp|telegram|slack|discord|facebot|oggrabber/i.test(userAgent);
 
-        // Facebook/Twitter scrapers need proper MIME types to display images
-        const proxyImageUrl = url.searchParams.get("image_url");
-        if (proxyImageUrl) {
-            if (!proxyImageUrl.startsWith(DEHUB_CDN_BASE) && !proxyImageUrl.startsWith("https://dehub.io/") && !proxyImageUrl.startsWith("https://aigxuutjaqsywioxjefr.supabase.co/storage/")) {
-                return new Response("Forbidden", { status: 403 });
-            }
-            const imgResp = await fetch(proxyImageUrl);
-            if (!imgResp.ok) {
-                return new Response("Image not found", { status: 404 });
-            }
-            const body = await imgResp.arrayBuffer();
-            return new Response(body, {
-                headers: {
-                    ...corsHeaders,
-                    "Content-Type": getMimeType(proxyImageUrl),
-                    "Cache-Control": "public, max-age=86400",
-                },
-            });
-        }
+    const functionBaseUrl = IMAGE_PROXY_BASE;
 
-        const userAgent = req.headers.get("user-agent") || "";
-        // X-Is-Bot header set by Netlify edge function (more reliable than UA sniffing here)
-        // because the edge function always serves SSR HTML for shareable routes — it knows
-        // whether the original requester was a bot and tells us via this header.
-        const xIsBot = req.headers.get("x-is-bot");
-        const isBot = xIsBot !== null
-            ? xIsBot === "1"
-            : /bot|facebook|twitter|linkedin|whatsapp|telegram|slack|discord|facebot|oggrabber/i.test(userAgent);
+    let fullPath = url.searchParams.get("path") || "/";
+    const originalUrl = url.searchParams.get("original_url");
+    const canonicalUrl = originalUrl || `${APP_URL}${fullPath}`;
 
-        const functionBaseUrl = IMAGE_PROXY_BASE;
+    let cleanPath = fullPath.split("?")[0];
+    if (cleanPath.startsWith("/")) cleanPath = cleanPath.substring(1);
+    const pathParts = cleanPath.split("/").filter(Boolean);
 
-        let fullPath = url.searchParams.get("path") || "/";
-        const originalUrl = url.searchParams.get("original_url");
-        const canonicalUrl = originalUrl || `${APP_URL}${fullPath}`;
+    // 1. Profile Handling (/@username or /username)
+    const possibleUsername = pathParts[0] || "";
+    const isSystemRoute = ["post", "app", "explore", "notifications", "messages", "settings"].includes(
+      possibleUsername.toLowerCase(),
+    );
 
-        let cleanPath = fullPath.split("?")[0];
-        if (cleanPath.startsWith("/")) cleanPath = cleanPath.substring(1);
-        const pathParts = cleanPath.split("/").filter(Boolean);
+    if (possibleUsername && !isSystemRoute) {
+      // Remove leading @ if present
+      const username = possibleUsername.startsWith("@") ? possibleUsername.substring(1) : possibleUsername;
+      console.log(`[SSR] Profile detected for: ${username}`);
 
-        // 1. Profile Handling (/@username or /username)
-        const possibleUsername = pathParts[0] || "";
-        const isSystemRoute = ["post", "app", "explore", "notifications", "messages", "settings"].includes(
-            possibleUsername.toLowerCase(),
-        );
+      const response = await fetch(`${DEHUB_API_BASE}/api/account_info/${username}`);
+      const userData = await response.json();
+      const user: DeHubUser = userData.result || userData;
 
-        if (possibleUsername && !isSystemRoute) {
-            // Remove leading @ if present
-            const username = possibleUsername.startsWith("@") ? possibleUsername.substring(1) : possibleUsername;
-            console.log(`[SSR] Profile detected for: ${username}`);
-
-            const response = await fetch(`${DEHUB_API_BASE}/api/account_info/${username}`);
-            const userData = await response.json();
-            const user: DeHubUser = userData.result || userData;
-
-            if (user && (user.username || user.address)) {
-                const displayName = user.displayName || user.username || "Fansite User";
-                const profileUrl = `${APP_URL}/${user.username || username}`;
-                const avatarUrl = buildAvatarUrl(user);
-                const isLogoFallback = avatarUrl === DEFAULT_BRAND_LOGO;
-                const html = generateMetaHTML({
-                    title: `Join @${user.username || username} on Fansite today!`,
-                    description:
-                        user.aboutMe || `Connect with ${displayName} on Fansite, the open source alternative to legacy media.`,
-                    image: avatarUrl,
-                    url: profileUrl,
-                    twitterCard: "summary",
-                    imageWidth: isLogoFallback ? 200 : 400,
-                    imageHeight: isLogoFallback ? 200 : 400,
-                    functionBaseUrl,
-                    isBot,
-                    jsonLd: {
-                        '@context': 'https://schema.org',
-                        '@type': 'Person',
-                        name: displayName,
-                        url: profileUrl,
-                        ...(user.aboutMe && { description: user.aboutMe }),
-                        ...(avatarUrl !== DEFAULT_BRAND_LOGO && { image: avatarUrl }),
-                        sameAs: profileUrl,
-                    },
-                });
-                return new Response(html, { headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
-            }
-        }
-
-        // 2. Community Handling (/app/communities/{slug})
-        if (cleanPath.includes("/communities/")) {
-            const slug = cleanPath.split("/communities/")[1].split("/")[0];
-            const community = await fetchCommunity(slug);
-
-            if (community) {
-                const communityUrl = `${APP_URL}/app/communities/${community.slug}`;
-                // Use avatar (profile image) for community OG card
-                const ogImage = community.avatar_url || brandLogo;
-                const hasRealImage = !!community.avatar_url;
-                const twitterCard = "summary";
-                const title = `Join ${community.name}'s community on Fansite today`;
-                const memberText = community.member_count > 0 ? ` • ${community.member_count} members` : "";
-                const description = community.description
-                    ? `${community.description}${memberText}`
-                    : `Join the ${community.name} community on Fansite — open source, censorship resistant media.${memberText}`;
-
-                const html = generateMetaHTML({
-                    title,
-                    description,
-                    image: ogImage,
-                    url: communityUrl,
-                    type: "website",
-                    twitterCard,
-                    imageWidth: 400,
-                    imageHeight: 400,
-                    functionBaseUrl,
-                    isBot,
-                    jsonLd: {
-                        "@context": "https://schema.org",
-                        "@type": "Organization",
-                        name: community.name,
-                        url: communityUrl,
-                        ...(community.description && { description: community.description }),
-                        ...(hasRealImage && { image: ogImage }),
-                    },
-                });
-                return new Response(html, { headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
-            }
-        }
-
-        // 3. Unified Post Handling (/app/post/{tokenId} for both image and video posts)
-        if (cleanPath.includes("/post/")) {
-            const postId = cleanPath.split("/post/")[1].split("/")[0];
-
-            const response = await fetch(`${DEHUB_API_BASE}/api/nft_info/${postId}`);
-            const nftData = await response.json();
-            const nft: DeHubNFT = nftData.result || nftData;
-
-            if (nft) {
-                const posterName = nft.minterDisplayName || nft.mintername || nft.minterUsername || "someone";
-                // trim() prevents nft.name=" " (whitespace-only) from being used as title —
-                // X/Twitter ignores cards with blank titles
-                const title = (nft.title || nft.name || "").trim() || `Post by ${posterName} on Fansite`;
-                const description = (`View this post by ${posterName} on Fansite` + (nft.description ? ` — ${nft.description}` : "")).trim();
-                const postUrl = `${APP_URL}/app/post/${postId}`;
-
-                const isAudio = nft.postType === "feed-audio";
-                const videoUrl = isAudio ? null : buildVideoUrl(nft);
-
-                let postImage: string;
-                let hasRealImage = false;
-                if (isAudio) {
-                    postImage = buildProxiedImageUrl(IMAGE_PROXY_BASE, AUDIO_OG_IMAGE);
-                    hasRealImage = true;
-                } else if (videoUrl) {
-                    postImage = ensureAbsoluteUrl(nft.thumbnail_url || nft.imageUrl || "") || brandLogo;
-                    hasRealImage = !!(nft.thumbnail_url || nft.imageUrl);
-                } else {
-                    const builtImage = buildPostImageUrl(nft);
-                    if (builtImage) {
-                        postImage = builtImage;
-                        hasRealImage = true;
-                    } else {
-                        // Text post (no image, no video) — generate a dynamic OG card
-                        // that renders the post text as a styled 1200×630 PNG, similar
-                        // to how X/Twitter shows "tweet screenshot" cards when sharing.
-                        const postText = (nft.title || nft.name || "").trim();
-                        if (postText) {
-                            postImage = `${OG_IMAGE_BASE}?post_id=${postId}`;
-                            hasRealImage = true;
-                        } else {
-                            // Absolute fallback: minter avatar (no text to render)
-                            const minter = nft.minterUser;
-                            postImage = minter ? buildAvatarUrl(minter) : brandLogo;
-                            hasRealImage = false;
-                        }
-                    }
-                }
-
-                // summary_large_image expects landscape images (posts with real images/video)
-                // summary works for square avatars and logo fallbacks
-                const twitterCardType = hasRealImage ? "summary_large_image" : "summary";
-
-                const html = generateMetaHTML({
-                    title,
-                    description,
-                    image: postImage,
-                    url: postUrl,
-                    type: "article",
-                    twitterCard: twitterCardType,
-                    functionBaseUrl,
-                    isBot,
-                    videoUrl,
-                    jsonLd: {
-                        '@context': 'https://schema.org',
-                        '@type': 'Article',
-                        headline: title,
-                        description,
-                        url: postUrl,
-                        ...(nft.minterDisplayName && { author: { '@type': 'Person', name: nft.minterDisplayName } }),
-                        publisher: { '@type': 'Organization', name: 'Fansite', url: 'https://fansite.app' },
-                        ...(postImage && { image: postImage }),
-                    },
-                });
-                return new Response(html, { headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
-            }
-        }
-
-        // Default Fallback
+      if (user && (user.username || user.address)) {
+        const displayName = user.displayName || user.username || "Fansite User";
+        const profileUrl = `${APP_URL}/${user.username || username}`;
+        const avatarUrl = buildAvatarUrl(user);
+        const isLogoFallback = avatarUrl === DEFAULT_BRAND_LOGO;
         const html = generateMetaHTML({
-            title: "Fansite — Open Source, User Owned & Censorship Resistant Media",
-            description:
-                "fansite.app is open source, user owned and censorship resistant media. Join the future of free speech and reach.",
-            image: brandLogo,
-            url: canonicalUrl,
-            twitterCard: "summary_large_image",
-            imageWidth: 1200,
-            imageHeight: 628,
-            functionBaseUrl,
-            isBot,
-            jsonLd: {
-                '@context': 'https://schema.org',
-                '@graph': [
-                    {
-                        '@type': 'WebSite',
-                        name: 'Fansite',
-                        url: 'https://fansite.app',
-                        description: 'Open source, user owned and censorship resistant media.',
-                        potentialAction: {
-                            '@type': 'SearchAction',
-                            target: 'https://fansite.app/app/explore?q={search_term_string}',
-                            'query-input': 'required name=search_term_string',
-                        },
-                    },
-                    {
-                        '@type': 'Organization',
-                        name: 'Fansite',
-                        url: 'https://fansite.app',
-                        logo: brandLogo,
-                        sameAs: ['https://x.com/FansiteApp'],
-                    },
-                ],
-            },
+          title: `Join @${user.username || username} on Fansite today!`,
+          description:
+            user.aboutMe || `Connect with ${displayName} on Fansite, the open source alternative to legacy media.`,
+          image: avatarUrl,
+          url: profileUrl,
+          twitterCard: "summary",
+          imageWidth: isLogoFallback ? 200 : 400,
+          imageHeight: isLogoFallback ? 200 : 400,
+          functionBaseUrl,
+          isBot,
+          jsonLd: {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: displayName,
+            url: profileUrl,
+            ...(user.aboutMe && { description: user.aboutMe }),
+            ...(avatarUrl !== DEFAULT_BRAND_LOGO && { image: avatarUrl }),
+            sameAs: profileUrl,
+          },
         });
         return new Response(html, { headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
-    } catch (e) {
-        console.error("SSR SEO Error:", e);
-        return new Response("Error", { status: 500 });
+      }
     }
+
+    // 2. Community Handling (/app/communities/{slug})
+    if (cleanPath.includes("/communities/")) {
+      const slug = cleanPath.split("/communities/")[1].split("/")[0];
+      const community = await fetchCommunity(slug);
+
+      if (community) {
+        const communityUrl = `${APP_URL}/app/communities/${community.slug}`;
+        // Use avatar (profile image) for community OG card
+        const ogImage = community.avatar_url || brandLogo;
+        const hasRealImage = !!community.avatar_url;
+        const twitterCard = "summary";
+        const title = `Join ${community.name}'s community on Fansite today`;
+        const memberText = community.member_count > 0 ? ` • ${community.member_count} members` : "";
+        const description = community.description
+          ? `${community.description}${memberText}`
+          : `Join the ${community.name} community on Fansite — open source, censorship resistant media.${memberText}`;
+
+        const html = generateMetaHTML({
+          title,
+          description,
+          image: ogImage,
+          url: communityUrl,
+          type: "website",
+          twitterCard,
+          imageWidth: 400,
+          imageHeight: 400,
+          functionBaseUrl,
+          isBot,
+          jsonLd: {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: community.name,
+            url: communityUrl,
+            ...(community.description && { description: community.description }),
+            ...(hasRealImage && { image: ogImage }),
+          },
+        });
+        return new Response(html, { headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
+      }
+    }
+
+    // 3. Unified Post Handling (/app/post/{tokenId} for both image and video posts)
+    if (cleanPath.includes("/post/")) {
+      const postId = cleanPath.split("/post/")[1].split("/")[0];
+
+      const response = await fetch(`${DEHUB_API_BASE}/api/nft_info/${postId}`);
+      const nftData = await response.json();
+      const nft: DeHubNFT = nftData.result || nftData;
+
+      if (nft) {
+        const posterName = nft.minterDisplayName || nft.mintername || nft.minterUsername || "someone";
+        // trim() prevents nft.name=" " (whitespace-only) from being used as title —
+        // X/Twitter ignores cards with blank titles
+        const title = (nft.title || nft.name || "").trim() || `Post by ${posterName} on Fansite`;
+        const description = (
+          `View this post by ${posterName} on Fansite` + (nft.description ? ` — ${nft.description}` : "")
+        ).trim();
+        const postUrl = `${APP_URL}/app/post/${postId}`;
+
+        const isAudio = nft.postType === "feed-audio";
+        const videoUrl = isAudio ? null : buildVideoUrl(nft);
+
+        let postImage: string;
+        let hasRealImage = false;
+        if (isAudio) {
+          postImage = buildProxiedImageUrl(IMAGE_PROXY_BASE, AUDIO_OG_IMAGE);
+          hasRealImage = true;
+        } else if (videoUrl) {
+          postImage = ensureAbsoluteUrl(nft.thumbnail_url || nft.imageUrl || "") || brandLogo;
+          hasRealImage = !!(nft.thumbnail_url || nft.imageUrl);
+        } else {
+          const builtImage = buildPostImageUrl(nft);
+          if (builtImage) {
+            postImage = builtImage;
+            hasRealImage = true;
+          } else {
+            // Text post (no image, no video) — generate a dynamic OG card
+            // that renders the post text as a styled 1200×630 PNG, similar
+            // to how X/Twitter shows "tweet screenshot" cards when sharing.
+            const postText = (nft.title || nft.name || "").trim();
+            if (postText) {
+              postImage = `${OG_IMAGE_BASE}?post_id=${postId}`;
+              hasRealImage = true;
+            } else {
+              // Absolute fallback: minter avatar (no text to render)
+              const minter = nft.minterUser;
+              postImage = minter ? buildAvatarUrl(minter) : brandLogo;
+              hasRealImage = false;
+            }
+          }
+        }
+
+        // summary_large_image expects landscape images (posts with real images/video)
+        // summary works for square avatars and logo fallbacks
+        const twitterCardType = hasRealImage ? "summary_large_image" : "summary";
+
+        const html = generateMetaHTML({
+          title,
+          description,
+          image: postImage,
+          url: postUrl,
+          type: "article",
+          twitterCard: twitterCardType,
+          functionBaseUrl,
+          isBot,
+          videoUrl,
+          jsonLd: {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: title,
+            description,
+            url: postUrl,
+            ...(nft.minterDisplayName && { author: { "@type": "Person", name: nft.minterDisplayName } }),
+            publisher: { "@type": "Organization", name: "Fansite", url: "https://fansite.app" },
+            ...(postImage && { image: postImage }),
+          },
+        });
+        return new Response(html, { headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
+      }
+    }
+
+    // Default Fallback
+    const html = generateMetaHTML({
+      title: "Fansite — Open Source, User Owned & Censorship Resistant Media",
+      description:
+        "fansite.app is open source, user owned and censorship resistant media. Join the future of free speech and reach.",
+      image: brandLogo,
+      url: canonicalUrl,
+      twitterCard: "summary_large_image",
+      imageWidth: 1200,
+      imageHeight: 628,
+      functionBaseUrl,
+      isBot,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            name: "Fansite",
+            url: "https://fansite.app",
+            description: "Open source, user owned and censorship resistant media.",
+            potentialAction: {
+              "@type": "SearchAction",
+              target: "https://fansite.app/app/explore?q={search_term_string}",
+              "query-input": "required name=search_term_string",
+            },
+          },
+          {
+            "@type": "Organization",
+            name: "Fansite",
+            url: "https://fansite.app",
+            logo: brandLogo,
+            sameAs: ["https://x.com/FansiteApp"],
+          },
+        ],
+      },
+    });
+    return new Response(html, { headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
+  } catch (e) {
+    console.error("SSR SEO Error:", e);
+    return new Response("Error", { status: 500 });
+  }
 });
