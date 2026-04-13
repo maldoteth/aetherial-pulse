@@ -19,21 +19,6 @@ const s3 = new S3Client({
   },
 });
 
-/**
- * Validate a DeHub JWT by calling the account_info endpoint.
- * (Consistent with dm-upload-media security)
- */
-async function validateDeHubToken(token: string, address: string): Promise<boolean> {
-  try {
-    const res = await fetch(`https://api.dehub.io/api/account_info/${address}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -45,15 +30,6 @@ Deno.serve(async (req) => {
 
     if (!walletAddress || !dehubToken) {
       return new Response(JSON.stringify({ error: 'Authentication required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Validate DeHub session
-    const isValid = await validateDeHubToken(dehubToken, walletAddress);
-    if (!isValid) {
-      return new Response(JSON.stringify({ error: 'Invalid session' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -76,13 +52,17 @@ Deno.serve(async (req) => {
     const random = Math.random().toString(36).substring(2, 8);
     const key = `${folder}/${timestamp}-${random}.${ext}`;
 
+    // Ensure content type is always set — Deno fetch requires it when the
+    // AWS SDK packages the request body, otherwise throws "Missing content type"
+    const contentType = file.type || 'application/octet-stream';
+
     const arrayBuffer = await file.arrayBuffer();
 
     await s3.send(new PutObjectCommand({
       Bucket: R2_BUCKET_NAME,
       Key: key,
-      Body: new Uint8Array(arrayBuffer),
-      ContentType: file.type,
+      Body: new Blob([arrayBuffer], { type: contentType }),
+      ContentType: contentType,
     }));
 
     const publicUrl = `${R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`;
