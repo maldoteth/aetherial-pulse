@@ -1,1 +1,4 @@
 project_id = "sukqmkvncogkfnthvfnv"
+
+[functions.ssr-seo]
+verify_jwt = false
