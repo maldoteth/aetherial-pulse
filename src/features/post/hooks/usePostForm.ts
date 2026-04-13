@@ -1126,12 +1126,6 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
 
       console.log('[Mint] API response:', JSON.stringify(mintResponse, null, 2));
 
-      // Validate signature data from API
-      if (!mintResponse.v || !mintResponse.r || !mintResponse.s) {
-        console.error('[Mint] Missing signature components in API response');
-        throw new Error('Invalid signature data from backend - missing v, r, or s');
-      }
-      
       if (!mintResponse.createdTokenId) {
         console.error('[Mint] Missing token ID in API response');
         throw new Error('Invalid response from backend - missing token ID');
@@ -1145,72 +1139,69 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
         return;
       }
 
-      // Step 2: Execute on-chain minting
-      setUploadProgress(65);
-      toast.loading('Publishing to decentralized database', { id: 'mint-progress', duration: Infinity });
-      
-      // Slowly creep progress from 69→99% while waiting for chain confirmation
-      // Faster initially, then decelerates as it approaches 99%
-      let simulatedProgress = 69;
-      const progressInterval = setInterval(() => {
-        const remaining = 99 - simulatedProgress;
-        // Exponential deceleration: move a fraction of remaining distance
-        const step = remaining > 4
-          ? Math.random() * 3 + 1.5   // 1.5-4.5% per tick when far from 99
-          : Math.random() * 0.3 + 0.1; // 0.1-0.4% per tick near 95-99%
-        simulatedProgress += step;
-        if (simulatedProgress >= 99) {
-          simulatedProgress = 99;
+      // Step 2: Execute on-chain minting (only when a real EIP-712 signature is returned)
+      const hasOnChainSignature = mintResponse.v && mintResponse.r && mintResponse.s;
+
+      if (hasOnChainSignature) {
+        setUploadProgress(65);
+        toast.loading('Publishing to decentralized database', { id: 'mint-progress', duration: Infinity });
+
+        let simulatedProgress = 69;
+        const progressInterval = setInterval(() => {
+          const remaining = 99 - simulatedProgress;
+          const step = remaining > 4
+            ? Math.random() * 3 + 1.5
+            : Math.random() * 0.3 + 0.1;
+          simulatedProgress += step;
+          if (simulatedProgress >= 99) {
+            simulatedProgress = 99;
+            clearInterval(progressInterval);
+          }
+          setUploadProgress(Math.round(simulatedProgress));
+        }, 1200);
+
+        let txHash: string;
+        let mintConfirmed: Promise<string> | undefined;
+
+        try {
+          if (hasBounty) {
+            toast.loading('Approving tokens', { id: 'mint-progress', duration: Infinity });
+            txHash = await mintWithBounty({
+              tokenId: mintResponse.createdTokenId,
+              timestamp: mintResponse.timestamp,
+              v: mintResponse.v,
+              r: mintResponse.r,
+              s: mintResponse.s,
+              bountyAmount: parseFloat(w2eTotal),
+              countOfViewers: w2eViews.trim() !== '' ? parseInt(w2eViews) : 10,
+              countOfCommentors: w2eComments.trim() !== '' ? parseInt(w2eComments) : 0,
+              chainId,
+            });
+          } else {
+            const mintResult = await mintOnChain({
+              tokenId: mintResponse.createdTokenId,
+              timestamp: mintResponse.timestamp,
+              v: mintResponse.v,
+              r: mintResponse.r,
+              s: mintResponse.s,
+              chainId,
+            });
+            txHash = mintResult.hash;
+            mintConfirmed = mintResult.confirmed;
+          }
+        } finally {
           clearInterval(progressInterval);
         }
-        setUploadProgress(Math.round(simulatedProgress));
-      }, 1200);
 
-      let txHash: string;
-      let mintConfirmed: Promise<string> | undefined;
-      
-      try {
-        if (hasBounty) {
-          // Use StreamController for bounty minting
-          toast.loading('Approving tokens', { id: 'mint-progress', duration: Infinity });
-          
-          txHash = await mintWithBounty({
-            tokenId: mintResponse.createdTokenId,
-            timestamp: mintResponse.timestamp,
-            v: mintResponse.v,
-            r: mintResponse.r,
-            s: mintResponse.s,
-            bountyAmount: parseFloat(w2eTotal),
-            countOfViewers: w2eViews.trim() !== '' ? parseInt(w2eViews) : 10,
-            countOfCommentors: w2eComments.trim() !== '' ? parseInt(w2eComments) : 0,
-            chainId,
+        if (mintConfirmed) {
+          mintConfirmed.catch((err) => {
+            console.error('[Mint] Background confirmation failed:', err);
+            toast.error('Post submitted but confirmation failed. It may still appear shortly.');
           });
-        } else {
-          // Use StreamCollection for standard minting — optimistic return
-          const mintResult = await mintOnChain({
-            tokenId: mintResponse.createdTokenId,
-            timestamp: mintResponse.timestamp,
-            v: mintResponse.v,
-            r: mintResponse.r,
-            s: mintResponse.s,
-            chainId,
-          });
-          txHash = mintResult.hash;
-          mintConfirmed = mintResult.confirmed;
         }
-      } finally {
-        clearInterval(progressInterval);
-      }
 
-      // Fire-and-forget: wait for on-chain confirmation in background
-      if (mintConfirmed) {
-        mintConfirmed.catch((err) => {
-          console.error('[Mint] Background confirmation failed:', err);
-          toast.error('Post submitted but confirmation failed. It may still appear shortly.');
-        });
+        console.log('[Mint] Transaction hash:', txHash);
       }
-
-      console.log('[Mint] Transaction hash:', txHash);
 
       setUploadProgress(100);
       toast.dismiss('mint-progress');

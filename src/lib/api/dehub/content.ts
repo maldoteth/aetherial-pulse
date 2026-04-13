@@ -57,8 +57,15 @@ async function uploadToR2(file: File | Blob, folder: string): Promise<string> {
   formData.append('file', file);
   formData.append('folder', folder);
 
+  const walletAddress = localStorage.getItem('dehub_wallet') || '';
+  const dehubToken = localStorage.getItem('dehub_token') || '';
+
   const { data, error } = await supabase.functions.invoke('r2-upload', {
     body: formData,
+    headers: {
+      'x-wallet-address': walletAddress,
+      'x-dehub-token': dehubToken,
+    },
   });
 
   if (error) throw new Error(`Upload failed: ${error.message}`);
