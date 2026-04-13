@@ -21,6 +21,8 @@ function postToNFT(p: any): DeHubNFT {
         ? p.media_url
         : undefined;
 
+  const prof = p.creator;
+
   return {
     tokenId: p.token_id,
     name: p.title || '',
@@ -30,6 +32,16 @@ function postToNFT(p: any): DeHubNFT {
     audioUrl: p.media_type === 'audio' ? p.media_url : undefined,
     postType: (isLive ? 'video' : p.media_type) || 'text',
     minter: p.creator_wallet_address,
+    minterDisplayName: prof?.display_name,
+    minterUsername: prof?.username,
+    minterAvatarUrl: prof?.avatar_url,
+    creator: prof ? {
+      id: prof.wallet_address,
+      username: prof.username,
+      display_name: prof.display_name,
+      avatar_url: prof.avatar_url,
+      is_verified: prof.is_verified,
+    } : undefined,
     createdAt: p.created_at,
     likes: p.like_count,
     views: p.view_count,
@@ -56,6 +68,7 @@ export async function searchNFTs(params: SearchNFTsParams = {}): Promise<Paginat
   const limit = (params as any).limit || params.unit || 20;
   const from = page * limit;
 
+  // Fetch posts with a manual join strategy for reliable profile lookup
   let query = supabase.from('posts').select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, from + limit - 1);
@@ -65,9 +78,29 @@ export async function searchNFTs(params: SearchNFTsParams = {}): Promise<Paginat
   if (params.address) query = query.eq('creator_wallet_address', params.address.toLowerCase());
   if (params.search) query = query.textSearch('search_vector', params.search);
 
-  const { data, count } = await query;
+  const { data: rawPosts, count } = await query;
+
+  if (!rawPosts?.length) {
+    return { data: [], total: count || 0, page, limit, has_more: false };
+  }
+
+  // Fetch associated profiles for the creators of these posts
+  const creatorAddresses = [...new Set(rawPosts.map(p => p.creator_wallet_address.toLowerCase()))];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('wallet_address, username, display_name, avatar_url, is_verified')
+    .in('wallet_address', creatorAddresses);
+
+  const profileMap = new Map((profiles || []).map(p => [p.wallet_address.toLowerCase(), p]));
+
+  // Map each post to its NFT format, including the looked-up creator profile
+  const data = rawPosts.map(p => {
+    const creator = profileMap.get(p.creator_wallet_address.toLowerCase());
+    return postToNFT({ ...p, creator });
+  });
+
   return {
-    data: (data || []).map(postToNFT),
+    data,
     total: count || 0,
     page,
     limit,
