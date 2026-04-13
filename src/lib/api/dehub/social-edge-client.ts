@@ -1,8 +1,6 @@
-/**
- * Authenticated Supabase Edge Function invokes (DeHub JWT + wallet header).
- */
 import { supabase } from '@/integrations/supabase/client';
 import { getAuthToken } from './core';
+import { useAuthStore } from '@/stores/authStore';
 
 export class DehubEdgeError extends Error {
   constructor(
@@ -21,10 +19,20 @@ export async function invokeDehubEdgeFn<T = Record<string, unknown>>(
   functionName: string,
   body: Record<string, unknown>
 ): Promise<T> {
-  const wallet = localStorage.getItem('dehub_wallet');
-  const token = getAuthToken();
-  if (!wallet) throw new DehubEdgeError('Authentication required');
-  if (!token) throw new DehubEdgeError('Authentication required');
+  // Use Zustand store as the primary source of truth for session state
+  const authState = useAuthStore.getState();
+  const wallet = authState.walletAddress || localStorage.getItem('dehub_wallet');
+  const token = getAuthToken(); // getAuthToken already reads from core.ts state / localStorage
+  
+  if (!wallet) {
+    console.error('[Edge] No wallet found in Zustand or localStorage');
+    throw new DehubEdgeError('Authentication required: No wallet address');
+  }
+  
+  if (!token) {
+    console.error('[Edge] No token found for wallet:', wallet);
+    throw new DehubEdgeError('Authentication required: No session token');
+  }
 
   const { data, error } = await supabase.functions.invoke(functionName, {
     body,

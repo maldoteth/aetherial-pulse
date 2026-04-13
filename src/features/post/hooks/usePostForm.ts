@@ -303,7 +303,7 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
     e.target.value = '';
   }, []);
 
-  const processImageFiles = useCallback((files: File[]) => {
+  const processImageFiles = useCallback(async (files: File[]) => {
     // Can't add images if there's already a video
     if (hasVideo) {
       toast.error('Remove the video first to add images');
@@ -318,16 +318,25 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
       return;
     }
 
-    const filesToAdd = files.filter(f => f.type.startsWith('image/')).slice(0, availableSlots);
+    const filesToProcess = files.filter(f => f.type.startsWith('image/')).slice(0, availableSlots);
     
     if (files.length > availableSlots) {
       toast.info(`Only ${availableSlots} image${availableSlots > 1 ? 's' : ''} added (max 4)`);
     }
 
-    filesToAdd.forEach(file => {
-      const preview = URL.createObjectURL(file);
-      setMedia(prev => [...prev, { file, preview, type: 'image' }]);
-    });
+    for (const file of filesToProcess) {
+      try {
+        // Optimize to WebP before adding to list
+        const webpBlob = await convertToWebP(file, { quality: 0.8, maxWidth: 1600 });
+        const optimizedFile = new File([webpBlob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: "image/webp" });
+        const preview = URL.createObjectURL(optimizedFile);
+        setMedia(prev => [...prev, { file: optimizedFile, preview, type: 'image' }]);
+      } catch (err) {
+        console.warn('[Image] Optimization failed, using original:', err);
+        const preview = URL.createObjectURL(file);
+        setMedia(prev => [...prev, { file, preview, type: 'image' }]);
+      }
+    }
   }, [hasVideo, media]);
     
   const handleVideoSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -411,15 +420,15 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
         if (ctx && canvas.width > 0 && canvas.height > 0) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          const blob = await new Promise<Blob | null>((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.85);
+          // Optimize generated thumbnail to WebP
+          thumbnailBlob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, 'image/webp', 0.8);
           });
 
           // Only store if blob is valid and non-empty
-          if (blob && blob.size > 0) {
-            thumbnailBlob = blob;
-            thumbnailUrl = URL.createObjectURL(blob);
-            console.log('[Video] Auto-generated thumbnail:', { width: canvas.width, height: canvas.height, size: blob.size });
+          if (thumbnailBlob && thumbnailBlob.size > 0) {
+            thumbnailUrl = URL.createObjectURL(thumbnailBlob);
+            console.log('[Video] Auto-generated thumbnail:', { width: canvas.width, height: canvas.height, size: thumbnailBlob.size });
           } else {
             console.warn('[Video] canvas.toBlob returned empty blob — skipping auto thumbnail');
           }

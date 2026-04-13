@@ -9,8 +9,7 @@
 
 import { Interface, parseUnits, formatUnits } from 'ethers';
 import { getWeb3AuthProvider, getOrInitWeb3Auth, refreshWeb3AuthProvider } from '@/lib/web3auth';
-import { getAccount } from '@wagmi/core';
-import { sendTransaction, waitForTransactionReceipt, switchChain as wagmiSwitchChain } from '@wagmi/core';
+import { getAccount, sendTransaction, waitForTransactionReceipt, switchChain as wagmiSwitchChain } from '@wagmi/core';
 import { wagmiConfig } from '@/lib/wagmi';
 import type { ChainId } from '@/components/app/ChainSelector';
 import { CHAIN_CONFIGS, BASE_CHAIN_ID, BNB_CHAIN_ID, initChainRpcUrls } from './dhb-token';
@@ -23,11 +22,25 @@ type Hex = `0x${string}`;
  * For external wallets, provider is null -- callers use wagmi actions or public RPC instead.
  */
 async function getActiveProvider(chainId?: number): Promise<{ provider: any; isWeb3Auth: boolean }> {
-  // Try Web3Auth first (social login sessions)
+  // 1. Try Web3Auth (social login sessions)
+  // Check if we already have a provider
   const web3authProvider = getWeb3AuthProvider();
   if (web3authProvider) return { provider: web3authProvider, isWeb3Auth: true };
 
-  // Check wagmi (external wallet).
+  // If sync check fails, but we have a stored session source, try waiting for init
+  const storedSource = localStorage.getItem('dehub_connection_source');
+  if (storedSource === 'web3auth') {
+    try {
+      const web3auth = await getOrInitWeb3Auth();
+      if (web3auth.connected && web3auth.provider) {
+        return { provider: web3auth.provider, isWeb3Auth: true };
+      }
+    } catch (err) {
+      console.warn('[AA] Web3Auth getOrInit failed in getActiveProvider:', err);
+    }
+  }
+
+  // 2. Check wagmi (external wallet).
   // Accept 'connected' OR 'reconnecting' — wagmi is in 'reconnecting' on page load
   // while auto-reconnect is in progress; address is already known in both states.
   const account = getAccount(wagmiConfig);

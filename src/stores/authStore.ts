@@ -317,6 +317,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // 2. Restore session from localStorage
     const storedWallet = localStorage.getItem('dehub_wallet');
     const storedUser = localStorage.getItem('dehub_user');
+    const storedSource = localStorage.getItem('dehub_connection_source');
 
     if (storedUser) {
       try {
@@ -330,6 +331,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (storedWallet) {
       set({ walletAddress: storedWallet.toLowerCase(), isAuthenticated: true });
+      
+      // If we are on a social login session, initialize Web3Auth to get the provider back
+      if (storedSource === 'web3auth') {
+        initWeb3Auth().catch(err => {
+          console.error('[Auth] Initial Web3Auth initialization failed:', err);
+        });
+      }
+
       await get().refreshUser().catch(() => {
         const fallback = normalizeUser(storedWallet.toLowerCase(), null);
         set({ user: fallback });
