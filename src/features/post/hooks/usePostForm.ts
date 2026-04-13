@@ -6,7 +6,6 @@ import { dhbText } from '@/lib/dhb-toast';
 import { createLogger } from '@/lib/logger';
 
 const mintLogger = createLogger('PostForm.handlePost');
-import { convertToWebP } from '@/lib/media-optimization';
 import { mintPost, type StreamInfo } from '@/lib/api/dehub';
 import { 
   mintOnChain, 
@@ -326,17 +325,8 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
     }
 
     for (const file of filesToProcess) {
-      try {
-        // Optimize to WebP before adding to list
-        const webpBlob = await convertToWebP(file, { quality: 0.8, maxWidth: 1600 });
-        const optimizedFile = new File([webpBlob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: "image/webp" });
-        const preview = URL.createObjectURL(optimizedFile);
-        setMedia(prev => [...prev, { file: optimizedFile, preview, type: 'image' }]);
-      } catch (err) {
-        console.warn('[Image] Optimization failed, using original:', err);
-        const preview = URL.createObjectURL(file);
-        setMedia(prev => [...prev, { file, preview, type: 'image' }]);
-      }
+      const preview = URL.createObjectURL(file);
+      setMedia(prev => [...prev, { file, preview, type: 'image' }]);
     }
   }, [hasVideo, media]);
     
