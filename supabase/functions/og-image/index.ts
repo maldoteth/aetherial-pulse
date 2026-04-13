@@ -280,7 +280,12 @@ serve(async (req) => {
             ],
         });
 
-        // SVG → PNG via resvg
+        // SVG → PNG via resvg-wasm
+        if (!wasmInitialized) {
+            const wasmResponse = await fetch("https://unpkg.com/@resvg/resvg-wasm@2.6.0/index_bg.wasm");
+            await initWasm(wasmResponse);
+            wasmInitialized = true;
+        }
         const resvg = new Resvg(svg, { fitTo: { mode: "width", value: 1200 } });
         const png = resvg.render().asPng();
 
