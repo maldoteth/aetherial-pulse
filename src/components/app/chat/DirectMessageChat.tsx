@@ -804,7 +804,10 @@ export function DirectMessageChat({ conversation, onBack }: DirectMessageChatPro
       },
       {
         onSuccess: (data) => {
-          if (resolvedConversationId.startsWith('new_') && data.conversation) {
+          const wasVirtual =
+            resolvedConversationId.startsWith('new_') ||
+            /^0x[0-9a-fA-F]{40}$/i.test(resolvedConversationId);
+          if (wasVirtual && data.conversation) {
             setResolvedConversationId(data.conversation);
           }
           setTimeout(scrollToBottom, 100);

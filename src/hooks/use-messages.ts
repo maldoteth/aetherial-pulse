@@ -429,10 +429,13 @@ export function useSendMessage(conversationId: string) {
       }
     },
 
-    onSettled: (_data, _err, variables) => {
+    onSettled: (data, _err, variables) => {
       const delay = variables?.mediaFile ? 3000 : 2000;
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: messagesKeys.messages(conversationId) });
+        if (data?.conversation && data.conversation !== conversationId) {
+          queryClient.invalidateQueries({ queryKey: messagesKeys.messages(data.conversation) });
+        }
       }, delay);
       queryClient.invalidateQueries({ queryKey: messagesKeys.conversations() });
     },
