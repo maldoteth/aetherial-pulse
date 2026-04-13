@@ -35,7 +35,11 @@ export async function invokeDehubEdgeFn<T = Record<string, unknown>>(
   }
 
   const { data, error } = await supabase.functions.invoke(functionName, {
-    body,
+    body: {
+      ...body,
+      _wallet: wallet.toLowerCase(),
+      _token: token,
+    },
     headers: {
       'x-wallet-address': wallet.toLowerCase(),
       'x-dehub-token': token,
