@@ -1,7 +1,7 @@
 {
   "imports": {
     "npm:satori@0.10.13": "npm:satori@0.10.13",
-    "npm:@resvg/resvg-js@2.6.0": "npm:@resvg/resvg-js@2.6.0"
+    "npm:@resvg/resvg-wasm@2.6.0": "npm:@resvg/resvg-wasm@2.6.0"
   },
   "nodeModulesDir": "auto"
 }
