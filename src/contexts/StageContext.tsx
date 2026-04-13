@@ -7,7 +7,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { invokeDehubPlatformApi } from '@/lib/api/dehub/social-edge-client';
+import { invokeDehubPlatformApi, invokePlatformApiPublic } from '@/lib/api/dehub/social-edge-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useVoiceEffects } from '@/hooks/use-voice-effects';
@@ -218,13 +218,8 @@ export function StageProvider({ children }: { children: ReactNode }) {
 
   const refreshSpaces = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('audio_spaces')
-        .select('*')
-        .eq('status', 'live')
-        .order('started_at', { ascending: false });
-      if (error) throw error;
-      setLiveSpaces((data as AudioSpace[]) || []);
+      const res = await invokePlatformApiPublic<{ items: AudioSpace[] }>({ action: 'stage.list' });
+      setLiveSpaces(res.items || []);
     } catch (err) {
       console.error('Error fetching stages:', err);
     }
@@ -746,21 +741,17 @@ export function StageProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
 
-    // Initial fetch
-    supabase
-      .from('space_participants')
-      .select('*')
-      .eq('space_id', currentSpace.id)
-      .is('left_at', null)
-      .then(({ data }) => { if (data) setParticipants(data as SpaceParticipant[]); });
+    // Initial fetch — route through edge function (bypasses RLS)
+    invokePlatformApiPublic<{ items: SpaceParticipant[] }>({
+      action: 'stage.participants.list',
+      spaceId: currentSpace.id,
+    }).then(res => { if (res.items) setParticipants(res.items); }).catch(() => {});
 
     if (myRoleRef.current === 'host') {
-      supabase
-        .from('raise_hand_requests')
-        .select('*')
-        .eq('space_id', currentSpace.id)
-        .eq('status', 'pending')
-        .then(({ data }) => { if (data) setHandRequests(data as RaiseHandRequest[]); });
+      invokeDehubPlatformApi<{ items: RaiseHandRequest[] }>({
+        action: 'stage.handrequests.list',
+        spaceId: currentSpace.id,
+      }).then(res => { if (res.items) setHandRequests(res.items); }).catch(() => {});
     }
 
     return () => {

@@ -65,3 +65,19 @@ export async function invokeDehubPlatformApi<T = Record<string, unknown>>(
 ): Promise<T> {
   return invokeDehubEdgeFn<T>('dehub-platform-api', body);
 }
+
+/**
+ * Calls the platform API without requiring authentication.
+ * Only works for public actions (e.g. stage.list, stage.participants.list).
+ */
+export async function invokePlatformApiPublic<T = Record<string, unknown>>(
+  body: Record<string, unknown>
+): Promise<T> {
+  const { data, error } = await supabase.functions.invoke('dehub-platform-api', { body });
+  if (error) throw new DehubEdgeError(error.message || 'Edge function failed');
+  const payload = data as { ok?: boolean; error?: string } | null;
+  if (payload && typeof payload === 'object' && payload.ok === false && payload.error) {
+    throw new DehubEdgeError(String(payload.error));
+  }
+  return data as T;
+}

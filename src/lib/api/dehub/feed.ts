@@ -149,9 +149,26 @@ export async function getSearchSuggestions(params: SearchSuggestionsParams): Pro
 export async function logSearchAnalytics(params: SearchLogParams): Promise<void> {}
 
 export async function getNFTInfo(tokenId: string): Promise<DeHubNFT> {
-  const { data } = await supabase.from('posts').select('*').eq('token_id', Number(tokenId)).maybeSingle();
-  if (data) return postToNFT(data);
-  return { tokenId: Number(tokenId), name: '', imageUrl: '', postType: 'image', minter: '', createdAt: '' };
+  const { data } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('token_id', Number(tokenId))
+    .maybeSingle();
+
+  if (!data) throw new Error('Post not found');
+
+  // Fetch creator profile so avatar/name/username are available on the post page
+  let creator = null;
+  if (data.creator_wallet_address) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('wallet_address, username, display_name, avatar_url, is_verified')
+      .eq('wallet_address', data.creator_wallet_address)
+      .maybeSingle();
+    creator = profile;
+  }
+
+  return postToNFT({ ...data, creator });
 }
 
 export async function recordView(tokenId: string): Promise<void> {

@@ -74,18 +74,12 @@ async function recountStageParticipants(admin: SupabaseClient, spaceId: string):
   }).eq("id", spaceId);
 }
 
+// Actions that don't require authentication (public reads)
+const PUBLIC_ACTIONS = new Set(["stage.list", "stage.participants.list"]);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
-
-  const wallet = req.headers.get("x-wallet-address")?.toLowerCase() || "";
-  const dehubToken = req.headers.get("x-dehub-token") || "";
-  if (!wallet) return json({ ok: false, error: "x-wallet-address required" }, 401);
-  if (!dehubToken) return json({ ok: false, error: "x-dehub-token required" }, 401);
-
-  if (!(await validateDeHubToken(dehubToken, wallet))) {
-    return json({ ok: false, error: "Invalid or expired token" }, 401);
-  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -99,6 +93,19 @@ Deno.serve(async (req) => {
   }
 
   const action = String(body.action || "");
+
+  // Skip auth for public actions
+  let wallet = "";
+  if (!PUBLIC_ACTIONS.has(action)) {
+    const rawWallet = req.headers.get("x-wallet-address")?.toLowerCase() || "";
+    const dehubToken = req.headers.get("x-dehub-token") || "";
+    if (!rawWallet) return json({ ok: false, error: "x-wallet-address required" }, 401);
+    if (!dehubToken) return json({ ok: false, error: "x-dehub-token required" }, 401);
+    if (!(await validateDeHubToken(dehubToken, rawWallet))) {
+      return json({ ok: false, error: "Invalid or expired token" }, 401);
+    }
+    wallet = rawWallet;
+  }
 
   try {
     switch (action) {
@@ -407,6 +414,52 @@ Deno.serve(async (req) => {
       }
 
       // ─── Stages ─────────────────────────────────────────────────────────
+
+      case "stage.list": {
+        // Public — no auth required. Returns live stages ordered by most recent.
+        const { data: spaces, error: spacesErr } = await admin
+          .from("audio_spaces")
+          .select("*")
+          .eq("status", "live")
+          .order("started_at", { ascending: false });
+        if (spacesErr) throw spacesErr;
+        return json({ ok: true, items: spaces || [] });
+      }
+
+      case "stage.participants.list": {
+        // Public — anyone can see who is in a live stage.
+        const spaceId = String(body.spaceId || "");
+        if (!UUID_RE.test(spaceId)) return json({ ok: false, error: "Invalid spaceId" }, 400);
+        const { data: participants, error: pErr } = await admin
+          .from("space_participants")
+          .select("*")
+          .eq("space_id", spaceId)
+          .is("left_at", null);
+        if (pErr) throw pErr;
+        return json({ ok: true, items: participants || [] });
+      }
+
+      case "stage.handrequests.list": {
+        // Host-only — requires auth
+        const spaceId = String(body.spaceId || "");
+        if (!UUID_RE.test(spaceId)) return json({ ok: false, error: "Invalid spaceId" }, 400);
+        const { data: space } = await admin
+          .from("audio_spaces")
+          .select("host_wallet_address")
+          .eq("id", spaceId)
+          .maybeSingle();
+        if (!space) return json({ ok: false, error: "Stage not found" }, 404);
+        if (String(space.host_wallet_address).toLowerCase() !== wallet) {
+          return json({ ok: false, error: "Only host can view hand requests" }, 403);
+        }
+        const { data: requests, error: rErr } = await admin
+          .from("raise_hand_requests")
+          .select("*")
+          .eq("space_id", spaceId)
+          .eq("status", "pending");
+        if (rErr) throw rErr;
+        return json({ ok: true, items: requests || [] });
+      }
 
       case "stage.create": {
         const title = String(body.title || "").trim();
