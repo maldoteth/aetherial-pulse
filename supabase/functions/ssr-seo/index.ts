@@ -401,9 +401,10 @@ serve(async (req) => {
       }
     }
 
-    // 2. Community Handling (/app/communities/{slug})
-    if (cleanPath.includes("/communities/")) {
-      const slug = cleanPath.split("/communities/")[1].split("/")[0];
+    // 2. Community Handling (/app/communities/{slug} or /communities/{slug})
+    const communityIndex = pathParts.indexOf("communities");
+    if (communityIndex !== -1 && pathParts[communityIndex + 1]) {
+      const slug = pathParts[communityIndex + 1];
       const community = await fetchCommunity(slug);
 
       if (community) {
@@ -442,9 +443,10 @@ serve(async (req) => {
       }
     }
 
-    // 3. Unified Post Handling (/app/post/{tokenId} for both image and video posts)
-    if (cleanPath.includes("/post/")) {
-      const postId = cleanPath.split("/post/")[1].split("/")[0];
+    // 3. Unified Post Handling (/app/post/{tokenId} or /post/{tokenId})
+    const postIndex = pathParts.indexOf("post");
+    if (postIndex !== -1 && pathParts[postIndex + 1]) {
+      const postId = pathParts[postIndex + 1];
 
       const response = await fetch(`${DEHUB_API_BASE}/api/nft_info/${postId}`);
       const nftData = await response.json();
