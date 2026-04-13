@@ -9,8 +9,8 @@ const DEHUB_API_BASE = "https://api.dehub.io";
 const DEHUB_CDN_BASE = "https://dehubcdn.ams3.cdn.digitaloceanspaces.com/";
 const APP_URL = "https://fansite.app";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://aigxuutjaqsywioxjefr.supabase.co";
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpZ3h1dXRqYXFzeXdpb3hqZWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MzY0MzIsImV4cCI6MjA4MzIxMjQzMn0.hjMx0kShuJlaZ26UoG7RFGu3OC_aLR0C1Sf1qdk3x0I";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://sukqmkvncogkfnthvfnv.supabase.co";
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const IMAGE_PROXY_BASE = `${SUPABASE_URL}/functions/v1/ssr-seo`;
 const OG_IMAGE_BASE = `${SUPABASE_URL}/functions/v1/og-image`;
 const DEFAULT_BRAND_LOGO = "https://fansiteapp.com/assets/fansite-logo-Bu7bx-CF.png";
