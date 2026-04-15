@@ -1065,7 +1065,7 @@ app.all("/*", async (c) => {
   const transport = new StreamableHTTPTransport();
   await server.connect(transport);
 
-  let response: Response;
+  let response: Response | undefined;
   try {
     response = await transport.handleRequest(c);
   } catch (err) {
