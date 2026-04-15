@@ -179,7 +179,7 @@ function extractTokenIdFromMintResponse(data: unknown): string | number | undefi
 
 // Rate limits per action type (per hour)
 const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
-  'post_create': { limit: 2, windowMs: 60 * 60 * 1000 },
+  'post_create': { limit: 10, windowMs: 60 * 60 * 1000 },
   'comment': { limit: 50, windowMs: 60 * 60 * 1000 },
   'vote': { limit: 200, windowMs: 60 * 60 * 1000 },
   'follow': { limit: 50, windowMs: 60 * 60 * 1000 },
