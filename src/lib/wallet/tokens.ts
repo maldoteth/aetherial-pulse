@@ -60,22 +60,39 @@ const erc20MetadataInterface = new Interface([
 /**
  * Get native token balance via public RPC
  */
+const NATIVE_FALLBACK_RPCS: Record<number, string[]> = {
+  [BASE_CHAIN_ID]: ['https://mainnet.base.org', 'https://base.llamarpc.com', 'https://base-rpc.publicnode.com'],
+  [BNB_CHAIN_ID]:  ['https://bsc-dataseed.binance.org', 'https://bsc-dataseed1.ninicoin.io'],
+  1:               ['https://ethereum-rpc.publicnode.com', 'https://eth.llamarpc.com'],
+};
+
+async function rpcGetBalance(rpcUrl: string, address: string): Promise<bigint> {
+  const res = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] }),
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return json.result ? BigInt(json.result) : BigInt(0);
+}
+
 export async function getNativeBalance(address: string, chainId: ChainId = BASE_CHAIN_ID): Promise<bigint> {
   await initChainRpcUrls();
   const config = CHAIN_CONFIGS[chainId];
   if (!config) return BigInt(0);
 
-  const res = await fetch(config.rpcUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0', id: 1,
-      method: 'eth_getBalance',
-      params: [address, 'latest'],
-    }),
-  });
-  const json = await res.json();
-  return json.result ? BigInt(json.result) : BigInt(0);
+  const fallbacks = NATIVE_FALLBACK_RPCS[chainId] ?? [];
+  const rpcsToTry = [config.rpcUrl, ...fallbacks.filter(r => r !== config.rpcUrl)];
+
+  for (const rpcUrl of rpcsToTry) {
+    try {
+      return await rpcGetBalance(rpcUrl, address);
+    } catch {
+      // try next
+    }
+  }
+  return BigInt(0);
 }
 
 /**

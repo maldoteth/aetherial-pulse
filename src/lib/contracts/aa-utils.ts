@@ -518,8 +518,16 @@ export async function writeContractAA(
   }
 }
 
+// Fallback public RPC URLs per chain (used when primary RPC fails)
+const FALLBACK_RPCS: Record<number, string[]> = {
+  8453: ['https://mainnet.base.org', 'https://base.llamarpc.com', 'https://base-rpc.publicnode.com'],
+  56:   ['https://bsc-dataseed.binance.org', 'https://bsc-dataseed1.ninicoin.io', 'https://bsc-rpc.publicnode.com'],
+  1:    ['https://ethereum-rpc.publicnode.com', 'https://eth.llamarpc.com'],
+};
+
 /**
- * Make a read-only contract call (uses public RPC -- no wallet needed)
+ * Make a read-only contract call (uses public RPC -- no wallet needed).
+ * Retries with fallback RPCs if the primary fails.
  */
 export async function readContract<T>(
   contractAddress: string,
@@ -530,15 +538,24 @@ export async function readContract<T>(
 ): Promise<T> {
   await initChainRpcUrls();
   const data = contractInterface.encodeFunctionData(functionName, args);
-  const rpcUrl = getRpcUrl(chainId);
+  const primaryRpc = getRpcUrl(chainId);
+  const fallbacks = FALLBACK_RPCS[chainId ?? BASE_CHAIN_ID] ?? [];
+  const rpcsToTry = [primaryRpc, ...fallbacks.filter(r => r !== primaryRpc)];
 
-  const result = await publicRpcCall(rpcUrl, 'eth_call', [
-    { to: contractAddress, data },
-    'latest',
-  ]);
-  
-  const decoded = contractInterface.decodeFunctionResult(functionName, result);
-  return decoded[0] as T;
+  let lastErr: unknown;
+  for (const rpcUrl of rpcsToTry) {
+    try {
+      const result = await publicRpcCall(rpcUrl, 'eth_call', [
+        { to: contractAddress, data },
+        'latest',
+      ]);
+      const decoded = contractInterface.decodeFunctionResult(functionName, result);
+      return decoded[0] as T;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 /**

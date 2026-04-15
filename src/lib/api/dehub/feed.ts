@@ -78,7 +78,15 @@ export async function searchNFTs(params: SearchNFTsParams = {}): Promise<Paginat
   if (params.address) query = query.eq('creator_wallet_address', params.address.toLowerCase());
   if (params.search) query = query.textSearch('search_vector', params.search);
 
-  const { data: rawPosts, count } = await query;
+  const { data: rawPosts, count, error } = await query;
+
+  // PGRST103 = offset exceeds total rows (416 Range Not Satisfiable) → empty page
+  if (error) {
+    if ((error as any).code === 'PGRST103') {
+      return { data: [], total: 0, page, limit, has_more: false };
+    }
+    throw error;
+  }
 
   if (!rawPosts?.length) {
     return { data: [], total: count || 0, page, limit, has_more: false };
