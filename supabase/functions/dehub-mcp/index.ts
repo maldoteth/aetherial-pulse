@@ -1065,7 +1065,7 @@ app.all("/*", async (c) => {
   const transport = new StreamableHTTPTransport();
   await server.connect(transport);
 
-  let response: Response;
+  let response: Response | undefined;
   try {
     response = await transport.handleRequest(c);
   } catch (err) {
@@ -1077,6 +1077,13 @@ app.all("/*", async (c) => {
     );
   }
 
+  if (!response) {
+    return c.json(
+      { jsonrpc: "2.0", id: null, error: { code: -32603, message: "No response from transport" } },
+      500,
+      corsHeaders
+    );
+  }
   // Inject CORS headers into every response (including 4xx from the transport)
   for (const [key, value] of Object.entries(corsHeaders)) {
     response.headers.set(key, value);
