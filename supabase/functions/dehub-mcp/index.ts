@@ -162,6 +162,84 @@ async function mintOnChainGasless(params: {
   throw new Error('UserOperation not confirmed within timeout');
 }
 
+// ── Cloudflare R2 Upload (direct from MCP, no browser needed) ─────────────────
+const R2_ACCOUNT_ID        = (Deno.env.get('R2_ACCOUNT_ID') ?? '').trim();
+const R2_ACCESS_KEY_ID     = (Deno.env.get('R2_ACCESS_KEY_ID') ?? '').trim();
+const R2_SECRET_ACCESS_KEY = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim();
+const R2_BUCKET_NAME       = (Deno.env.get('R2_BUCKET_NAME') ?? '').trim();
+const R2_PUBLIC_URL        = (Deno.env.get('R2_PUBLIC_URL') ?? '').trim();
+
+async function _sha256Hex(data: BufferSource): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+async function _hmacSha256(key: BufferSource, msg: string): Promise<ArrayBuffer> {
+  const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg));
+}
+async function _r2AuthHeaders(method: string, key: string, body: Uint8Array, contentType: string): Promise<Record<string,string>> {
+  const now      = new Date();
+  const amzDate  = now.toISOString().replace(/[:\-]/g,'').replace(/\.\d{3}/,'');
+  const dateOnly = amzDate.slice(0,8);
+  const region   = 'auto'; const service = 's3';
+  const endpoint = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const host     = new URL(endpoint).host;
+  const bodyHash = await _sha256Hex(body);
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-content-sha256:${bodyHash}\nx-amz-date:${amzDate}\n`;
+  const signedHeaders    = 'content-type;host;x-amz-content-sha256;x-amz-date';
+  const canonicalRequest = [method, `/${R2_BUCKET_NAME}/${key}`, '', canonicalHeaders, signedHeaders, bodyHash].join('\n');
+  const credentialScope  = `${dateOnly}/${region}/${service}/aws4_request`;
+  const stringToSign     = ['AWS4-HMAC-SHA256', amzDate, credentialScope, await _sha256Hex(new TextEncoder().encode(canonicalRequest))].join('\n');
+  const enc = new TextEncoder();
+  let k: ArrayBuffer = await _hmacSha256(enc.encode('AWS4' + R2_SECRET_ACCESS_KEY), dateOnly);
+  k = await _hmacSha256(k, region); k = await _hmacSha256(k, service); k = await _hmacSha256(k, 'aws4_request');
+  const sig = Array.from(new Uint8Array(await _hmacSha256(k, stringToSign))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return {
+    'Authorization': `AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${sig}`,
+    'x-amz-date': amzDate, 'x-amz-content-sha256': bodyHash, 'Content-Type': contentType,
+  };
+}
+
+/**
+ * Fetch a file from any public URL and upload it to Cloudflare R2.
+ * Returns the public CDN URL on success.
+ */
+async function uploadUrlToR2(sourceUrl: string, folder: 'images' | 'videos' | 'thumbnails'): Promise<string> {
+  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME || !R2_PUBLIC_URL) {
+    throw new Error('R2 not configured on server');
+  }
+  const res = await fetch(sourceUrl);
+  if (!res.ok) throw new Error(`Could not fetch source URL (${res.status}): ${sourceUrl}`);
+
+  const contentType = res.headers.get('content-type') || 'application/octet-stream';
+  const ext = contentType.includes('png') ? 'png'
+    : contentType.includes('gif') ? 'gif'
+    : contentType.includes('webp') ? 'webp'
+    : contentType.includes('mp4') ? 'mp4'
+    : contentType.includes('webm') ? 'webm'
+    : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
+    : 'bin';
+
+  const body     = new Uint8Array(await res.arrayBuffer());
+  const key      = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const endpoint = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const authHdrs = await _r2AuthHeaders('PUT', key, body, contentType);
+
+  const r2Res = await fetch(`${endpoint}/${R2_BUCKET_NAME}/${key}`, {
+    method: 'PUT', headers: authHdrs, body,
+  });
+  if (!r2Res.ok) {
+    const errText = await r2Res.text();
+    throw new Error(`R2 upload failed (${r2Res.status}): ${errText}`);
+  }
+  return `${R2_PUBLIC_URL.replace(/\/$/,'')}/${key}`;
+}
+
+/** Returns true if the URL is already hosted on our R2/CDN — no re-upload needed */
+function isR2Url(url: string): boolean {
+  return !!R2_PUBLIC_URL && url.startsWith(R2_PUBLIC_URL.replace(/\/$/,''));
+}
+
 function extractTokenIdFromMintResponse(data: unknown): string | number | undefined {
   if (!data || typeof data !== "object") return undefined;
   const d = data as Record<string, unknown>;
@@ -572,7 +650,7 @@ mcpServer.tool(
 // Create a post (requires auth)
 mcpServer.tool(
   "dehub_post_create",
-  "Create a new post on DeHub. Requires API key authentication via x-dehub-api-key header. Rate limited to 2 posts per hour.",
+  "Create a new post on DeHub. Requires API key authentication via x-dehub-api-key header. Rate limited to 10 posts per hour.",
   {
     title: z.string().optional().describe("Title of the post"),
     content: z.string().describe("The text content/description of your post"),
@@ -596,166 +674,116 @@ mcpServer.tool(
       return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
     }
     
-    const authToken = await authenticateWithDeHub(agent.wallet_private_key);
-    if (!authToken) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: "Failed to authenticate with DeHub" }) }] };
-    }
-    
-    // Build FormData — DeHub API requires multipart/form-data with file uploads
-    const formData = new FormData();
-    formData.append('name', title || content.substring(0, 50));
-    formData.append('description', content);
-    // DeHub API postType enum: 'feed-simple' (text), 'feed-images' (image), 'video', 'audio', 'live'
-    const isVideo = media_url && media_type === 'video';
-    const isImage = media_url && media_type === 'image';
-    const dehubPostType = isVideo ? 'video' : isImage ? 'feed-images' : 'feed-simple';
-    formData.append('postType', dehubPostType);
-    formData.append('chainId', '8453');
-    formData.append('category', JSON.stringify([category || 'General']));
-    // Minter must be the agent's own wallet (the one that authenticated with DeHub),
-    // not the human owner's wallet.
-    const agentWallet = new Wallet(agent.wallet_private_key!);
-    const agentWalletAddr = agentWallet.address.toLowerCase();
-    formData.append('minter', agentWalletAddr);
-    formData.append('streamInfo', JSON.stringify({
-      isLockContent: false,
-      isPayPerView: false,
-      isAddBounty: false,
-    }));
+    // Derive the agent's own wallet address from private key
+    const agentWalletAddr = new Wallet(agent.wallet_private_key!).address.toLowerCase();
 
-    if (media_url && media_type && media_type !== 'text') {
-      // Image or video post — download media from URL
-      try {
-        console.log(`[Post Create] Downloading media from: ${media_url}`);
-        const mediaResponse = await fetch(media_url);
-        if (!mediaResponse.ok) {
-          return { content: [{ type: "text", text: JSON.stringify({ error: `Failed to download media from URL: ${mediaResponse.status}` }) }] };
+    // Map media_type to Supabase media_type column values
+    const dbMediaType = media_type === 'image' ? 'image' : media_type === 'video' ? 'video' : 'text';
+
+    // Auto-upload media to Cloudflare R2 if a non-R2 URL is provided
+    let finalMediaUrl: string | null = null;
+    if (media_url && media_type !== 'text') {
+      if (isR2Url(media_url)) {
+        finalMediaUrl = media_url; // already on our CDN
+      } else {
+        try {
+          const r2Folder = media_type === 'video' ? 'videos' : 'images';
+          console.log(`[Post Create] Uploading media to R2: ${media_url}`);
+          finalMediaUrl = await uploadUrlToR2(media_url, r2Folder);
+          console.log(`[Post Create] Media uploaded to R2: ${finalMediaUrl}`);
+        } catch (uploadErr) {
+          console.warn('[Post Create] R2 upload failed, using original URL:', uploadErr);
+          finalMediaUrl = media_url; // fallback to original URL
         }
-        const mediaBlob = await mediaResponse.blob();
-        const ext = isVideo ? 'mp4' : 'jpg';
-        const filename = `agent-upload-${Date.now()}.${ext}`;
-        const file = new File([mediaBlob], filename, { type: mediaBlob.type || (isVideo ? 'video/mp4' : 'image/jpeg') });
-        formData.append('file', file);
-        formData.append('media_type', media_type);
-      } catch (dlErr) {
-        console.error('[Post Create] Media download error:', dlErr);
-        return { content: [{ type: "text", text: JSON.stringify({ error: "Failed to download media file" }) }] };
       }
-    } else {
-      // Text-only post — API requires a file, send a 1x1 transparent PNG placeholder
-      const pngBytes = new Uint8Array([
-        0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A, // PNG signature
-        0x00,0x00,0x00,0x0D,0x49,0x48,0x44,0x52, // IHDR chunk
-        0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x01, // 1x1
-        0x08,0x06,0x00,0x00,0x00,0x1F,0x15,0xC4, // RGBA
-        0x89,0x00,0x00,0x00,0x0A,0x49,0x44,0x41, // IDAT chunk
-        0x54,0x78,0x9C,0x62,0x00,0x00,0x00,0x02,
-        0x00,0x01,0xE2,0x21,0xBC,0x33,0x00,0x00,
-        0x00,0x00,0x49,0x45,0x4E,0x44,0xAE,0x42, // IEND chunk
-        0x60,0x82
-      ]);
-      const placeholderBlob = new Blob([pngBytes], { type: 'image/png' });
-      formData.append('file', placeholderBlob, 'text-post.png');
-      console.log(`[Post Create] Text post — attached ${pngBytes.length}-byte placeholder PNG`);
     }
 
-    const response = await fetch(`${DEHUB_API_BASE}/api/user_mint`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: formData,
-    });
+    // Insert post directly into Supabase posts table (same as frontend flow — no gas needed)
+    const { createClient: createSupabaseClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const adminSupabase = createSupabaseClient(
+      (Deno.env.get('SUPABASE_URL') ?? '').trim(),
+      (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim(),
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Post creation failed:', errorText);
-      return { content: [{ type: "text", text: JSON.stringify({ error: "Failed to create post" }) }] };
+    const insertRow: Record<string, unknown> = {
+      creator_wallet_address: agentWalletAddr,
+      title: title || content.substring(0, 100),
+      description: content,
+      media_url: finalMediaUrl,
+      thumbnail_url: null,
+      media_type: dbMediaType,
+      category: category || 'General',
+      is_ppv: false,
+      ppv_amount: null,
+      ppv_currency: null,
+      is_subscribers_only: false,
+      visibility: 'public',
+    };
+
+    const { data: post, error: insertErr } = await adminSupabase
+      .from('posts')
+      .insert(insertRow)
+      .select('token_id')
+      .single();
+
+    if (insertErr || !post) {
+      console.error('[Post Create] Supabase insert failed:', insertErr);
+      return { content: [{ type: "text", text: JSON.stringify({ error: `Failed to save post: ${insertErr?.message}` }) }] };
     }
-    
-    const data = await response.json();
 
     await touchAgentLastActive(supabase, apiKey);
 
-    // Step 2: Submit on-chain transaction to StreamCollection contract
-    // DeHub API returns EIP-712 pre-signed data (v, r, s) that must be broadcast to Base chain.
-    // We use Pimlico ERC-4337 to sponsor gas (gasless for the agent wallet).
-    const mintData = data as Record<string, unknown>;
-    let txHash: string | undefined;
+    const tokenId = post.token_id;
+    const postUrl = `${FANSITE_PUBLIC_URL}/post/${tokenId}`;
 
-    if (mintData.v && mintData.r && mintData.s && mintData.createdTokenId) {
-      const STREAM_COLLECTION_ADDRESS = '0x9f8012074d27F8596C0E5038477ACB52057BC934';
-      const STREAM_COLLECTION_ABI = ['function mint(uint256 id, uint256 timestamp, uint8 v, bytes32 r, bytes32 s, tuple(address recipient, uint256 value)[] fees, uint256 supply, string uri)'];
-      const tokenIdBig = BigInt(mintData.createdTokenId as string | number);
-      const timestampBig = BigInt(mintData.timestamp as number);
-      const v = Number(mintData.v);
-      const r = String(mintData.r);
-      const s = String(mintData.s);
-      const mintCalldata = new Interface(STREAM_COLLECTION_ABI).encodeFunctionData('mint', [
-        tokenIdBig, timestampBig, v, r, s, [], BigInt(1000), `${mintData.createdTokenId}.json`,
-      ]);
-
-      const pimlicoApiKey = Deno.env.get('PIMLICO_API_KEY');
-      const agentSigner = new Wallet(agent.wallet_private_key!);
-
-      if (pimlicoApiKey) {
-        // ── Gasless path: ERC-4337 via Pimlico ────────────────────────────────
-        try {
-          txHash = await mintOnChainGasless({
-            agentSigner,
-            mintCalldata,
-            streamCollectionAddress: STREAM_COLLECTION_ADDRESS,
-            pimlicoApiKey,
-          });
-          console.log(`[Post Create] Gasless tx confirmed: ${txHash}`);
-        } catch (gaslessErr) {
-          console.error('[Post Create] Gasless mint failed, falling back to direct:', gaslessErr);
-          // Fall through to direct tx
-        }
-      }
-
-      if (!txHash) {
-        // ── Direct path: agent wallet must have ETH ────────────────────────────
-        try {
-          const BASE_RPC = 'https://mainnet.base.org';
-          const provider = new JsonRpcProvider(BASE_RPC);
-          const wallet = agentSigner.connect(provider);
-          const contract = new Contract(STREAM_COLLECTION_ADDRESS, new Interface(STREAM_COLLECTION_ABI), wallet);
-          console.log(`[Post Create] Direct mint for tokenId ${tokenIdBig} from ${agentSigner.address}`);
-          const tx = await (contract.mint as (...a: unknown[]) => Promise<{ hash: string; wait: (n: number) => Promise<unknown> }>)(
-            tokenIdBig, timestampBig, v, r, s, [], BigInt(1000), `${mintData.createdTokenId}.json`
-          );
-          txHash = tx.hash;
-          await tx.wait(1);
-          console.log(`[Post Create] Direct tx confirmed: ${txHash}`);
-        } catch (chainErr) {
-          const msg = chainErr instanceof Error ? chainErr.message : String(chainErr);
-          const isNoFunds = msg.toLowerCase().includes('insufficient') || msg.toLowerCase().includes('funds');
-          console.error('[Post Create] On-chain mint failed:', msg);
-          return { content: [{ type: "text", text: JSON.stringify({
-            error: isNoFunds
-              ? `Agent wallet (${agentSigner.address}) needs ETH on Base for gas. Send ~0.001 ETH to that address and retry.`
-              : `On-chain mint failed: ${msg}`,
-            agent_wallet: agentSigner.address,
-          }) }] };
-        }
-      }
-    }
-
-    const tokenId = mintData.createdTokenId ?? extractTokenIdFromMintResponse(data);
-    const postUrl = tokenId != null && String(tokenId).length > 0
-      ? `${FANSITE_PUBLIC_URL}/post/${tokenId}`
-      : undefined;
+    console.log(`[Post Create] Post saved to Supabase: token_id=${tokenId}`);
 
     const result = {
       success: true,
       token_id: tokenId,
-      tx_hash: txHash,
       post_url: postUrl,
+      media_url: finalMediaUrl || null,
+      media_uploaded_to_r2: !!(finalMediaUrl && finalMediaUrl !== media_url),
       message: `Post created by ${agent.name}`,
     };
 
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Upload media to Cloudflare R2
+mcpServer.tool(
+  "dehub_upload_media",
+  "Upload an image or video to Cloudflare R2 CDN. Pass any public URL (imgur, giphy, direct image link, etc.) and get back a permanent CDN URL you can use in dehub_post_create. Supported: jpg, png, gif, webp, mp4, webm.",
+  {
+    url: z.string().describe("Public URL of the image or video to upload"),
+    media_type: z.enum(["image", "video"]).optional().default("image").describe("Type of media — image or video"),
+  },
+  async ({ url, media_type }) => {
+    const agent = await getAgentFromApiKey(apiKey, supabase);
+    if (!agent) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "Authentication required. Include x-dehub-api-key header." }) }] };
+    }
+
+    if (!R2_ACCOUNT_ID || !R2_PUBLIC_URL) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "R2 storage not configured on server." }) }] };
+    }
+
+    if (isR2Url(url)) {
+      return { content: [{ type: "text", text: JSON.stringify({ success: true, cdn_url: url, note: "Already on R2 CDN — no upload needed." }) }] };
+    }
+
+    try {
+      const folder = media_type === 'video' ? 'videos' : 'images';
+      console.log(`[Upload Media] Fetching and uploading to R2: ${url}`);
+      const cdnUrl = await uploadUrlToR2(url, folder);
+      console.log(`[Upload Media] Done: ${cdnUrl}`);
+      return { content: [{ type: "text", text: JSON.stringify({ success: true, cdn_url: cdnUrl, original_url: url }) }] };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[Upload Media] Failed:', msg);
+      return { content: [{ type: "text", text: JSON.stringify({ error: `Upload failed: ${msg}` }) }] };
+    }
   }
 );
 
