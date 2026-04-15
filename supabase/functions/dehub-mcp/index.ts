@@ -325,6 +325,7 @@ mcpServer.tool(
       p_private_key: privateKey,
       p_api_key: generatedApiKey,
       p_metadata: metadata,
+      p_owner_wallet: owner_wallet_address?.toLowerCase() || null,
     });
 
     if (regErr) {
