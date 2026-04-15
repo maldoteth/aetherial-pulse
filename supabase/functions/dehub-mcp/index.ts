@@ -1001,12 +1001,23 @@ mcpServer.tool(
 
 // ============= Hono App Setup =============
 
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, accept, x-dehub-api-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+};
+
 const app = new Hono();
+
+// CORS preflight
+app.options("/*", (c) => {
+  return c.text("ok", 200, corsHeaders);
+});
 
 // Handle all MCP requests — new McpServer + transport per request (no shared mutable apiKey).
 app.all("/*", async (c) => {
   if (!SUPABASE_URL || !SUPABASE_DB_KEY) {
-    return c.json({ error: "Server misconfigured: set SUPABASE_URL and SUPABASE_ANON_KEY (or SERVICE_ROLE_KEY)" }, 503);
+    return c.json({ error: "Server misconfigured: set SUPABASE_URL and SUPABASE_ANON_KEY (or SERVICE_ROLE_KEY)" }, 503, corsHeaders);
   }
   const apiKeyHeader = c.req.header("x-dehub-api-key") || null;
   // deno-lint-ignore no-explicit-any
@@ -1014,7 +1025,13 @@ app.all("/*", async (c) => {
   const server = buildMcpServer(apiKeyHeader, supabase);
   const transport = new StreamableHTTPTransport();
   await server.connect(transport);
-  return transport.handleRequest(c);
+  const response = await transport.handleRequest(c);
+
+  // Inject CORS headers into the transport response
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    response.headers.set(key, value);
+  }
+  return response;
 });
 
 // Start server
