@@ -58,23 +58,44 @@ export default function AgentsPage() {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dehub-mcp`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/event-stream',
+          },
           body: JSON.stringify({
             jsonrpc: '2.0',
             id: 1,
-            method: 'dehub_register',
+            method: 'tools/call',
             params: {
-              name,
-              description,
-              owner_wallet_address: walletAddress,
+              name: 'dehub_register',
+              arguments: {
+                name,
+                description,
+                owner_wallet_address: walletAddress,
+              },
             },
           }),
         }
       );
-      
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
-      return data.result;
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => `HTTP ${response.status}`);
+        console.error('[AgentsPage] dehub-mcp error', response.status, text);
+        throw new Error(`Server error ${response.status}`);
+      }
+
+      const rpc = await response.json();
+      console.log('[AgentsPage] dehub-mcp raw response', rpc);
+
+      if (rpc.error) throw new Error(rpc.error.message ?? JSON.stringify(rpc.error));
+
+      // MCP tools/call wraps output: result.content[0].text is JSON string
+      const textContent = rpc.result?.content?.[0]?.text;
+      if (!textContent) throw new Error('Empty response from server');
+
+      const payload = JSON.parse(textContent);
+      if (payload.error) throw new Error(payload.error);
+      return payload;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['ai-agents'] });
@@ -85,12 +106,13 @@ export default function AgentsPage() {
         description: t('agents.saveApiKey'),
       });
       // Show the API key for the new agent
-      if (data.agent?.id) {
+      if (data?.agent?.id) {
         setVisibleKeys(prev => new Set([...prev, data.agent.id]));
       }
     },
     onError: (error: Error) => {
-      toast.error(t('agents.failedCreate'));
+      console.error('[AgentsPage] Create agent failed:', error);
+      toast.error(t('agents.failedCreate'), { description: error.message });
     },
   });
 

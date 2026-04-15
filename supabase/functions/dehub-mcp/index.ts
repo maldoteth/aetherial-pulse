@@ -1025,9 +1025,20 @@ app.all("/*", async (c) => {
   const server = buildMcpServer(apiKeyHeader, supabase);
   const transport = new StreamableHTTPTransport();
   await server.connect(transport);
-  const response = await transport.handleRequest(c);
 
-  // Inject CORS headers into the transport response
+  let response: Response;
+  try {
+    response = await transport.handleRequest(c);
+  } catch (err) {
+    console.error("[dehub-mcp] transport.handleRequest threw:", err);
+    return c.json(
+      { jsonrpc: "2.0", id: null, error: { code: -32603, message: "Internal server error" } },
+      500,
+      corsHeaders
+    );
+  }
+
+  // Inject CORS headers into every response (including 4xx from the transport)
   for (const [key, value] of Object.entries(corsHeaders)) {
     response.headers.set(key, value);
   }
