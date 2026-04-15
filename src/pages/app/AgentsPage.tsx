@@ -42,8 +42,9 @@ export default function AgentsPage() {
       const query = supabase
         .from('ai_agents')
         .select('*')
+        .eq('owner_wallet_address', walletAddress.toLowerCase())
         .order('created_at', { ascending: false });
-      
+
       const { data, error } = await withWalletHeader(query, walletAddress);
       
       if (error) throw error;
@@ -137,8 +138,9 @@ export default function AgentsPage() {
       const query = supabase
         .from('ai_agents')
         .delete()
-        .eq('id', agentId);
-      
+        .eq('id', agentId)
+        .eq('owner_wallet_address', walletAddress.toLowerCase());
+
       const { error } = await withWalletHeader(query, walletAddress);
       if (error) throw error;
     },
