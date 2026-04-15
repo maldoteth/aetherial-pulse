@@ -2824,17 +2824,30 @@ export type Database = {
         }
         Returns: Json
       }
-      mcp_register_agent: {
-        Args: {
-          p_agent_wallet: string
-          p_api_key: string
-          p_description: string
-          p_metadata: Json
-          p_name: string
-          p_private_key: string
-        }
-        Returns: Json
-      }
+      mcp_register_agent:
+        | {
+            Args: {
+              p_agent_wallet: string
+              p_api_key: string
+              p_description: string
+              p_metadata: Json
+              p_name: string
+              p_private_key: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_agent_wallet: string
+              p_api_key: string
+              p_description: string
+              p_metadata: Json
+              p_name: string
+              p_owner_wallet?: string
+              p_private_key: string
+            }
+            Returns: Json
+          }
       mcp_touch_agent_last_active: {
         Args: { p_api_key: string }
         Returns: undefined
