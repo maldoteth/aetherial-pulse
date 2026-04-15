@@ -169,8 +169,8 @@ const R2_SECRET_ACCESS_KEY = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim()
 const R2_BUCKET_NAME       = (Deno.env.get('R2_BUCKET_NAME') ?? '').trim();
 const R2_PUBLIC_URL        = (Deno.env.get('R2_PUBLIC_URL') ?? '').trim();
 
-async function _sha256Hex(data: BufferSource): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', data);
+async function _sha256Hex(data: Uint8Array | ArrayBuffer): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', data instanceof ArrayBuffer ? data : new Uint8Array(data));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 async function _hmacSha256(key: BufferSource, msg: string): Promise<ArrayBuffer> {
