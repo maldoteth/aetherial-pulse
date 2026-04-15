@@ -84,13 +84,27 @@ export default function AgentsPage() {
         throw new Error(`Server error ${response.status}`);
       }
 
-      const rpc = await response.json();
-      console.log('[AgentsPage] dehub-mcp raw response', rpc);
+      // MCP Streamable HTTP may respond with SSE (text/event-stream) or plain JSON.
+      // Parse both formats.
+      const rawText = await response.text();
+      console.log('[AgentsPage] dehub-mcp raw response', rawText);
 
-      if (rpc.error) throw new Error(rpc.error.message ?? JSON.stringify(rpc.error));
+      let rpc: Record<string, unknown>;
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('text/event-stream')) {
+        // SSE format: lines like "data: {...}\n"
+        const dataLine = rawText.split('\n').find(l => l.startsWith('data: '));
+        if (!dataLine) throw new Error('Empty SSE response from server');
+        rpc = JSON.parse(dataLine.slice(6));
+      } else {
+        rpc = JSON.parse(rawText);
+      }
+
+      if (rpc.error) throw new Error((rpc.error as Record<string, unknown>)?.message as string ?? JSON.stringify(rpc.error));
 
       // MCP tools/call wraps output: result.content[0].text is JSON string
-      const textContent = rpc.result?.content?.[0]?.text;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const textContent = (rpc.result as any)?.content?.[0]?.text as string | undefined;
       if (!textContent) throw new Error('Empty response from server');
 
       const payload = JSON.parse(textContent);
