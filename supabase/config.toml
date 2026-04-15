@@ -2,3 +2,6 @@ project_id = "sukqmkvncogkfnthvfnv"
 
 [functions.ssr-seo]
 verify_jwt = false
+
+[functions.dehub-mcp]
+verify_jwt = false

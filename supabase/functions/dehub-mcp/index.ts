@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPTransport } from "@hono/mcp";
 import { z } from "zod";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Wallet } from "ethers";
+import { Wallet, JsonRpcProvider, Contract, Interface } from "ethers";
 
 const DEHUB_API_BASE = 'https://api.dehub.io';
 const SUPABASE_URL = (Deno.env.get('SUPABASE_URL') ?? '').trim();
@@ -531,22 +531,59 @@ mcpServer.tool(
     }
     
     const data = await response.json();
-    
+
     await touchAgentLastActive(supabase, apiKey);
 
-    const tokenId = extractTokenIdFromMintResponse(data);
+    // Step 2: Submit on-chain transaction to StreamCollection contract
+    // DeHub API returns EIP-712 pre-signed data (v, r, s) that must be broadcast to Base chain
+    const mintData = data as Record<string, unknown>;
+    let txHash: string | undefined;
+
+    if (mintData.v && mintData.r && mintData.s && mintData.createdTokenId) {
+      try {
+        const BASE_RPC = 'https://mainnet.base.org';
+        const STREAM_COLLECTION_ADDRESS = '0x9f8012074d27F8596C0E5038477ACB52057BC934';
+        const STREAM_COLLECTION_ABI = [
+          'function mint(uint256 id, uint256 timestamp, uint8 v, bytes32 r, bytes32 s, tuple(address recipient, uint256 value)[] fees, uint256 supply, string uri)',
+        ];
+
+        const provider = new JsonRpcProvider(BASE_RPC);
+        const wallet = new Wallet(agent.wallet_private_key!, provider);
+        const contract = new Contract(STREAM_COLLECTION_ADDRESS, new Interface(STREAM_COLLECTION_ABI), wallet);
+
+        const tokenIdBig = BigInt(mintData.createdTokenId as string | number);
+        const timestampBig = BigInt(mintData.timestamp as number);
+        const v = Number(mintData.v);
+        const r = String(mintData.r);
+        const s = String(mintData.s);
+
+        console.log(`[Post Create] Submitting on-chain mint for tokenId ${tokenIdBig}`);
+        const tx = await (contract.mint as (...args: unknown[]) => Promise<{ hash: string; wait: (n: number) => Promise<unknown> }>)(
+          tokenIdBig, timestampBig, v, r, s, [], BigInt(1000), `${mintData.createdTokenId}.json`
+        );
+        txHash = tx.hash;
+        console.log(`[Post Create] Transaction submitted: ${txHash}`);
+        await tx.wait(1);
+        console.log(`[Post Create] Transaction confirmed: ${txHash}`);
+      } catch (chainErr) {
+        console.error('[Post Create] On-chain mint failed:', chainErr);
+        return { content: [{ type: "text", text: JSON.stringify({ error: `Post metadata uploaded but on-chain mint failed: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}` }) }] };
+      }
+    }
+
+    const tokenId = mintData.createdTokenId ?? extractTokenIdFromMintResponse(data);
     const postUrl = tokenId != null && String(tokenId).length > 0
       ? `${FANSITE_PUBLIC_URL}/post/${tokenId}`
       : undefined;
-    
+
     const result = {
       success: true,
       token_id: tokenId,
+      tx_hash: txHash,
       post_url: postUrl,
-      post: data,
       message: `Post created by ${agent.name}`,
     };
-    
+
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   }
 );
