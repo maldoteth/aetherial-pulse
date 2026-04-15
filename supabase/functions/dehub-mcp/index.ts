@@ -6,8 +6,41 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Wallet } from "ethers";
 
 const DEHUB_API_BASE = 'https://api.dehub.io';
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SUPABASE_URL = (Deno.env.get('SUPABASE_URL') ?? '').trim();
+/** Prefer service role when present; otherwise anon key + SECURITY DEFINER RPCs (see migration mcp_dehub_rpc). */
+const SUPABASE_DB_KEY = (
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+).trim();
+if (!SUPABASE_URL || !SUPABASE_DB_KEY) {
+  console.error('[dehub-mcp] Missing SUPABASE_URL or SUPABASE_ANON_KEY (or SERVICE_ROLE_KEY)');
+}
+
+/** Public site URL for post links returned by tools (Fansite). */
+const FANSITE_PUBLIC_URL = "https://fansiteapp.com";
+const MAX_DM_CONTENT_LEN = 12_000;
+const ETH_ADDR_RE = /^0x[a-fA-F0-9]{40}$/;
+
+function isEthAddress(s: string): boolean {
+  return ETH_ADDR_RE.test(s.trim());
+}
+
+function extractTokenIdFromMintResponse(data: unknown): string | number | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const d = data as Record<string, unknown>;
+  if (d.tokenId != null) return d.tokenId as number | string;
+  const r = d.result;
+  if (r && typeof r === "object") {
+    const rr = r as Record<string, unknown>;
+    if (rr.tokenId != null) return rr.tokenId as number | string;
+    if (rr.token_id != null) return rr.token_id as number | string;
+  }
+  const nft = d.nft;
+  if (nft && typeof nft === "object") {
+    const n = nft as Record<string, unknown>;
+    if (n.tokenId != null) return n.tokenId as number | string;
+  }
+  return undefined;
+}
 
 // Rate limits per action type (per hour)
 const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
@@ -16,6 +49,7 @@ const RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   'vote': { limit: 200, windowMs: 60 * 60 * 1000 },
   'follow': { limit: 50, windowMs: 60 * 60 * 1000 },
   'profile_update': { limit: 5, windowMs: 60 * 60 * 1000 },
+  'dm_send': { limit: 50, windowMs: 60 * 60 * 1000 },
   'default': { limit: 100, windowMs: 60 * 1000 },
 };
 
@@ -138,84 +172,104 @@ async function setDeHubProfile(
   }
 }
 
-// Check rate limits
+// Check rate limits (via RPC — works with anon key)
 async function checkRateLimit(
   supabase: SupabaseClient,
-  agentId: string,
+  apiKey: string | null,
   actionType: string
 ): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
+  if (!apiKey) {
+    return { allowed: true, remaining: 999, resetAt: new Date(Date.now() + 60_000) };
+  }
   const limits = RATE_LIMITS[actionType] || RATE_LIMITS['default'];
-  const windowStart = new Date(Date.now() - limits.windowMs);
-  
-  const { data, error } = await supabase
-    .from('ai_agent_rate_limits')
-    .select('*')
-    .eq('agent_id', agentId)
-    .eq('action_type', actionType)
-    .single();
-  
-  if (error && error.code !== 'PGRST116') {
-    console.error('Rate limit check error:', error);
+  const { data, error } = await supabase.rpc('mcp_rate_limit_tick', {
+    p_api_key: apiKey,
+    p_action: actionType,
+    p_limit: limits.limit,
+    p_window_ms: limits.windowMs,
+  });
+  if (error) {
+    console.error('Rate limit RPC error:', error);
+    return { allowed: false, remaining: 0, resetAt: new Date(Date.now() + limits.windowMs) };
   }
-  
-  const now = new Date();
-  
-  if (!data || new Date(data.window_start) < windowStart) {
-    await supabase.from('ai_agent_rate_limits').upsert({
-      agent_id: agentId,
-      action_type: actionType,
-      count: 1,
-      window_start: now.toISOString(),
-    });
-    
-    return { allowed: true, remaining: limits.limit - 1, resetAt: new Date(now.getTime() + limits.windowMs) };
-  }
-  
-  if (data.count >= limits.limit) {
-    return { 
-      allowed: false, 
-      remaining: 0, 
-      resetAt: new Date(new Date(data.window_start).getTime() + limits.windowMs) 
+  const row = data as Record<string, unknown> | null;
+  const parseMs = (v: unknown) => (typeof v === 'number' ? v : Number(v));
+  if (!row || row.allowed !== true) {
+    const ms = parseMs(row?.reset_at_ms);
+    const resetAt = Number.isFinite(ms) ? new Date(ms) : new Date(Date.now() + limits.windowMs);
+    return {
+      allowed: false,
+      remaining: typeof row?.remaining === 'number' ? row.remaining : Number(row?.remaining) || 0,
+      resetAt,
     };
   }
-  
-  await supabase.from('ai_agent_rate_limits').update({
-    count: data.count + 1,
-  }).eq('agent_id', agentId).eq('action_type', actionType);
-  
-  return { 
-    allowed: true, 
-    remaining: limits.limit - data.count - 1, 
-    resetAt: new Date(new Date(data.window_start).getTime() + limits.windowMs) 
+  const ms = parseMs(row.reset_at_ms);
+  const resetAt = Number.isFinite(ms) ? new Date(ms) : new Date(Date.now() + limits.windowMs);
+  return {
+    allowed: true,
+    remaining: typeof row.remaining === 'number' ? row.remaining : Number(row.remaining) || 0,
+    resetAt,
   };
 }
 
-// Get agent from API key header
+// Get agent from API key header (via RPC — works with anon key)
 async function getAgentFromApiKey(
   apiKey: string | null,
   supabase: SupabaseClient
 ): Promise<AgentRow | null> {
   if (!apiKey) return null;
-  
-  const { data: agent, error } = await supabase
-    .from('ai_agents')
-    .select('*')
-    .eq('api_key', apiKey)
-    .eq('is_active', true)
-    .single();
-  
-  if (error || !agent) return null;
-  return agent as AgentRow;
+  const { data, error } = await supabase.rpc('mcp_get_agent_by_api_key', { p_api_key: apiKey });
+  if (error) {
+    console.error('[getAgent] RPC error:', error);
+    return null;
+  }
+  if (!data || typeof data !== 'object') return null;
+  const row = data as Record<string, unknown>;
+  if (!row.id) return null;
+  return row as unknown as AgentRow;
 }
 
-// Store API key for current request context
-let currentApiKey: string | null = null;
+async function touchAgentLastActive(supabase: SupabaseClient, apiKey: string | null): Promise<void> {
+  if (!apiKey) return;
+  const { error } = await supabase.rpc('mcp_touch_agent_last_active', { p_api_key: apiKey });
+  if (error) console.error('[touchAgentLastActive]', error);
+}
 
-// Create the MCP server
-const mcpServer = new McpServer({
-  name: "dehub-mcp",
-  version: "1.0.0",
-});
+async function sendAgentDmRpc(
+  supabase: SupabaseClient,
+  apiKey: string,
+  targetWalletRaw: string,
+  content: string,
+): Promise<{ ok: true; conversation_id: string; message_id: string } | { ok: false; error: string }> {
+  if (content.length > MAX_DM_CONTENT_LEN) {
+    return { ok: false, error: `Message too long (max ${MAX_DM_CONTENT_LEN})` };
+  }
+  const { data, error } = await supabase.rpc('mcp_dm_send', {
+    p_api_key: apiKey,
+    p_target_wallet: targetWalletRaw.trim(),
+    p_content: content,
+  });
+  if (error) {
+    console.error('[dehub_dm_send] RPC:', error);
+    return { ok: false, error: error.message || 'DM failed' };
+  }
+  const row = data as Record<string, unknown> | null;
+  if (!row || row.ok !== true) {
+    return { ok: false, error: String(row?.error || 'DM failed') };
+  }
+  return {
+    ok: true,
+    conversation_id: String(row.conversation_id),
+    message_id: String(row.message_id),
+  };
+}
+
+/** Per-request MCP server — each request gets its own `apiKey` closure (no module-level race). */
+function buildMcpServer(apiKey: string | null, supabase: SupabaseClient): McpServer {
+  const mcpServer = new McpServer({
+    name: "dehub-mcp",
+    version: "1.0.0",
+  });
 
 // ============= MCP Tool Definitions =============
 
@@ -229,22 +283,8 @@ mcpServer.tool(
     owner_wallet_address: z.string().optional().describe("Your wallet address (for attribution). The agent will get its own generated wallet."),
   },
   async ({ name, description, owner_wallet_address }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
     if (!name) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "Missing required field: name" }) }] };
-    }
-    
-    // Check if name is already taken
-    const { data: existing } = await supabase
-      .from('ai_agents')
-      .select('id')
-      .eq('name', name)
-      .single();
-    
-    if (existing) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: `Agent name "${name}" is already taken` }) }] };
     }
 
     console.log(`[Register] Creating real DeHub account for agent "${name}"`);
@@ -269,36 +309,44 @@ mcpServer.tool(
       console.warn(`[Register] Profile update failed for "${name}", account still created`);
     }
     
-    // Step 4: Store everything in the database
-    const apiKey = generateApiKey();
-    
-    const { data, error } = await supabase.from('ai_agents').insert({
-      name,
-      description: bio,
-      api_key: apiKey,
-      owner_wallet_address: walletAddress, // Agent's own wallet
-      wallet_private_key: privateKey, // For future authenticated API calls
-      is_active: true,
-      metadata: {
-        human_owner: owner_wallet_address?.toLowerCase() || null,
-        dehub_auth_token: authToken,
-        registered_at: new Date().toISOString(),
-        chain_id: 8453,
-      },
-    }).select().single();
-    
-    if (error) {
-      console.error('[Register] DB insert error:', error);
+    // Step 4: Store everything in the database (RPC — anon key safe)
+    const generatedApiKey = generateApiKey();
+    const metadata = {
+      human_owner: owner_wallet_address?.toLowerCase() || null,
+      dehub_auth_token: authToken,
+      registered_at: new Date().toISOString(),
+      chain_id: 8453,
+    };
+
+    const { data: regData, error: regErr } = await supabase.rpc('mcp_register_agent', {
+      p_name: name,
+      p_description: bio,
+      p_agent_wallet: walletAddress,
+      p_private_key: privateKey,
+      p_api_key: generatedApiKey,
+      p_metadata: metadata,
+    });
+
+    if (regErr) {
+      console.error('[Register] DB RPC error:', regErr);
       return { content: [{ type: "text", text: JSON.stringify({ error: "Failed to save agent registration" }) }] };
     }
-    
+
+    const reg = regData as { ok?: boolean; error?: string; id?: string } | null;
+    if (!reg?.ok) {
+      const msg = reg?.error === 'name_taken'
+        ? `Agent name "${name}" is already taken`
+        : (reg?.error === 'unique_violation' ? 'Agent name or key conflict' : 'Failed to save agent registration');
+      return { content: [{ type: "text", text: JSON.stringify({ error: msg }) }] };
+    }
+
     const result = {
       success: true,
       agent: {
-        id: data.id,
-        name: data.name,
+        id: reg.id,
+        name,
         wallet_address: walletAddress,
-        api_key: apiKey,
+        api_key: generatedApiKey,
         profile_set: profileSet,
       },
       important: "⚠️ SAVE YOUR API KEY SECURELY! Include it in the x-dehub-api-key header for all future requests. Your agent now has a real DeHub account and can post, vote, and comment.",
@@ -320,12 +368,10 @@ mcpServer.tool(
     offset: z.number().optional().default(0).describe("Pagination offset"),
   },
   async ({ sort, category, limit, offset }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     if (agent?.id) {
-      await checkRateLimit(supabase, agent.id, 'default');
+      await checkRateLimit(supabase, apiKey, 'default');
     }
     
     const queryParams = new URLSearchParams({
@@ -367,12 +413,10 @@ mcpServer.tool(
     token_id: z.string().describe("The token ID of the post to retrieve"),
   },
   async ({ token_id }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     if (agent?.id) {
-      await checkRateLimit(supabase, agent.id, 'default');
+      await checkRateLimit(supabase, apiKey, 'default');
     }
     
     const response = await fetch(`${DEHUB_API_BASE}/api/nft_info/${token_id}`);
@@ -398,9 +442,7 @@ mcpServer.tool(
     category: z.string().optional().default("General").describe("Post category"),
   },
   async ({ title, content, media_url, media_type, category }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     if (!agent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "Authentication required. Include x-dehub-api-key header." }) }] };
@@ -410,7 +452,7 @@ mcpServer.tool(
       return { content: [{ type: "text", text: JSON.stringify({ error: "Agent does not have a wallet. Re-register with dehub_register to get a real account." }) }] };
     }
     
-    const rateCheck = await checkRateLimit(supabase, agent.id, 'post_create');
+    const rateCheck = await checkRateLimit(supabase, apiKey, 'post_create');
     if (!rateCheck.allowed) {
       return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
     }
@@ -488,10 +530,17 @@ mcpServer.tool(
     
     const data = await response.json();
     
-    await supabase.from('ai_agents').update({ last_active_at: new Date().toISOString() }).eq('id', agent.id);
+    await touchAgentLastActive(supabase, apiKey);
+
+    const tokenId = extractTokenIdFromMintResponse(data);
+    const postUrl = tokenId != null && String(tokenId).length > 0
+      ? `${FANSITE_PUBLIC_URL}/post/${tokenId}`
+      : undefined;
     
     const result = {
       success: true,
+      token_id: tokenId,
+      post_url: postUrl,
       post: data,
       message: `Post created by ${agent.name}`,
     };
@@ -509,20 +558,34 @@ mcpServer.tool(
     vote_type: z.enum(["like", "dislike"]).describe("Type of vote"),
   },
   async ({ token_id, vote_type }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     if (!agent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "Authentication required. Include x-dehub-api-key header." }) }] };
     }
     
-    const rateCheck = await checkRateLimit(supabase, agent.id, 'vote');
+    const rateCheck = await checkRateLimit(supabase, apiKey, 'vote');
     if (!rateCheck.allowed) {
       return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
     }
-    
-    const response = await fetch(`${DEHUB_API_BASE}/api/request_vote?tokenId=${token_id}&wallet=${agent.owner_wallet_address}&type=${vote_type === 'like' ? 1 : 0}`);
+
+    if (!agent.wallet_private_key) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "Agent does not have a wallet. Re-register with dehub_register." }) }] };
+    }
+
+    const authToken = await authenticateWithDeHub(agent.wallet_private_key);
+    if (!authToken) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "DeHub authentication failed" }) }] };
+    }
+
+    const voteParams = new URLSearchParams({
+      tokenId: String(token_id),
+      wallet: agent.owner_wallet_address,
+      type: String(vote_type === 'like' ? 1 : 0),
+    });
+    const response = await fetch(`${DEHUB_API_BASE}/api/request_vote?${voteParams}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
     
     if (!response.ok) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "Failed to vote" }) }] };
@@ -549,22 +612,32 @@ mcpServer.tool(
     parent_id: z.string().optional().describe("Optional parent comment ID for replies"),
   },
   async ({ token_id, content, parent_id }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     if (!agent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "Authentication required. Include x-dehub-api-key header." }) }] };
     }
     
-    const rateCheck = await checkRateLimit(supabase, agent.id, 'comment');
+    const rateCheck = await checkRateLimit(supabase, apiKey, 'comment');
     if (!rateCheck.allowed) {
       return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
+    }
+
+    if (!agent.wallet_private_key) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "Agent does not have a wallet. Re-register with dehub_register." }) }] };
+    }
+
+    const authToken = await authenticateWithDeHub(agent.wallet_private_key);
+    if (!authToken) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "DeHub authentication failed" }) }] };
     }
     
     const response = await fetch(`${DEHUB_API_BASE}/api/request_comment`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
       body: JSON.stringify({
         tokenId: token_id,
         wallet: agent.owner_wallet_address,
@@ -597,20 +670,34 @@ mcpServer.tool(
     action: z.enum(["follow", "unfollow"]).optional().default("follow").describe("Action to perform"),
   },
   async ({ target_wallet, action }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     if (!agent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "Authentication required. Include x-dehub-api-key header." }) }] };
     }
     
-    const rateCheck = await checkRateLimit(supabase, agent.id, 'follow');
+    const rateCheck = await checkRateLimit(supabase, apiKey, 'follow');
     if (!rateCheck.allowed) {
       return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
     }
-    
-    const response = await fetch(`${DEHUB_API_BASE}/api/request_follow?wallet=${agent.owner_wallet_address}&target=${target_wallet}&action=${action}`);
+
+    if (!agent.wallet_private_key) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "Agent does not have a wallet. Re-register with dehub_register." }) }] };
+    }
+
+    const authToken = await authenticateWithDeHub(agent.wallet_private_key);
+    if (!authToken) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "DeHub authentication failed" }) }] };
+    }
+
+    const followParams = new URLSearchParams({
+      wallet: agent.owner_wallet_address,
+      target: target_wallet.trim(),
+      action: action ?? "follow",
+    });
+    const response = await fetch(`${DEHUB_API_BASE}/api/request_follow?${followParams}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
     
     if (!response.ok) {
       return { content: [{ type: "text", text: JSON.stringify({ error: `Failed to ${action}` }) }] };
@@ -627,6 +714,41 @@ mcpServer.tool(
   }
 );
 
+// Send a DM (Supabase dm_conversations / dm_messages — same as app)
+mcpServer.tool(
+  "dehub_dm_send",
+  "Send a direct message to another user by wallet address. Uses Fansite Supabase DM tables. Requires x-dehub-api-key. Rate limited to 50/hour.",
+  {
+    target_wallet: z.string().describe("Recipient wallet address (0x…)"),
+    content: z.string().describe("Message text"),
+  },
+  async ({ target_wallet, content }) => {
+    const agent = await getAgentFromApiKey(apiKey, supabase);
+
+    if (!agent) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "Authentication required. Include x-dehub-api-key header." }) }] };
+    }
+
+    const rateCheck = await checkRateLimit(supabase, apiKey, "dm_send");
+    if (!rateCheck.allowed) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
+    }
+
+    const dm = await sendAgentDmRpc(supabase, apiKey!, target_wallet, content);
+    if (!dm.ok) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: dm.error }) }] };
+    }
+
+    const result = {
+      success: true,
+      conversation_id: dm.conversation_id,
+      message_id: dm.message_id,
+      message: `DM sent to ${target_wallet.trim().toLowerCase()}`,
+    };
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
 // Search content and users
 mcpServer.tool(
   "dehub_search",
@@ -637,12 +759,10 @@ mcpServer.tool(
     limit: z.number().optional().default(20).describe("Maximum results to return (max: 50)"),
   },
   async ({ query, type, limit }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     if (agent?.id) {
-      await checkRateLimit(supabase, agent.id, 'default');
+      await checkRateLimit(supabase, apiKey, 'default');
     }
     
     const queryParams = new URLSearchParams({
@@ -670,9 +790,7 @@ mcpServer.tool(
     wallet_address: z.string().optional().describe("Wallet address to lookup (defaults to agent's own wallet)"),
   },
   async ({ wallet_address }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
     
     const targetWallet = wallet_address || agent?.owner_wallet_address;
     
@@ -681,7 +799,7 @@ mcpServer.tool(
     }
     
     if (agent?.id) {
-      await checkRateLimit(supabase, agent.id, 'default');
+      await checkRateLimit(supabase, apiKey, 'default');
     }
     
     const response = await fetch(`${DEHUB_API_BASE}/api/account_info?wallet=${targetWallet}`);
@@ -706,9 +824,7 @@ mcpServer.tool(
     banner_url: z.string().optional().describe("URL to download banner/cover image from (will be uploaded to DeHub)"),
   },
   async ({ bio, display_name, avatar_url, banner_url }) => {
-    // deno-lint-ignore no-explicit-any
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const agent = await getAgentFromApiKey(currentApiKey, supabase);
+    const agent = await getAgentFromApiKey(apiKey, supabase);
 
     if (!agent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "Authentication required. Include x-dehub-api-key header." }) }] };
@@ -722,7 +838,7 @@ mcpServer.tool(
       return { content: [{ type: "text", text: JSON.stringify({ error: "At least one of bio, display_name, avatar_url, or banner_url must be provided." }) }] };
     }
 
-    const rateCheck = await checkRateLimit(supabase, agent.id, 'profile_update');
+    const rateCheck = await checkRateLimit(supabase, apiKey, 'profile_update');
     if (!rateCheck.allowed) {
       return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
     }
@@ -866,7 +982,7 @@ mcpServer.tool(
       console.error(`[UpdateProfile] Verification failed: ${verifyResponse.status}`);
     }
 
-    await supabase.from('ai_agents').update({ last_active_at: new Date().toISOString() }).eq('id', agent.id);
+    await touchAgentLastActive(supabase, apiKey);
 
     const result = {
       success: true,
@@ -880,23 +996,24 @@ mcpServer.tool(
   }
 );
 
+  return mcpServer;
+}
+
 // ============= Hono App Setup =============
 
 const app = new Hono();
 
-// Create transport
-const transport = new StreamableHTTPTransport();
-
-// Handle all MCP requests
+// Handle all MCP requests — new McpServer + transport per request (no shared mutable apiKey).
 app.all("/*", async (c) => {
-  // Extract API key from headers for tool handlers
-  currentApiKey = c.req.header('x-dehub-api-key') || null;
-  
-  // Connect server to transport if not already connected
-  if (!mcpServer.isConnected()) {
-    await mcpServer.connect(transport);
+  if (!SUPABASE_URL || !SUPABASE_DB_KEY) {
+    return c.json({ error: "Server misconfigured: set SUPABASE_URL and SUPABASE_ANON_KEY (or SERVICE_ROLE_KEY)" }, 503);
   }
-  
+  const apiKeyHeader = c.req.header("x-dehub-api-key") || null;
+  // deno-lint-ignore no-explicit-any
+  const supabase = createClient<any>(SUPABASE_URL, SUPABASE_DB_KEY);
+  const server = buildMcpServer(apiKeyHeader, supabase);
+  const transport = new StreamableHTTPTransport();
+  await server.connect(transport);
   return transport.handleRequest(c);
 });
 
