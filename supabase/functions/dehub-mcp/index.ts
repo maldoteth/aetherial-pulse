@@ -24,6 +24,141 @@ function isEthAddress(s: string): boolean {
   return ETH_ADDR_RE.test(s.trim());
 }
 
+// ── ERC-4337 Gasless Mint via Pimlico ─────────────────────────────────────────
+// Uses SimpleAccount (v0.6) with Pimlico verifying paymaster on Base mainnet.
+const ENTRY_POINT    = '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789';
+const SA_FACTORY     = '0x9406Cc6185a346906296840746125a0E44976454';
+const SA_FACTORY_ABI = ['function getAddress(address owner,uint256 salt) view returns (address)',
+                        'function createAccount(address owner,uint256 salt) returns (address)'];
+const SA_EXEC_ABI    = ['function execute(address dest,uint256 value,bytes calldata func)'];
+const EP_NONCE_ABI   = ['function getNonce(address sender,uint192 key) view returns (uint256)'];
+
+async function mintOnChainGasless(params: {
+  agentSigner: Wallet;
+  mintCalldata: string;
+  streamCollectionAddress: string;
+  pimlicoApiKey: string;
+}): Promise<string> {
+  const { agentSigner, mintCalldata, streamCollectionAddress, pimlicoApiKey } = params;
+  const BUNDLER = `https://api.pimlico.io/v2/8453/rpc?apikey=${pimlicoApiKey}`;
+  const BASE_RPC = 'https://mainnet.base.org';
+
+  const provider = new JsonRpcProvider(BASE_RPC);
+  const saFactory = new Contract(SA_FACTORY, new Interface(SA_FACTORY_ABI), provider);
+  const entryPoint = new Contract(ENTRY_POINT, new Interface(EP_NONCE_ABI), provider);
+
+  // 1. Compute counterfactual smart account address
+  const sender: string = await saFactory.getAddress(agentSigner.address, 0);
+  console.log(`[Gasless] SmartAccount: ${sender}, owner: ${agentSigner.address}`);
+
+  // 2. Check deployment — build initCode if needed
+  const code = await provider.getCode(sender);
+  let initCode = '0x';
+  if (code === '0x') {
+    const factoryIface = new Interface(SA_FACTORY_ABI);
+    initCode = SA_FACTORY + factoryIface.encodeFunctionData('createAccount', [agentSigner.address, 0]).slice(2);
+  }
+
+  // 3. Encode execute() calldata: SmartAccount → StreamCollection.mint(...)
+  const callData = new Interface(SA_EXEC_ABI).encodeFunctionData('execute', [
+    streamCollectionAddress, 0, mintCalldata,
+  ]);
+
+  // 4. Get nonce from EntryPoint
+  const nonce: bigint = await entryPoint.getNonce(sender, 0);
+
+  // 5. Get gas fees from bundler
+  async function bundlerCall(method: string, params: unknown[]): Promise<unknown> {
+    const res = await fetch(BUNDLER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    });
+    const json = await res.json() as { result?: unknown; error?: { message?: string } };
+    if (json.error) throw new Error(`Bundler ${method}: ${json.error.message ?? JSON.stringify(json.error)}`);
+    return json.result;
+  }
+
+  const feeData = await bundlerCall('pimlico_getUserOperationGasPrice', []) as {
+    standard: { maxFeePerGas: string; maxPriorityFeePerGas: string };
+  };
+  const maxFeePerGas = feeData.standard.maxFeePerGas;
+  const maxPriorityFeePerGas = feeData.standard.maxPriorityFeePerGas;
+
+  // 6. Build partial UserOp (no gas limits yet — paymaster will fill)
+  const userOpPartial = {
+    sender,
+    nonce: '0x' + nonce.toString(16),
+    initCode,
+    callData,
+    callGasLimit: '0x0',
+    verificationGasLimit: '0x0',
+    preVerificationGas: '0x0',
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+    paymasterAndData: '0x',
+    signature: '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c', // dummy sig for gas estimation
+  };
+
+  // 7. Sponsor via Pimlico paymaster — fills gas limits + paymasterAndData
+  const sponsored = await bundlerCall('pm_sponsorUserOperation', [userOpPartial, ENTRY_POINT]) as {
+    paymasterAndData: string;
+    callGasLimit: string;
+    verificationGasLimit: string;
+    preVerificationGas: string;
+  };
+
+  const userOp = {
+    ...userOpPartial,
+    callGasLimit: sponsored.callGasLimit,
+    verificationGasLimit: sponsored.verificationGasLimit,
+    preVerificationGas: sponsored.preVerificationGas,
+    paymasterAndData: sponsored.paymasterAndData,
+    signature: '0x',
+  };
+
+  // 8. Hash and sign the UserOp (ERC-4337 v0.6 encoding)
+  const { AbiCoder, keccak256, solidityPacked, getBytes } = await import('ethers');
+  const abiCoder = AbiCoder.defaultAbiCoder();
+  const packedUserOp = keccak256(abiCoder.encode(
+    ['address','uint256','bytes32','bytes32','uint256','uint256','uint256','uint256','uint256','bytes32'],
+    [
+      userOp.sender,
+      BigInt(userOp.nonce),
+      keccak256(userOp.initCode),
+      keccak256(userOp.callData),
+      BigInt(userOp.callGasLimit),
+      BigInt(userOp.verificationGasLimit),
+      BigInt(userOp.preVerificationGas),
+      BigInt(userOp.maxFeePerGas),
+      BigInt(userOp.maxPriorityFeePerGas),
+      keccak256(userOp.paymasterAndData),
+    ]
+  ));
+  const userOpHash = keccak256(abiCoder.encode(
+    ['bytes32','address','uint256'],
+    [packedUserOp, ENTRY_POINT, 8453]
+  ));
+  userOp.signature = await agentSigner.signMessage(getBytes(userOpHash));
+
+  // 9. Submit UserOperation
+  const uoHash = await bundlerCall('eth_sendUserOperation', [userOp, ENTRY_POINT]) as string;
+  console.log(`[Gasless] UserOperation submitted: ${uoHash}`);
+
+  // 10. Wait for receipt
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const receipt = await bundlerCall('eth_getUserOperationReceipt', [uoHash]).catch(() => null) as {
+      success: boolean; receipt: { transactionHash: string };
+    } | null;
+    if (receipt?.receipt?.transactionHash) {
+      if (!receipt.success) throw new Error('UserOperation reverted on-chain');
+      return receipt.receipt.transactionHash;
+    }
+  }
+  throw new Error('UserOperation not confirmed within timeout');
+}
+
 function extractTokenIdFromMintResponse(data: unknown): string | number | undefined {
   if (!data || typeof data !== "object") return undefined;
   const d = data as Record<string, unknown>;
@@ -474,7 +609,11 @@ mcpServer.tool(
     formData.append('postType', dehubPostType);
     formData.append('chainId', '8453');
     formData.append('category', JSON.stringify([category || 'General']));
-    formData.append('minter', agent.owner_wallet_address);
+    // Minter must be the agent's own wallet (the one that authenticated with DeHub),
+    // not the human owner's wallet.
+    const agentWallet = new Wallet(agent.wallet_private_key!);
+    const agentWalletAddr = agentWallet.address.toLowerCase();
+    formData.append('minter', agentWalletAddr);
     formData.append('streamInfo', JSON.stringify({
       isLockContent: false,
       isPayPerView: false,
@@ -536,39 +675,67 @@ mcpServer.tool(
     await touchAgentLastActive(supabase, apiKey);
 
     // Step 2: Submit on-chain transaction to StreamCollection contract
-    // DeHub API returns EIP-712 pre-signed data (v, r, s) that must be broadcast to Base chain
+    // DeHub API returns EIP-712 pre-signed data (v, r, s) that must be broadcast to Base chain.
+    // We use Pimlico ERC-4337 to sponsor gas (gasless for the agent wallet).
     const mintData = data as Record<string, unknown>;
     let txHash: string | undefined;
 
     if (mintData.v && mintData.r && mintData.s && mintData.createdTokenId) {
-      try {
-        const BASE_RPC = 'https://mainnet.base.org';
-        const STREAM_COLLECTION_ADDRESS = '0x9f8012074d27F8596C0E5038477ACB52057BC934';
-        const STREAM_COLLECTION_ABI = [
-          'function mint(uint256 id, uint256 timestamp, uint8 v, bytes32 r, bytes32 s, tuple(address recipient, uint256 value)[] fees, uint256 supply, string uri)',
-        ];
+      const STREAM_COLLECTION_ADDRESS = '0x9f8012074d27F8596C0E5038477ACB52057BC934';
+      const STREAM_COLLECTION_ABI = ['function mint(uint256 id, uint256 timestamp, uint8 v, bytes32 r, bytes32 s, tuple(address recipient, uint256 value)[] fees, uint256 supply, string uri)'];
+      const tokenIdBig = BigInt(mintData.createdTokenId as string | number);
+      const timestampBig = BigInt(mintData.timestamp as number);
+      const v = Number(mintData.v);
+      const r = String(mintData.r);
+      const s = String(mintData.s);
+      const mintCalldata = new Interface(STREAM_COLLECTION_ABI).encodeFunctionData('mint', [
+        tokenIdBig, timestampBig, v, r, s, [], BigInt(1000), `${mintData.createdTokenId}.json`,
+      ]);
 
-        const provider = new JsonRpcProvider(BASE_RPC);
-        const wallet = new Wallet(agent.wallet_private_key!, provider);
-        const contract = new Contract(STREAM_COLLECTION_ADDRESS, new Interface(STREAM_COLLECTION_ABI), wallet);
+      const pimlicoApiKey = Deno.env.get('PIMLICO_API_KEY');
+      const agentSigner = new Wallet(agent.wallet_private_key!);
 
-        const tokenIdBig = BigInt(mintData.createdTokenId as string | number);
-        const timestampBig = BigInt(mintData.timestamp as number);
-        const v = Number(mintData.v);
-        const r = String(mintData.r);
-        const s = String(mintData.s);
+      if (pimlicoApiKey) {
+        // ── Gasless path: ERC-4337 via Pimlico ────────────────────────────────
+        try {
+          txHash = await mintOnChainGasless({
+            agentSigner,
+            mintCalldata,
+            streamCollectionAddress: STREAM_COLLECTION_ADDRESS,
+            pimlicoApiKey,
+          });
+          console.log(`[Post Create] Gasless tx confirmed: ${txHash}`);
+        } catch (gaslessErr) {
+          console.error('[Post Create] Gasless mint failed, falling back to direct:', gaslessErr);
+          // Fall through to direct tx
+        }
+      }
 
-        console.log(`[Post Create] Submitting on-chain mint for tokenId ${tokenIdBig}`);
-        const tx = await (contract.mint as (...args: unknown[]) => Promise<{ hash: string; wait: (n: number) => Promise<unknown> }>)(
-          tokenIdBig, timestampBig, v, r, s, [], BigInt(1000), `${mintData.createdTokenId}.json`
-        );
-        txHash = tx.hash;
-        console.log(`[Post Create] Transaction submitted: ${txHash}`);
-        await tx.wait(1);
-        console.log(`[Post Create] Transaction confirmed: ${txHash}`);
-      } catch (chainErr) {
-        console.error('[Post Create] On-chain mint failed:', chainErr);
-        return { content: [{ type: "text", text: JSON.stringify({ error: `Post metadata uploaded but on-chain mint failed: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}` }) }] };
+      if (!txHash) {
+        // ── Direct path: agent wallet must have ETH ────────────────────────────
+        try {
+          const BASE_RPC = 'https://mainnet.base.org';
+          const provider = new JsonRpcProvider(BASE_RPC);
+          const wallet = agentSigner.connect(provider);
+          const contract = new Contract(STREAM_COLLECTION_ADDRESS, new Interface(STREAM_COLLECTION_ABI), wallet);
+          console.log(`[Post Create] Direct mint for tokenId ${tokenIdBig} from ${agentSigner.address}`);
+          const tx = await (contract.mint as (...a: unknown[]) => Promise<{ hash: string; wait: (n: number) => Promise<unknown> }>)(
+            tokenIdBig, timestampBig, v, r, s, [], BigInt(1000), `${mintData.createdTokenId}.json`
+          );
+          txHash = tx.hash;
+          await tx.wait(1);
+          console.log(`[Post Create] Direct tx confirmed: ${txHash}`);
+        } catch (chainErr) {
+          const msg = chainErr instanceof Error ? chainErr.message : String(chainErr);
+          const isNoFunds = msg.toLowerCase().includes('insufficient') || msg.toLowerCase().includes('funds');
+          console.error('[Post Create] On-chain mint failed:', msg);
+          return { content: [{ type: "text", text: JSON.stringify({
+            error: isNoFunds
+              ? `Agent wallet (${agentSigner.address}) needs ETH on Base for gas. Send ~0.001 ETH to that address and retry.`
+              : `On-chain mint failed: ${msg}`,
+            agent_wallet: agentSigner.address,
+          }) }] };
+        }
       }
     }
 
