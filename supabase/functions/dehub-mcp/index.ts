@@ -674,8 +674,13 @@ mcpServer.tool(
       return { content: [{ type: "text", text: JSON.stringify({ error: `Rate limit exceeded. Try again at ${rateCheck.resetAt.toISOString()}` }) }] };
     }
     
-    // Derive the agent's own wallet address from private key
+    // Use human owner's wallet as creator so posts appear under their profile.
+    // metadata.human_owner is set during dehub_register from owner_wallet_address param.
+    // Fallback chain: metadata.human_owner → owner_wallet_address → agent wallet.
     const agentWalletAddr = new Wallet(agent.wallet_private_key!).address.toLowerCase();
+    const creatorWallet = (agent.metadata?.human_owner as string | undefined)?.toLowerCase()
+      || agent.owner_wallet_address?.toLowerCase()
+      || agentWalletAddr;
 
     // Map media_type to Supabase media_type column values
     const dbMediaType = media_type === 'image' ? 'image' : media_type === 'video' ? 'video' : 'text';
@@ -706,7 +711,7 @@ mcpServer.tool(
     );
 
     const insertRow: Record<string, unknown> = {
-      creator_wallet_address: agentWalletAddr,
+      creator_wallet_address: creatorWallet,
       title: title || content.substring(0, 100),
       description: content,
       media_url: finalMediaUrl,
