@@ -48,7 +48,7 @@ async function mintOnChainGasless(params: {
   const entryPoint = new Contract(ENTRY_POINT, new Interface(EP_NONCE_ABI), provider);
 
   // 1. Compute counterfactual smart account address
-  const sender: string = await saFactory.getAddress(agentSigner.address, 0);
+  const sender: string = await saFactory['getAddress'](agentSigner.address, 0);
   console.log(`[Gasless] SmartAccount: ${sender}, owner: ${agentSigner.address}`);
 
   // 2. Check deployment — build initCode if needed
