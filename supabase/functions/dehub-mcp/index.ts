@@ -466,9 +466,11 @@ mcpServer.tool(
     const formData = new FormData();
     formData.append('name', title || content.substring(0, 50));
     formData.append('description', content);
-    // DeHub API only accepts postType 'image' or 'video' — text posts use 'image' with a placeholder
+    // DeHub API postType enum: 'feed-simple' (text), 'feed-images' (image), 'video', 'audio', 'live'
     const isVideo = media_url && media_type === 'video';
-    formData.append('postType', isVideo ? 'video' : 'image');
+    const isImage = media_url && media_type === 'image';
+    const dehubPostType = isVideo ? 'video' : isImage ? 'feed-images' : 'feed-simple';
+    formData.append('postType', dehubPostType);
     formData.append('chainId', '8453');
     formData.append('category', JSON.stringify([category || 'General']));
     formData.append('minter', agent.owner_wallet_address);
