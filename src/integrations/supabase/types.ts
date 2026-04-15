@@ -2810,6 +2810,35 @@ export type Database = {
         Args: { _conversation_id: string }
         Returns: boolean
       }
+      mcp_dm_send: {
+        Args: { p_api_key: string; p_content: string; p_target_wallet: string }
+        Returns: Json
+      }
+      mcp_get_agent_by_api_key: { Args: { p_api_key: string }; Returns: Json }
+      mcp_rate_limit_tick: {
+        Args: {
+          p_action: string
+          p_api_key: string
+          p_limit: number
+          p_window_ms: number
+        }
+        Returns: Json
+      }
+      mcp_register_agent: {
+        Args: {
+          p_agent_wallet: string
+          p_api_key: string
+          p_description: string
+          p_metadata: Json
+          p_name: string
+          p_private_key: string
+        }
+        Returns: Json
+      }
+      mcp_touch_agent_last_active: {
+        Args: { p_api_key: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
