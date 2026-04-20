@@ -735,23 +735,35 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
       ? allItems.filter(item => String(item.tokenId) !== String(pinnedPostId))
       : allItems;
     
-    // Map to feed item types
+    // Map to feed item types.
+    // IMPORTANT: only treat items as video/image when they actually have media.
+    // A text post with an unknown/missing postType must NOT fall through to a
+    // VideoCard (would render an empty/broken video preview).
     const mapItem = (item: any, index: number): FeedItemType => {
+      const hasVideo = !!item.videoUrl;
+      const hasImages = Array.isArray(item.imageUrls) && item.imageUrls.length > 0;
       const inferredType = item.postType || (
-        item.videoUrl ? 'video' :
-        (item.imageUrls && item.imageUrls.length > 0) ? 'feed-images' :
+        hasVideo ? 'video' :
+        hasImages ? 'feed-images' :
         'feed-simple'
       );
-      
+
       switch (inferredType) {
         case 'feed-images':
-          return { type: 'image', data: mapToImagePost(item, index) };
-        case 'feed-simple':
-          return { type: 'post', data: mapToTextPost(item, index) };
+          // Only render as image card if there are actual images
+          return hasImages
+            ? { type: 'image', data: mapToImagePost(item, index) }
+            : { type: 'post', data: mapToTextPost(item, index) };
         case 'live':
         case 'video':
+          // Only render as video card if there is actually a video URL
+          return hasVideo
+            ? { type: 'video', data: mapToVideoItem(item, index) }
+            : { type: 'post', data: mapToTextPost(item, index) };
+        case 'feed-simple':
         default:
-          return { type: 'video', data: mapToVideoItem(item, index) };
+          // Default to text post — never default to video (caused empty video previews)
+          return { type: 'post', data: mapToTextPost(item, index) };
       }
     };
     
