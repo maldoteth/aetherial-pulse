@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { CHAIN_CONFIGS, BASE_CHAIN_ID, BNB_CHAIN_ID } from '@/lib/contracts/dhb-token';
+import { fetchBaseErc20Metadata } from '@/lib/onchain-erc20';
 
 /**
  * Internal tokens we know are swappable on Base via Uniswap, even if
@@ -158,6 +159,31 @@ async function fetchKnownBasePair(symbol: string): Promise<DexPair | null> {
     marketCap,
     fdv,
     info: known.logo ? { imageUrl: known.logo } : undefined,
+  };
+}
+
+/**
+ * Build a synthetic DexPair from raw on-chain ERC20 metadata. Used as a last
+ * resort when DexScreener has no pair indexed for a Base token (brand-new pool,
+ * unindexed deployment, etc.) so the Uniswap Instant Swap drawer still renders.
+ */
+async function buildSyntheticBasePairFromOnchain(address: string): Promise<DexPair | null> {
+  const meta = await fetchBaseErc20Metadata(address);
+  if (!meta) return null;
+  return {
+    chainId: 'base',
+    dexId: 'uniswap',
+    url: `https://dexscreener.com/base/${meta.address}`,
+    pairAddress: '',
+    baseToken: { address: meta.address, name: meta.name, symbol: meta.symbol },
+    quoteToken: { address: '0x4200000000000000000000000000000000000006', name: 'Wrapped Ether', symbol: 'WETH' },
+    priceNative: '0',
+    priceUsd: null,
+    priceChange: null,
+    volume: undefined,
+    liquidity: null,
+    marketCap: null,
+    fdv: null,
   };
 }
 
