@@ -62,9 +62,9 @@ export function PlanCard({ plan, isOwner, isSubscribed, onEdit }: PlanCardProps)
       {/* Price & Duration */}
       <div className="flex items-baseline gap-2 mb-4">
         <div className="flex items-center gap-1.5">
-          <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+          <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
           <span className="text-2xl font-bold text-white">{plan.price}</span>
-          <span className="text-zinc-400">DHB</span>
+          <span className="text-zinc-400">Coins</span>
         </div>
         <span className="text-zinc-500">/</span>
         <div className="flex items-center gap-1 text-zinc-400">
@@ -135,7 +135,7 @@ export function PlanCard({ plan, isOwner, isSubscribed, onEdit }: PlanCardProps)
               <AlertDialogTitle className="text-white">Confirm Subscription</AlertDialogTitle>
               <AlertDialogDescription className="text-zinc-400">
                 Subscribe to <span className="text-white font-medium">{plan.name}</span> for{' '}
-                <span className="text-yellow-400 font-medium">{plan.price} DHB</span> / {formatDuration(plan.duration)}?
+                <span className="text-yellow-400 font-medium">{plan.price} Coins</span> / {formatDuration(plan.duration)}?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

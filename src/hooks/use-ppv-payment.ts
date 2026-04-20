@@ -1,8 +1,8 @@
 /**
  * PPV Payment Hook
  * ================
- * Handles Pay-Per-View content unlock via DHB ERC20 transfer.
- * Auto-swaps ETH → DHB via Uniswap V3 on Base when user lacks DHB.
+ * Handles Pay-Per-View content unlock via Coins ERC20 transfer.
+ * Auto-swaps ETH → Coins via Uniswap V3 on Base when user lacks Coins.
  */
 
 import { useState, useCallback } from 'react';
@@ -47,7 +47,7 @@ export function usePPVPayment({
   tokenId,
   creatorAddress,
   price,
-  currency = 'DHB',
+  currency = 'Coins',
   chainId = BASE_CHAIN_ID,
   onSuccess,
 }: UsePPVPaymentOptions) {
@@ -95,18 +95,18 @@ export function usePPVPayment({
       
       const signerAddress = await getWalletAddress();
       
-      // Check DHB balance
+      // Check Coins balance
       const amountWei = toWei(price, DHB_TOKEN.decimals);
       const dhbBalance = await getERC20Balance(chainConfig.dhbToken, signerAddress);
       
-      // ── Auto-swap if insufficient DHB ────────────────────────
+      // ── Auto-swap if insufficient Coins ────────────────────────
       if (dhbBalance < amountWei) {
         const shortfall = amountWei - dhbBalance;
         
         // Only Base supports auto-swap via Uniswap
         if (!isAutoSwapSupported(chainId)) {
           const balanceHuman = fromWei(dhbBalance);
-          toast.error(dhbText(`Insufficient DHB balance. Need ${price} DHB but have ${balanceHuman} DHB. Auto-swap is only available on Base.`));
+          toast.error(dhbText(`Insufficient Coins balance. Need ${price} Coins but have ${balanceHuman} Coins. Auto-swap is only available on Base.`));
           setIsPaying(false);
           return;
         }
@@ -116,7 +116,7 @@ export function usePPVPayment({
         const ethQuoteResult = await getSwapQuote(shortfall);
         
         if (!ethQuoteResult) {
-          toast.error(dhbText('Could not get swap quote. Please acquire DHB manually.'), { id: 'ppv-payment' });
+          toast.error(dhbText('Could not get swap quote. Please acquire Coins manually.'), { id: 'ppv-payment' });
           setIsPaying(false);
           return;
         }
@@ -127,7 +127,7 @@ export function usePPVPayment({
         if (ethBalance < ethNeeded) {
           const ethHuman = fromWei(ethBalance);
           const ethRequired = fromWei(ethNeeded);
-          toast.error(dhbText(`Insufficient DHB and ETH. Need ~${ethRequired} ETH for auto-swap but have ${ethHuman} ETH.`),
+          toast.error(dhbText(`Insufficient Coins and ETH. Need ~${ethRequired} ETH for auto-swap but have ${ethHuman} ETH.`),
             { id: 'ppv-payment' }
           );
           setIsPaying(false);
@@ -135,14 +135,14 @@ export function usePPVPayment({
         }
 
         // Execute swap
-        toast.loading(dhbText('Swapping ETH → DHB...'), { id: 'ppv-payment' });
+        toast.loading(dhbText('Swapping ETH → Coins...'), { id: 'ppv-payment' });
         try {
           await swapETHForDHB(shortfall, ethNeeded, signerAddress);
           console.log('[PPV] Auto-swap complete, proceeding with payment');
         } catch (swapError: any) {
           console.error('[PPV] Auto-swap failed:', swapError);
           const msg = parseTxError(swapError);
-          toast.error(dhbText(msg || 'ETH → DHB swap failed'), { id: 'ppv-payment' });
+          toast.error(dhbText(msg || 'ETH → Coins swap failed'), { id: 'ppv-payment' });
           if (msg.toLowerCase().includes('session expired') || msg.toLowerCase().includes('log in again')) {
             setTimeout(() => openLoginModal?.(), 1200);
           }

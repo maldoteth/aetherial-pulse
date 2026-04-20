@@ -128,7 +128,7 @@ export async function mintPost(
     category: params.category?.join(',') || null,
     is_ppv: isPPV,
     ppv_amount: ppvAmount,
-    ppv_currency: isPPV ? (streamInfo.payPerViewTokenSymbol || 'DHB') : null,
+    ppv_currency: isPPV ? (streamInfo.payPerViewTokenSymbol || 'Coins') : null,
     is_subscribers_only: isSubscribersOnly,
     visibility: 'public',
     ...(metadata ? { metadata } : {}),

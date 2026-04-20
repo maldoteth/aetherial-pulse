@@ -18,7 +18,7 @@ export {
   type AAWriteResult,
 } from './aa-utils';
 
-// DHB Token & Chain Configs
+// Coins Token & Chain Configs
 export { 
   DHB_TOKEN, 
   BASE_CHAIN_ID,

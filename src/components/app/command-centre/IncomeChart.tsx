@@ -69,7 +69,7 @@ export function IncomeChart() {
     staleTime: 30_000,
   });
 
-  // On-chain DHB transfers
+  // On-chain Coins transfers
   const { data: onchainTransfers = [], isLoading: onchainLoading } = useOnchainDHBTransfers(walletAddress);
 
   const isLoading = tipsLoading || ppvLoading || onchainLoading;
@@ -133,7 +133,7 @@ export function IncomeChart() {
         <div className="flex items-center gap-2 mr-auto">
           <span className="text-white font-semibold">{t('commandCentre.incomeChart')}</span>
           {totalEarned > 0 && (
-            <span className="text-emerald-400 text-sm font-semibold">{totalEarned.toLocaleString()} DHB</span>
+            <span className="text-emerald-400 text-sm font-semibold">{totalEarned.toLocaleString()} Coins</span>
           )}
         </div>
         <GlassFilterRow

@@ -25,13 +25,13 @@ export interface WalletToken {
 // Well-known tokens per chain
 export const DEFAULT_TOKENS: Record<number, { address: string; symbol: string; name: string; decimals: number; logo?: string; displaySymbol?: string }[]> = {
   [BASE_CHAIN_ID]: [
-    { address: '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c', symbol: 'DHB', name: 'DeHub', decimals: 18 },
+    { address: '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c', symbol: 'Coins', name: 'DeHub', decimals: 18 },
     { address: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2', symbol: 'USDT', name: 'Tether', decimals: 6 },
     { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
     { address: '0x236aa50979D5f3De3Bd1Eeb40E81137F22ab794b', symbol: 'BTC', name: 'Bitcoin', decimals: 8, displaySymbol: 'BTC' },
   ],
   [BNB_CHAIN_ID]: [
-    { address: '0x680D3113caf77B61b510f332D5Ef4cf5b41A761D', symbol: 'DHB', name: 'DeHub', decimals: 18 },
+    { address: '0x680D3113caf77B61b510f332D5Ef4cf5b41A761D', symbol: 'Coins', name: 'DeHub', decimals: 18 },
     { address: '0x55d398326f99059fF775485246999027B3197955', symbol: 'USDT', name: 'Tether', decimals: 18 },
     { address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', symbol: 'BTC', name: 'Bitcoin', decimals: 18, displaySymbol: 'BTC' },
   ],
@@ -166,9 +166,9 @@ export async function getAllTokenBalances(walletAddress: string, chainId: ChainI
     chainId,
   }));
 
-  // On Base and BNB, put DHB first (above native token)
-  const dhbToken = erc20Tokens.find(t => t.symbol === 'DHB');
-  const otherErc20 = erc20Tokens.filter(t => t.symbol !== 'DHB');
+  // On Base and BNB, put Coins first (above native token)
+  const dhbToken = erc20Tokens.find(t => t.symbol === 'Coins');
+  const otherErc20 = erc20Tokens.filter(t => t.symbol !== 'Coins');
 
   if (dhbToken) {
     tokens.push(dhbToken);

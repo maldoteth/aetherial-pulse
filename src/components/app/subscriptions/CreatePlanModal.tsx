@@ -25,7 +25,7 @@ const DURATION_PRESETS = [
   { label: 'Lifetime', months: 0, tier: 5 },
 ];
 
-// DHB token addresses per chain
+// Coins token addresses per chain
 const DHB_TOKENS: Record<number, string> = {
   8453: '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c', // Base
   56: '0x680D3113caf77B61b510f332D5Ef4cf5b41A761D',   // BSC
@@ -176,8 +176,8 @@ export function CreatePlanModal({ open, onOpenChange }: CreatePlanModalProps) {
                 className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500 pr-16"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                <img src={dehubCoin} alt="DHB" className="w-4 h-4" />
-                <span className="text-sm text-zinc-400">DHB</span>
+                <img src={dehubCoin} alt="Coins" className="w-4 h-4" />
+                <span className="text-sm text-zinc-400">Coins</span>
               </div>
             </div>
           </div>

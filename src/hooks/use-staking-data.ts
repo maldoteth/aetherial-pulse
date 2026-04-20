@@ -67,13 +67,13 @@ export function useStakingStats() {
 }
 
 /**
- * Get user's unstaked DHB balance on a specific chain
+ * Get user's unstaked Coins balance on a specific chain
  */
 export async function getUserDHBBalance(userAddress: string, chainId: ChainId): Promise<bigint> {
   const config = CHAIN_CONFIGS[chainId];
   if (!config?.dhbToken) return BigInt(0);
   
-  // For BNB staking, the DHB token address might differ
+  // For BNB staking, the Coins token address might differ
   const tokenAddress = chainId === BNB_CHAIN_ID
     ? '0x680d3113caf77b61b510f332d5ef4cf5b41a761d'
     : config.dhbToken;
@@ -221,7 +221,7 @@ export function useStakingTVL() {
   const { data: stats } = useStakingStats();
   const { data: prices } = useTokenPrices();
   
-  const dhbPrice = prices?.DHB ?? 0;
+  const dhbPrice = prices?.Coins ?? 0;
   const totalStakedNum = stats ? parseFloat(stats.totalStaked) : 0;
   const tvl = totalStakedNum * dhbPrice;
 

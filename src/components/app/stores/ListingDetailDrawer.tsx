@@ -37,7 +37,7 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
   const [shippingAddress, setShippingAddress] = useState('');
   const [notes, setNotes] = useState('');
   const { data: prices } = useTokenPrices();
-  const dhbPrice = prices?.DHB ?? 0;
+  const dhbPrice = prices?.Coins ?? 0;
   if (!listing) return null;
 
   const images = (listing.images as string[]) || [];
@@ -57,9 +57,9 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
     setBuying(true);
     try {
       const dhbConfig = DHB_TOKEN[BASE_CHAIN_ID];
-      if (!dhbConfig) throw new Error('DHB not configured');
+      if (!dhbConfig) throw new Error('Coins not configured');
 
-      toast.loading('Sending DHB payment...');
+      toast.loading('Sending Coins payment...');
       const result = await sendERC20Token(
         dhbConfig.address,
         sellerAddress,
@@ -122,7 +122,7 @@ export function ListingDetailDrawer({ listing, open, onClose }: Props) {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xl font-bold flex items-center gap-1.5 text-primary-foreground">
-                {dhbPrice > 0 ? (<><img src={dehubCoin} alt="DHB" className="w-5 h-5" />{priceDhbCeil.toLocaleString()}</>) : `$${priceUsd.toLocaleString()}`}
+                {dhbPrice > 0 ? (<><img src={dehubCoin} alt="Coins" className="w-5 h-5" />{priceDhbCeil.toLocaleString()}</>) : `$${priceUsd.toLocaleString()}`}
               </span>
               <p className="text-xs text-zinc-500">${priceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</p>
             </div>

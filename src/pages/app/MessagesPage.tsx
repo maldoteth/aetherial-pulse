@@ -443,7 +443,7 @@ export default function MessagesPage() {
                         )}
                         {!dmDisabled && perMessageFee && perMessageFee > 0 && (
                           <p className="text-xs text-amber-400 mt-0.5">
-                            {perMessageFee.toLocaleString()} DHB to message
+                            {perMessageFee.toLocaleString()} Coins to message
                           </p>
                         )}
                       </div>

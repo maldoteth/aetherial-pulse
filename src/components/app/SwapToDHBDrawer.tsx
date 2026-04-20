@@ -1,7 +1,7 @@
 /**
- * Swap Any Token → DHB Drawer
+ * Swap Any Token → Coins Drawer
  * ============================
- * Lets users convert any in-wallet token to DHB via Uniswap V3 on Base.
+ * Lets users convert any in-wallet token to Coins via Uniswap V3 on Base.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -27,7 +27,7 @@ import usdcLogo from '@/assets/usdc-logo.png';
 import btcLogo from '@/assets/btc-logo.png';
 
 const TOKEN_ICONS: Record<string, string> = {
-  ETH: ethLogo, BNB: bnbLogo, USDT: usdtLogo, USDC: usdcLogo, BTC: btcLogo, WETH: ethLogo, DHB: dehubCoin,
+  ETH: ethLogo, BNB: bnbLogo, USDT: usdtLogo, USDC: usdcLogo, BTC: btcLogo, WETH: ethLogo, Coins: dehubCoin,
 };
 
 const PRESETS = [
@@ -75,9 +75,9 @@ export function SwapToDHBDrawer({ open, onOpenChange }: SwapToDHBDrawerProps) {
 
   const debouncedAmount = useDebouncedValue(dhbAmount, 500);
 
-  // Available pay tokens: Base chain tokens with balance (exclude DHB) + native ETH
+  // Available pay tokens: Base chain tokens with balance (exclude Coins) + native ETH
   const payTokens: PayToken[] = useMemo(() => {
-    const baseTokens = allTokens.filter(t => t.chainId === BASE_CHAIN_ID && t.symbol !== 'DHB');
+    const baseTokens = allTokens.filter(t => t.chainId === BASE_CHAIN_ID && t.symbol !== 'Coins');
     // Dedupe by address
     const seen = new Set<string>();
     const result: PayToken[] = [];
@@ -151,7 +151,7 @@ export function SwapToDHBDrawer({ open, onOpenChange }: SwapToDHBDrawerProps) {
   const insufficientBalance = amountInWithSlippage && selectedToken.balance < amountInWithSlippage;
 
   const tokenPrice = prices[selectedToken.symbol] ?? 0;
-  const dhbPrice = prices['DHB'] ?? 0;
+  const dhbPrice = prices['Coins'] ?? 0;
   const dhbUsd = dhbPrice && dhbAmount ? (parseFloat(dhbAmount) * dhbPrice) : 0;
   const payUsd = tokenPrice && amountInFormatted ? (parseFloat(amountInFormatted) * tokenPrice) : 0;
 
@@ -172,7 +172,7 @@ export function SwapToDHBDrawer({ open, onOpenChange }: SwapToDHBDrawerProps) {
         quoteResult.feeTier,
       );
       setSuccess(true);
-      toast.success(dhbText(`Swapped for ${Math.floor(amt).toLocaleString()} DHB`), {
+      toast.success(dhbText(`Swapped for ${Math.floor(amt).toLocaleString()} Coins`), {
         description: `TX: ${receipt.hash.slice(0, 10)}…`,
       });
     } catch (err: any) {
@@ -201,7 +201,7 @@ export function SwapToDHBDrawer({ open, onOpenChange }: SwapToDHBDrawerProps) {
     <Drawer open={open} onOpenChange={handleClose}>
       <DrawerContent glass hideHandle={false}>
         <DrawerHeader>
-          <DrawerTitle className="text-white">Swap {selectedToken.symbol} → DHB</DrawerTitle>
+          <DrawerTitle className="text-white">Swap {selectedToken.symbol} → Coins</DrawerTitle>
         </DrawerHeader>
         <div className="px-4 pb-8 space-y-4">
           {success ? (
@@ -209,7 +209,7 @@ export function SwapToDHBDrawer({ open, onOpenChange }: SwapToDHBDrawerProps) {
               <CheckCircle2 className="w-12 h-12 text-emerald-400" />
               <p className="text-white font-medium">Swap Successful!</p>
               <p className="text-sm text-zinc-400">
-                {Math.floor(parseFloat(dhbAmount)).toLocaleString()} DHB added to your wallet
+                {Math.floor(parseFloat(dhbAmount)).toLocaleString()} Coins added to your wallet
               </p>
               <Button variant="glass" className="mt-2 rounded-xl" onClick={() => handleClose(false)}>
                 Done
@@ -217,14 +217,14 @@ export function SwapToDHBDrawer({ open, onOpenChange }: SwapToDHBDrawerProps) {
             </div>
           ) : (
             <>
-              {/* DHB amount input */}
+              {/* Coins amount input */}
               <div className="bg-white/[0.04] border border-white/10 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-zinc-400">You receive</span>
                   {dhbUsd > 0 && <span className="text-xs text-zinc-500">≈ ${dhbUsd.toFixed(2)}</span>}
                 </div>
                 <div className="flex items-center gap-3">
-                  <img src={dehubCoin} alt="DHB" className="w-8 h-8 rounded-full" />
+                  <img src={dehubCoin} alt="Coins" className="w-8 h-8 rounded-full" />
                   <Input
                     type="number"
                     placeholder="0"
@@ -232,7 +232,7 @@ export function SwapToDHBDrawer({ open, onOpenChange }: SwapToDHBDrawerProps) {
                     onChange={e => setDhbAmount(e.target.value)}
                     className="bg-transparent border-none text-white text-xl font-semibold p-0 h-auto focus-visible:ring-0"
                   />
-                  <span className="text-sm text-zinc-400 font-medium shrink-0">DHB</span>
+                  <span className="text-sm text-zinc-400 font-medium shrink-0">Coins</span>
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
                   {PRESETS.map(p => (

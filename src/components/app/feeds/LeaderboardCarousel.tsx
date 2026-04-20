@@ -88,7 +88,7 @@ const LeaderboardCard = memo(function LeaderboardCard({
           displayName={displayName}
           size="sm"
         />
-        <span className="text-xs text-zinc-500 tabular-nums">{formatNumber(entry.total)} DHB</span>
+        <span className="text-xs text-zinc-500 tabular-nums">{formatNumber(entry.total)} Coins</span>
       </div>
     </div>
   );

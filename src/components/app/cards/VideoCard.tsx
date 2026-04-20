@@ -223,7 +223,7 @@ function MobileCreatorInfo({
                   <Gift className="w-3 h-3 text-white" />
                   <span className="text-white text-xs font-medium">
                     {bountyAmount && bountyAmount > 0 
-                      ? `${formatCompact(bountyAmount)} ${bountyCurrency || 'DHB'}` 
+                      ? `${formatCompact(bountyAmount)} ${bountyCurrency || 'Coins'}` 
                       : 'Bounty'}
                   </span>
                 </button>
@@ -302,8 +302,8 @@ function MobileCreatorInfo({
                 <div className="flex items-center justify-between px-4 py-4 bg-white/5 rounded-xl border border-white/10">
                   <span className="text-white text-sm">{t('drawers.rewardPerUser')}</span>
                   <div className="flex items-center gap-2">
-                    <img src={dehubCoinSmall} alt="DHB" className="w-5 h-5" />
-                    <span className="text-white text-lg font-bold">{formatCompact(bountyAmount)} {bountyCurrency || 'DHB'}</span>
+                    <img src={dehubCoinSmall} alt="Coins" className="w-5 h-5" />
+                    <span className="text-white text-lg font-bold">{formatCompact(bountyAmount)} {bountyCurrency || 'Coins'}</span>
                   </div>
                 </div>
               )}
@@ -312,8 +312,8 @@ function MobileCreatorInfo({
                 <div className="flex items-center justify-between px-4 py-3 bg-white/5 rounded-xl border border-white/10">
                   <span className="text-white text-sm">{t('drawers.totalBountyPool')}</span>
                   <div className="flex items-center gap-2">
-                    <img src={dehubCoinSmall} alt="DHB" className="w-4 h-4" />
-                    <span className="text-white text-sm font-medium">{formatCompact(totalBountyPool)} {bountyCurrency || 'DHB'}</span>
+                    <img src={dehubCoinSmall} alt="Coins" className="w-4 h-4" />
+                    <span className="text-white text-sm font-medium">{formatCompact(totalBountyPool)} {bountyCurrency || 'Coins'}</span>
                   </div>
                 </div>
               )}
@@ -330,7 +330,7 @@ function MobileCreatorInfo({
         <PPVDrawerContent
           tokenId={tokenId || ''}
           price={Number(ppvPrice)}
-          currency={ppvCurrency || 'DHB'}
+          currency={ppvCurrency || 'Coins'}
           creatorAddress={creatorId}
           chainId={chainId}
           onClose={() => setShowPPVDrawer(false)}
@@ -356,8 +356,8 @@ function MobileCreatorInfo({
                 <div className="flex items-center justify-between px-4 py-4 bg-white/5 rounded-xl border border-white/10">
                   <span className="text-white text-sm">{t('drawers.mustHoldToView')}</span>
                   <div className="flex items-center gap-2">
-                    <img src={dehubCoinSmall} alt="DHB" className="w-5 h-5" />
-                    <span className="text-white text-lg font-bold">{formatCompact(lockedPrice)} {lockedCurrency || 'DHB'}</span>
+                    <img src={dehubCoinSmall} alt="Coins" className="w-5 h-5" />
+                    <span className="text-white text-lg font-bold">{formatCompact(lockedPrice)} {lockedCurrency || 'Coins'}</span>
                   </div>
                 </div>
               )}
@@ -367,7 +367,7 @@ function MobileCreatorInfo({
               {lockedPrice && lockedPrice > 0 && (
                 <VerifyUnlockButton
                   requiredAmount={lockedPrice}
-                  currency={lockedCurrency || 'DHB'}
+                  currency={lockedCurrency || 'Coins'}
                   onUnlocked={() => { setShowLockedDrawer(false); onUnlocked?.(); }}
                 />
               )}
@@ -1270,10 +1270,10 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
                 </div>
               </div>
               <p className="text-white font-semibold text-sm mb-1">
-                {t('drawers.unlockFor')} {formatCompact(Number(video.ppvPrice))} {video.ppvCurrency || 'DHB'}
+                {t('drawers.unlockFor')} {formatCompact(Number(video.ppvPrice))} {video.ppvCurrency || 'Coins'}
               </p>
               <p className="text-white/70 text-xs">
-                Must be holding {formatCompact(Number(video.lockedPrice))} {video.lockedCurrency || 'DHB'}
+                Must be holding {formatCompact(Number(video.lockedPrice))} {video.lockedCurrency || 'Coins'}
               </p>
             </div>
           </>
@@ -1322,7 +1322,7 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
               </div>
               <p className="text-white font-semibold text-sm mb-1">Holdings Required</p>
               <p className="text-white/70 text-xs">
-                Must be holding {formatCompact(Number(video.lockedPrice))} {video.lockedCurrency || 'DHB'}
+                Must be holding {formatCompact(Number(video.lockedPrice))} {video.lockedCurrency || 'Coins'}
               </p>
             </div>
           </>
@@ -1347,7 +1347,7 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
               <p className="text-white font-semibold text-sm mb-1">{t('drawers.bountyTitle')}</p>
               <p className="text-white/70 text-xs">
                 {video.bountyAmount && video.bountyAmount > 0 
-                  ? `${formatCompact(video.bountyAmount)} ${video.bountyCurrency || 'DHB'}`
+                  ? `${formatCompact(video.bountyAmount)} ${video.bountyCurrency || 'Coins'}`
                   : t('drawers.bountyDescription')}
               </p>
             </div>
@@ -1435,7 +1435,7 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
                 <Lock className="w-3 h-3 text-white" />
                 <span className="text-white text-xs font-medium">
                   {video.lockedPrice && video.lockedPrice > 0 
-                    ? `${formatCompact(video.lockedPrice)} ${video.lockedCurrency || 'DHB'}` 
+                    ? `${formatCompact(video.lockedPrice)} ${video.lockedCurrency || 'Coins'}` 
                     : ''}
                 </span>
               </button>
@@ -1846,7 +1846,7 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
           <PPVDrawerContent
             tokenId={video.id}
             price={Number(video.ppvPrice)}
-            currency={video.ppvCurrency || 'DHB'}
+            currency={video.ppvCurrency || 'Coins'}
             creatorAddress={video.creatorId}
             chainId={video.chainId}
             onClose={() => setShowPPVDrawer(false)}
@@ -1904,8 +1904,8 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
                 <div className="flex items-center justify-between px-4 py-4 bg-white/5 rounded-xl border border-white/10">
                   <span className="text-white text-sm">{t('drawers.rewardPerUser')}</span>
                   <div className="flex items-center gap-2">
-                    <img src={dehubCoinSmall} alt="DHB" className="w-5 h-5" />
-                    <span className="text-white text-lg font-bold">{video.bountyAmount} {video.bountyCurrency || 'DHB'}</span>
+                    <img src={dehubCoinSmall} alt="Coins" className="w-5 h-5" />
+                    <span className="text-white text-lg font-bold">{video.bountyAmount} {video.bountyCurrency || 'Coins'}</span>
                   </div>
                 </div>
               )}
@@ -1960,8 +1960,8 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
                 <div className="flex items-center justify-between px-4 py-4 bg-white/5 rounded-xl border border-white/10">
                   <span className="text-white text-sm">{t('drawers.mustHoldToView')}</span>
                   <div className="flex items-center gap-2">
-                    <img src={dehubCoinSmall} alt="DHB" className="w-5 h-5" />
-                    <span className="text-white text-lg font-bold">{formatCompact(video.lockedPrice)} {video.lockedCurrency || 'DHB'}</span>
+                    <img src={dehubCoinSmall} alt="Coins" className="w-5 h-5" />
+                    <span className="text-white text-lg font-bold">{formatCompact(video.lockedPrice)} {video.lockedCurrency || 'Coins'}</span>
                   </div>
                 </div>
               )}
@@ -1971,7 +1971,7 @@ export const VideoCard = memo(function VideoCard({ video, isImmersive = false, d
               {video.lockedPrice && video.lockedPrice > 0 && (
                 <VerifyUnlockButton
                   requiredAmount={video.lockedPrice}
-                  currency={video.lockedCurrency || 'DHB'}
+                  currency={video.lockedCurrency || 'Coins'}
                   onUnlocked={() => {
                     setShowLockedDrawer(false);
                     setLocallyUnlocked(true);

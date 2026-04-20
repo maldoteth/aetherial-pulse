@@ -1,5 +1,5 @@
 /**
- * DHB Token Configuration
+ * Coins Token Configuration
  * =======================
  * DeHub token configuration for Base and BNB Chain.
  */
@@ -38,7 +38,7 @@ export const CHAIN_CONFIGS: Record<ChainId, ChainConfig> = {
     name: 'BNB',
     rpcUrl: 'https://bsc-dataseed.binance.org',
     explorerUrl: 'https://bscscan.com',
-    dhbToken: '0x680D3113caf77B61b510f332D5Ef4cf5b41A761D', // DHB on BNB
+    dhbToken: '0x680D3113caf77B61b510f332D5Ef4cf5b41A761D', // Coins on BNB
     streamCollection: '0x1065F5922a336C75623B55D22c4a0C760efCe947',
     streamController: '0x9f8012074d27F8596C0E5038477ACB52057BC934', // Uses same as collection on BNB
   },
@@ -47,7 +47,7 @@ export const CHAIN_CONFIGS: Record<ChainId, ChainConfig> = {
     name: 'Ethereum',
     rpcUrl: 'https://ethereum-rpc.publicnode.com',
     explorerUrl: 'https://etherscan.io',
-    dhbToken: '', // No DHB on Ethereum mainnet
+    dhbToken: '', // No Coins on Ethereum mainnet
     streamCollection: '',
     streamController: '',
   },
@@ -104,15 +104,15 @@ export function getChainConfig(chainId: ChainId): ChainConfig {
   return config;
 }
 
-// DHB Token on Base Mainnet (default for backward compatibility)
+// Coins Token on Base Mainnet (default for backward compatibility)
 export const DHB_TOKEN = {
   value: 'dhb',
-  label: 'DHB',
-  symbol: 'DHB',
+  label: 'Coins',
+  symbol: 'Coins',
   customAbbreviation: 'dhb',
   chainId: BASE_CHAIN_ID,
   address: '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c',
-  iconUrl: '/icons/DHB.png',
+  iconUrl: '/icons/Coins.png',
   mintBlockNumber: 16428469,
   decimals: 18,
   isSubscriptionSupported: true,

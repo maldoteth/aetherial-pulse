@@ -1,5 +1,5 @@
 /**
- * Hook to fetch on-chain DHB ERC-20 Transfer events for a user's wallet.
+ * Hook to fetch on-chain Coins ERC-20 Transfer events for a user's wallet.
  * Identifies fiat gateway purchases and labels them accordingly.
  */
 
@@ -8,14 +8,14 @@ import { createPublicClient, http, parseAbiItem, formatUnits, type Address } fro
 import { base } from 'viem/chains';
 import { CHAIN_CONFIGS, BASE_CHAIN_ID } from '@/lib/contracts/dhb-token';
 
-// Known fiat gateway / DPay hot wallets that send DHB after card purchases
+// Known fiat gateway / DPay hot wallets that send Coins after card purchases
 const FIAT_GATEWAY_WALLETS = new Set([
   '0xbf3039b0bb672b268e8384e30d81b1e6a8a43b2c', // DPay treasury
   '0x3a0b5fe1ce81251afaf7e457e1d1e23a4a85c67f', // DPay hot wallet
   '0x1be95b03ef8f10f78e078a74b0080b7e9af4c02b', // DPay sender
 ]);
 
-// DeHub AI Treasury — receives DHB payments for AI prompt/generation usage
+// DeHub AI Treasury — receives Coins payments for AI prompt/generation usage
 const AI_TREASURY_WALLET = '0xbf3039b0bb672b268e8384e30d81b1e6a8a43b2c';
 
 const DHB_TOKEN_BASE = '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c' as Address;

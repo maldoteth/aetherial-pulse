@@ -51,7 +51,7 @@ function SubscriptionRow({ sub, index }: { sub: Subscription; index: number }) {
         {planPrice !== undefined ? (
           <span className="flex items-center gap-1 text-white text-sm">
             {planPrice}
-            <img src={dehubCoin} alt="DHB" className="w-3.5 h-3.5" />
+            <img src={dehubCoin} alt="Coins" className="w-3.5 h-3.5" />
           </span>
         ) : (
           <span className="text-zinc-500">—</span>
@@ -142,7 +142,7 @@ export function SubscriptionsTab() {
           <span className="text-zinc-400 text-sm">Est. Monthly Spend</span>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-3xl font-bold text-white">{Math.round(totalMonthlySpend)}</span>
-            <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+            <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
           </div>
         </div>
 

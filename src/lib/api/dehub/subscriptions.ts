@@ -87,7 +87,7 @@ export async function createPlan(planData: any): Promise<SubscriptionPlan> {
       tier: planData.tier || 1,
       benefits: planData.benefits || [],
       price: planData.chains?.[0]?.price || planData.price || 0,
-      currency: planData.currency || 'DHB',
+      currency: planData.currency || 'Coins',
     })
     .select()
     .single();

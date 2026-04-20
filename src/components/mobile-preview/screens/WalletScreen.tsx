@@ -5,11 +5,11 @@ import { MockAvatar } from '../MockAvatar';
 import { Send, ArrowUpRight, ArrowDownLeft, Copy, QrCode } from 'lucide-react';
 
 const MOCK_TRANSACTIONS = [
-  { id: '1', type: 'received', user: 'bob_dev', amount: '+50 DHB', time: '2h ago' },
-  { id: '2', type: 'sent', user: 'crypto_sarah', amount: '-25 DHB', time: '5h ago' },
-  { id: '3', type: 'received', user: 'defi_whale', amount: '+100 DHB', time: '1d ago' },
-  { id: '4', type: 'staking', user: 'Staking Reward', amount: '+12.4 DHB', time: '1d ago' },
-  { id: '5', type: 'sent', user: 'nft_artist', amount: '-200 DHB', time: '3d ago' },
+  { id: '1', type: 'received', user: 'bob_dev', amount: '+50 Coins', time: '2h ago' },
+  { id: '2', type: 'sent', user: 'crypto_sarah', amount: '-25 Coins', time: '5h ago' },
+  { id: '3', type: 'received', user: 'defi_whale', amount: '+100 Coins', time: '1d ago' },
+  { id: '4', type: 'staking', user: 'Staking Reward', amount: '+12.4 Coins', time: '1d ago' },
+  { id: '5', type: 'sent', user: 'nft_artist', amount: '-200 Coins', time: '3d ago' },
 ];
 
 export function WalletScreen() {
@@ -21,7 +21,7 @@ export function WalletScreen() {
       {/* Balance card */}
       <div className="mx-4 my-3 p-5 rounded-2xl border border-white/[0.1] bg-white/[0.03] backdrop-blur-xl">
         <p className="text-zinc-500 text-xs mb-1">Total Balance</p>
-        <h2 className="text-white text-3xl font-bold">4,250.00 <span className="text-lg text-zinc-400">DHB</span></h2>
+        <h2 className="text-white text-3xl font-bold">4,250.00 <span className="text-lg text-zinc-400">Coins</span></h2>
         <p className="text-zinc-500 text-sm mt-0.5">≈ $1,275.00 USD</p>
 
         <div className="flex gap-3 mt-5">
@@ -46,7 +46,7 @@ export function WalletScreen() {
         <h3 className="text-white text-sm font-semibold mb-3">Tokens</h3>
         <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] divide-y divide-white/[0.04]">
           {[
-            { name: 'DHB', balance: '4,250.00', value: '$1,275.00' },
+            { name: 'Coins', balance: '4,250.00', value: '$1,275.00' },
             { name: 'ETH', balance: '0.52', value: '$1,820.00' },
             { name: 'USDC', balance: '350.00', value: '$350.00' },
           ].map((token) => (

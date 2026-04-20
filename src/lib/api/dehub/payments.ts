@@ -10,10 +10,10 @@ export interface DHBPriceResponse { price: number; tokenSymbol?: string; currenc
 export interface PaginatedTransactions { transactions: DPayTransaction[]; total: number; page: number; hasMore: boolean; }
 
 export async function getDHBPrice(): Promise<DHBPriceResponse> {
-  return { price: 0, tokenSymbol: 'DHB', currency: 'USD' };
+  return { price: 0, tokenSymbol: 'Coins', currency: 'USD' };
 }
 export async function getDHBPriceByChain(chainId: number): Promise<DHBPriceResponse> {
-  return { price: 0, tokenSymbol: 'DHB', currency: 'USD' };
+  return { price: 0, tokenSymbol: 'Coins', currency: 'USD' };
 }
 export async function getAvailableTokens(): Promise<DPayToken[]> { return []; }
 export async function getAvailableGas(): Promise<Record<string, unknown>> { return {}; }

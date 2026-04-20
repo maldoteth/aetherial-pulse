@@ -4,10 +4,10 @@ import { MobileBottomBar } from '../MobileBottomBar';
 import { Sparkles, Send, Plus } from 'lucide-react';
 
 const MOCK_MESSAGES = [
-  { id: '1', role: 'user', content: 'What\'s the current staking APY for DHB?' },
-  { id: '2', role: 'assistant', content: 'The current staking APY for $DHB is **12.4%** for a 30-day lock period. Here\'s a breakdown:\n\n• 7-day lock: 8.2% APY\n• 30-day lock: 12.4% APY\n• 90-day lock: 18.7% APY\n\nWould you like me to help you calculate potential earnings?' },
-  { id: '3', role: 'user', content: 'Yes, if I stake 10,000 DHB for 90 days' },
-  { id: '4', role: 'assistant', content: 'For **10,000 DHB** staked at **18.7% APY** for 90 days:\n\n📊 Estimated reward: **~461 DHB**\n\nThat\'s roughly 5.13 DHB per day. Keep in mind APY can fluctuate based on total staked amount.' },
+  { id: '1', role: 'user', content: 'What\'s the current staking APY for Coins?' },
+  { id: '2', role: 'assistant', content: 'The current staking APY for $Coins is **12.4%** for a 30-day lock period. Here\'s a breakdown:\n\n• 7-day lock: 8.2% APY\n• 30-day lock: 12.4% APY\n• 90-day lock: 18.7% APY\n\nWould you like me to help you calculate potential earnings?' },
+  { id: '3', role: 'user', content: 'Yes, if I stake 10,000 Coins for 90 days' },
+  { id: '4', role: 'assistant', content: 'For **10,000 Coins** staked at **18.7% APY** for 90 days:\n\n📊 Estimated reward: **~461 Coins**\n\nThat\'s roughly 5.13 Coins per day. Keep in mind APY can fluctuate based on total staked amount.' },
 ];
 
 export function AssistantScreen() {

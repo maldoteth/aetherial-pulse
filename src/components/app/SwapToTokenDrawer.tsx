@@ -26,7 +26,7 @@ import btcLogo from '@/assets/btc-logo.png';
 import dehubCoin from '@/assets/fansite-logo.png';
 
 const TOKEN_ICONS: Record<string, string> = {
-  ETH: ethLogo, BNB: bnbLogo, USDT: usdtLogo, USDC: usdcLogo, BTC: btcLogo, WETH: ethLogo, DHB: dehubCoin,
+  ETH: ethLogo, BNB: bnbLogo, USDT: usdtLogo, USDC: usdcLogo, BTC: btcLogo, WETH: ethLogo, Coins: dehubCoin,
 };
 
 interface PayToken {

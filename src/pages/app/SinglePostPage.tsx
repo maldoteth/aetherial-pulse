@@ -93,7 +93,7 @@ function toVideoItem(nft: DeHubNFT): VideoItem {
   const bountyViews = streamInfo?.addBountyFirstXViewers != null ? Number(streamInfo.addBountyFirstXViewers) : undefined;
   const bountyComments = streamInfo?.addBountyFirstXComments != null ? Number(streamInfo.addBountyFirstXComments) : undefined;
   const bountyAmount = streamInfo?.addBountyAmount;
-  const bountyCurrency = streamInfo?.addBountyTokenSymbol || 'DHB';
+  const bountyCurrency = streamInfo?.addBountyTokenSymbol || 'Coins';
   
   // Canonical avatar resolution (matches feed normalization)
   const creatorObj = (nft as any).creator;
@@ -136,11 +136,11 @@ function toVideoItem(nft: DeHubNFT): VideoItem {
     commentCount: nft.commentCount || nft.comment_count || 0,
     isPPV: nft.is_ppv || streamInfo?.isPayPerView || false,
     ppvPrice: nft.ppv_price || streamInfo?.payPerViewAmount,
-    ppvCurrency: nft.ppv_currency || 'DHB',
+    ppvCurrency: nft.ppv_currency || 'Coins',
     isW2E,
     isLocked: nft.is_locked || streamInfo?.isLockContent || false,
     lockedPrice: nft.locked_price || streamInfo?.lockContentAmount,
-    lockedCurrency: nft.locked_currency || streamInfo?.lockContentTokenSymbol || 'DHB',
+    lockedCurrency: nft.locked_currency || streamInfo?.lockContentTokenSymbol || 'Coins',
     bountyViews,
     bountyComments,
     bountyAmount,
@@ -197,15 +197,15 @@ function toImagePost(nft: DeHubNFT): ImagePost {
     isDisliked: nft.isDisliked,
     isPPV: nft.is_ppv || streamInfo?.isPayPerView || false,
     ppvPrice: nft.ppv_price || streamInfo?.payPerViewAmount,
-    ppvCurrency: nft.ppv_currency || 'DHB',
+    ppvCurrency: nft.ppv_currency || 'Coins',
     isW2E: nft.is_w2e || streamInfo?.isAddBounty || false,
     isLocked: nft.is_locked || streamInfo?.isLockContent || false,
     lockedPrice: nft.locked_price || streamInfo?.lockContentAmount,
-    lockedCurrency: nft.locked_currency || streamInfo?.lockContentTokenSymbol || 'DHB',
+    lockedCurrency: nft.locked_currency || streamInfo?.lockContentTokenSymbol || 'Coins',
     bountyViews: streamInfo?.addBountyFirstXViewers != null ? Number(streamInfo.addBountyFirstXViewers) : undefined,
     bountyComments: streamInfo?.addBountyFirstXComments != null ? Number(streamInfo.addBountyFirstXComments) : undefined,
     bountyAmount: streamInfo?.addBountyAmount,
-    bountyCurrency: streamInfo?.addBountyTokenSymbol || 'DHB',
+    bountyCurrency: streamInfo?.addBountyTokenSymbol || 'Coins',
     isOwner: nft.isOwner ?? false,
     isUnlocked: nft.isUnlocked ?? false,
     repostCount: (nft.totalReposts || nft.reposts || 0) + (nft.quotes || 0),

@@ -1,5 +1,5 @@
 /**
- * Hook for DHB balance verification to unlock gated content.
+ * Hook for Coins balance verification to unlock gated content.
  * Uses the cached badgeBalance from the DeHub API profile instead of calling an edge function.
  */
 import { useState, useCallback } from 'react';

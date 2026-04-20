@@ -2,7 +2,7 @@
  * Event Gate Payment Hook
  * =======================
  * Handles paying the gate fee for gated events.
- * Sends DHB to the event creator via StreamController.sendTip(),
+ * Sends Coins to the event creator via StreamController.sendTip(),
  * then records the payment in event_gate_payments.
  */
 
@@ -94,7 +94,7 @@ export function useEventGatePayment({
         signerAddress
       );
 
-      toast.success(dhbText(`Paid ${amount} DHB entry fee!`), { id: 'gate-payment' });
+      toast.success(dhbText(`Paid ${amount} Coins entry fee!`), { id: 'gate-payment' });
 
       queryClient.invalidateQueries({ queryKey: ['event-gate-paid', eventId] });
       onSuccess?.();

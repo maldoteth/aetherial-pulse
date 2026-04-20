@@ -78,7 +78,7 @@ export function SubscriptionsSummary() {
               <span className="text-2xl font-bold text-white">
                 {Math.round(totalMonthlySpend).toLocaleString()}
               </span>
-              <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+              <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
             </div>
           </div>
 

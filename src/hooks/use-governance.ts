@@ -164,7 +164,7 @@ export function useGovernanceUserVotes() {
   });
 }
 
-const GOVERNANCE_PROPOSAL_FEE = 10000; // DHB per proposal
+const GOVERNANCE_PROPOSAL_FEE = 10000; // Coins per proposal
 
 export function useSubmitGovernanceProposal() {
   const queryClient = useQueryClient();
@@ -174,7 +174,7 @@ export function useSubmitGovernanceProposal() {
     mutationFn: async ({ title, description }: { title: string; description: string }) => {
       if (!walletAddress) throw new Error('Not authenticated');
 
-      // ── Charge 10,000 DHB proposal fee ─────────────────────
+      // ── Charge 10,000 Coins proposal fee ─────────────────────
       const chainConfig = getChainConfig(BASE_CHAIN_ID);
       await switchChain(BASE_CHAIN_ID);
       const signerAddress = await getWalletAddress();
@@ -184,7 +184,7 @@ export function useSubmitGovernanceProposal() {
       if (balance < amountWei) {
         const balanceHuman = Number(balance) / 1e18;
         throw new Error(
-          `Insufficient unstaked DHB on Base. Need ${GOVERNANCE_PROPOSAL_FEE.toLocaleString()} liquid (unstaked) DHB on Base but have ${balanceHuman.toFixed(2)} DHB. Staked DHB cannot be used for fees.`
+          `Insufficient unstaked Coins on Base. Need ${GOVERNANCE_PROPOSAL_FEE.toLocaleString()} liquid (unstaked) Coins on Base but have ${balanceHuman.toFixed(2)} Coins. Staked Coins cannot be used for fees.`
         );
       }
 
@@ -363,7 +363,7 @@ export function useVoteGovernanceProposal() {
       if (context?.previousDetail && context?.proposalId) {
         queryClient.setQueryData(['governance-proposal', context.proposalId], context.previousDetail);
       }
-      const msg = parseTxError(err) || err?.message || 'Vote failed. You must hold DHB tokens to vote.';
+      const msg = parseTxError(err) || err?.message || 'Vote failed. You must hold Coins tokens to vote.';
       toast.error(msg);
     },
     onSettled: () => {

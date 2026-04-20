@@ -2,7 +2,7 @@
  * Buy Fraction Drawer
  * ===================
  * Confirms purchase of fractions from a listing.
- * Flow: Buyer sends DHB to seller → trade recorded in DB.
+ * Flow: Buyer sends Coins to seller → trade recorded in DB.
  */
 
 import { useState } from 'react';
@@ -47,11 +47,11 @@ export function BuyFractionDrawer({ listing, open, onOpenChange, onSuccess }: Bu
 
     setIsProcessing(true);
     try {
-      // Step 1: Send DHB to seller
-      toast.info('Sending DHB payment to seller...');
+      // Step 1: Send Coins to seller
+      toast.info('Sending Coins payment to seller...');
       const chainId = (listing.chain_id || BASE_CHAIN_ID) as ChainId;
       const dhbConfig = DHB_TOKEN[chainId];
-      if (!dhbConfig) throw new Error('DHB token not configured for this chain');
+      if (!dhbConfig) throw new Error('Coins token not configured for this chain');
 
       const result = await sendERC20Token(
         dhbConfig.address,
@@ -116,19 +116,19 @@ export function BuyFractionDrawer({ listing, open, onOpenChange, onSuccess }: Bu
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-white/60">Price per fraction</span>
-              <span className="text-white font-medium">{listing.price_per_fraction} DHB</span>
+              <span className="text-white font-medium">{listing.price_per_fraction} Coins</span>
             </div>
             <div className="border-t border-white/10 pt-3 flex justify-between">
               <span className="text-white font-medium">Total</span>
               <span className="text-white font-bold flex items-center gap-1.5">
-                <img src={dehubCoin} alt="DHB" className="w-4 h-4" />
-                {totalDHB.toLocaleString(undefined, { maximumFractionDigits: 2 })} DHB
+                <img src={dehubCoin} alt="Coins" className="w-4 h-4" />
+                {totalDHB.toLocaleString(undefined, { maximumFractionDigits: 2 })} Coins
               </span>
             </div>
           </div>
 
           <p className="text-xs text-white/40 text-center">
-            DHB will be sent directly to the seller. The seller will then transfer the fractions to you.
+            Coins will be sent directly to the seller. The seller will then transfer the fractions to you.
           </p>
 
           <Button
@@ -139,7 +139,7 @@ export function BuyFractionDrawer({ listing, open, onOpenChange, onSuccess }: Bu
             {isProcessing ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
             ) : (
-              <><ShoppingCart className="w-4 h-4 mr-2" />Buy for {totalDHB.toLocaleString(undefined, { maximumFractionDigits: 2 })} DHB</>
+              <><ShoppingCart className="w-4 h-4 mr-2" />Buy for {totalDHB.toLocaleString(undefined, { maximumFractionDigits: 2 })} Coins</>
             )}
           </Button>
         </div>

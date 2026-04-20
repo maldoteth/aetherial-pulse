@@ -111,7 +111,7 @@ export interface VideoItem extends BaseFeedItem {
   isPPV?: boolean;
   /** PPV price amount */
   ppvPrice?: number;
-  /** PPV currency (e.g., "USDC", "DHB") */
+  /** PPV currency (e.g., "USDC", "Coins") */
   ppvCurrency?: string;
   /** Whether content is watch-to-earn/bounty */
   isW2E?: boolean;
@@ -119,7 +119,7 @@ export interface VideoItem extends BaseFeedItem {
   isLocked?: boolean;
   /** Locked: price to unlock */
   lockedPrice?: number;
-  /** Locked: currency (DHB, USDC) */
+  /** Locked: currency (Coins, USDC) */
   lockedCurrency?: string;
   /** Bounty: number of viewers to reward */
   bountyViews?: number;
@@ -127,7 +127,7 @@ export interface VideoItem extends BaseFeedItem {
   bountyComments?: number;
   /** Bounty: total reward amount */
   bountyAmount?: number;
-  /** Bounty: reward currency (DHB, USDC) */
+  /** Bounty: reward currency (Coins, USDC) */
   bountyCurrency?: string;
   /** Number of reposts + quotes */
   repostCount?: number;
@@ -212,7 +212,7 @@ export interface ImagePost extends BaseFeedItem {
   isPPV?: boolean;
   /** PPV price amount */
   ppvPrice?: number;
-  /** PPV currency (e.g., "USDC", "DHB") */
+  /** PPV currency (e.g., "USDC", "Coins") */
   ppvCurrency?: string;
   /** Whether content is watch-to-earn/bounty */
   isW2E?: boolean;
@@ -220,7 +220,7 @@ export interface ImagePost extends BaseFeedItem {
   isLocked?: boolean;
   /** Locked: price to unlock */
   lockedPrice?: number;
-  /** Locked: currency (DHB, USDC) */
+  /** Locked: currency (Coins, USDC) */
   lockedCurrency?: string;
   /** Bounty: number of viewers to reward */
   bountyViews?: number;
@@ -228,7 +228,7 @@ export interface ImagePost extends BaseFeedItem {
   bountyComments?: number;
   /** Bounty: total reward amount */
   bountyAmount?: number;
-  /** Bounty: reward currency (DHB, USDC) */
+  /** Bounty: reward currency (Coins, USDC) */
   bountyCurrency?: string;
   /** Number of reposts + quotes */
   repostCount?: number;

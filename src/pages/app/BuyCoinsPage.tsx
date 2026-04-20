@@ -104,8 +104,8 @@ export default function BuyCoinsPage() {
 
   // Pre-fetch token supply so we can validate before checkout (prevents 406)
   const { data: availableSupply } = useQuery({
-    queryKey: ['dpay', 'supply', 'DHB'],
-    queryFn: () => getTokenAvailableSupply('DHB'),
+    queryKey: ['dpay', 'supply', 'Coins'],
+    queryFn: () => getTokenAvailableSupply('Coins'),
     enabled: isAuthenticated,
     staleTime: 2 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
@@ -242,7 +242,7 @@ export default function BuyCoinsPage() {
       return;
     }
 
-    const symbol = selectedToken?.symbol || 'DHB';
+    const symbol = selectedToken?.symbol || 'Coins';
     const tokensToReceive = Math.floor(estimatedTokens);
 
     {
@@ -273,7 +273,7 @@ export default function BuyCoinsPage() {
 
   return (
     <div className="min-h-screen p-3 sm:p-4">
-      <SEOHead title="Buy — Purchase Crypto on Fansite" description="Buy DHB and other cryptocurrencies directly on Fansite with your credit card. Fast checkout, multiple chains supported." url="https://fansite.app/buy" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Buy Crypto on Fansite', url: 'https://fansite.app/buy', description: 'Purchase DHB and other cryptocurrencies with credit card on Fansite.', isPartOf: { '@type': 'WebSite', name: 'Fansite', url: 'https://fansite.app' } }} />
+      <SEOHead title="Buy — Purchase Crypto on Fansite" description="Buy Coins and other cryptocurrencies directly on Fansite with your credit card. Fast checkout, multiple chains supported." url="https://fansite.app/buy" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Buy Crypto on Fansite', url: 'https://fansite.app/buy', description: 'Purchase Coins and other cryptocurrencies with credit card on Fansite.', isPartOf: { '@type': 'WebSite', name: 'Fansite', url: 'https://fansite.app' } }} />
       <h1 className="sr-only">Fansite Buy Crypto — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       <div className="max-w-lg mx-auto space-y-4">
         {/* Header */}
@@ -348,7 +348,7 @@ export default function BuyCoinsPage() {
             Math.floor(estimatedTokens) > availableSupply && (
             <p className="text-red-400 text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
-              {t('buyCoins.supplyWarning', { supply: availableSupply!.toLocaleString(), symbol: selectedToken?.symbol || 'DHB' })}
+              {t('buyCoins.supplyWarning', { supply: availableSupply!.toLocaleString(), symbol: selectedToken?.symbol || 'Coins' })}
             </p>
           )}
         </div>
@@ -363,7 +363,7 @@ export default function BuyCoinsPage() {
                   <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
                 ) : (
                   <>
-                    <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+                    <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
                     <span className="text-white font-semibold text-lg">
                       {estimatedTokens.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </span>
@@ -373,7 +373,7 @@ export default function BuyCoinsPage() {
             </div>
             {tokenPrice > 0 && (
               <p className="text-xs text-zinc-500 mt-1 text-right">
-                1 {selectedToken?.symbol || 'DHB'} ≈ ${tokenPrice.toFixed(5)}
+                1 {selectedToken?.symbol || 'Coins'} ≈ ${tokenPrice.toFixed(5)}
                 {priceData?.change24h != null && (
                   <span className={priceData.change24h >= 0 ? 'text-emerald-400 ml-2' : 'text-red-400 ml-2'}>
                     {priceData.change24h >= 0 ? '+' : ''}{priceData.change24h.toFixed(2)}%
@@ -391,9 +391,9 @@ export default function BuyCoinsPage() {
                   Available to buy now
                 </span>
                 <div className="flex items-center gap-2">
-                  <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+                  <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
                   <span className="text-white font-semibold">
-                    {Math.floor(availableSupply).toLocaleString()} DHB
+                    {Math.floor(availableSupply).toLocaleString()} Coins
                   </span>
                 </div>
               </div>
@@ -456,7 +456,7 @@ export default function BuyCoinsPage() {
             ) : (
               <Wallet className="w-5 h-5 mr-2" />
             )}
-            {isPending ? t('buyCoins.processing') : t('buyCoins.buy', { symbol: selectedToken?.symbol || 'DHB' })}
+            {isPending ? t('buyCoins.processing') : t('buyCoins.buy', { symbol: selectedToken?.symbol || 'Coins' })}
             <ShimmerHoverEffect />
           </Button>
         </div>
@@ -603,7 +603,7 @@ export default function BuyCoinsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="text-sm text-zinc-300">
                         {tx.status === 'completed' ? '✅' : tx.status === 'failed' ? '❌' : '⏳'}{' '}
-                        ${tx.amount} — {tx.approxTokensToReceive ? `~${Number(tx.approxTokensToReceive).toLocaleString()} DHB` : `${tx.tokenSymbol}`}
+                        ${tx.amount} — {tx.approxTokensToReceive ? `~${Number(tx.approxTokensToReceive).toLocaleString()} Coins` : `${tx.tokenSymbol}`}
                         {tx.status === 'failed' && (tx as any).failureReason && (
                           <span className="text-xs text-red-400/70 ml-1 capitalize whitespace-nowrap">({(tx as any).failureReason})</span>
                         )}

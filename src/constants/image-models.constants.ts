@@ -25,7 +25,7 @@ export const getImageCostUsd = (model: ImageModel): number => {
 };
 
 /**
- * Calculate the cost in DHB tokens
+ * Calculate the cost in Coins tokens
  */
 export const getImageCostDhb = (model: ImageModel, dhbPriceUsd: number): number => {
   if (dhbPriceUsd <= 0) return 0;

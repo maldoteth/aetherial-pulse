@@ -140,9 +140,9 @@ describe("payments.ts", () => {
 
   it("getAvailableTokens calls GET /api/dpay/available/tokens", async () => {
     const { getAvailableTokens } = await import("../payments");
-    mockOk({ result: [{ symbol: "DHB" }] });
+    mockOk({ result: [{ symbol: "Coins" }] });
     const res = await getAvailableTokens();
-    expect(res[0].symbol).toBe("DHB");
+    expect(res[0].symbol).toBe("Coins");
   });
 
   it("getAvailableGas calls GET /api/dpay/available/gas", async () => {

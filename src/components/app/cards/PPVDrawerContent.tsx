@@ -30,7 +30,7 @@ interface PPVDrawerContentProps {
 export function PPVDrawerContent({
   tokenId,
   price,
-  currency = 'DHB',
+  currency = 'Coins',
   creatorAddress,
   chainId,
   onClose,
@@ -91,7 +91,7 @@ export function PPVDrawerContent({
             ) : (
               t('drawers.payAmount', 'Pay {{amount}} {{currency}}', {
                 amount: formatCompact(Number(price)),
-                currency: currency || 'DHB',
+                currency: currency || 'Coins',
               })
             )}
           </Button>

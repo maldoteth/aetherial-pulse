@@ -175,7 +175,7 @@ function MessageBubble({
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm">
             <Gem className="w-4 h-4 text-white" />
             <span>
-              Tip: {message.tipAmount} {message.tipSymbol || 'DHB'}
+              Tip: {message.tipAmount} {message.tipSymbol || 'Coins'}
             </span>
           </div>
         )}
@@ -246,7 +246,7 @@ function MessageBubble({
             {message.tipAmount != null && (message.msgType as string) !== 'tip' && (
               <div className="inline-flex items-center gap-1 mt-1 text-xs text-amber-300">
                 <Gem className="w-3 h-3 text-amber-300" />
-                {message.tipAmount} {message.tipSymbol || 'DHB'}
+                {message.tipAmount} {message.tipSymbol || 'Coins'}
               </div>
             )}
           </div>
@@ -398,7 +398,7 @@ export function DirectMessageChat({ conversation, onBack }: DirectMessageChatPro
   const balancesLoaded = feeBalanceBase !== null || feeBalanceBnb !== null;
   const feeSendDisabled = feeRequired && balancesLoaded && (bestFeeBalance < activeFee);
 
-  // Check DHB balance on both Base and BNB when fee is required
+  // Check Coins balance on both Base and BNB when fee is required
   useEffect(() => {
     if (!feeRequired) return;
     const addr = walletAddress;
@@ -697,7 +697,7 @@ export function DirectMessageChat({ conversation, onBack }: DirectMessageChatPro
         paymentStatus: 'pending',
         paymentTxHash: null,
         tipAmount: activeFee,
-        tipSymbol: 'DHB',
+        tipSymbol: 'Coins',
         isDeleted: false,
         author: 'me',
         createdAt: new Date().toISOString(),
@@ -737,7 +737,7 @@ export function DirectMessageChat({ conversation, onBack }: DirectMessageChatPro
           return;
         }
 
-        console.log('[DM Fee] Paying', activeFee, 'DHB to recipient:', recipientAddress, '| chain:', chainId);
+        console.log('[DM Fee] Paying', activeFee, 'Coins to recipient:', recipientAddress, '| chain:', chainId);
         toast.loading('Processing payment...', { id: 'dm-fee-send' });
 
         const tipResult = await sendTip({
@@ -752,7 +752,7 @@ export function DirectMessageChat({ conversation, onBack }: DirectMessageChatPro
         // Track this tx as locally confirmed so we don't show "confirming payment..." forever
         if (feeTxHash) confirmedTxHashes.current.add(feeTxHash.toLowerCase());
 
-        toast.success(dhbText(`Paid ${activeFee.toLocaleString()} DHB`), { id: 'dm-fee-send', duration: 2000 });
+        toast.success(dhbText(`Paid ${activeFee.toLocaleString()} Coins`), { id: 'dm-fee-send', duration: 2000 });
 
         // Update balance after payment
         if (chainId === BASE_CHAIN_ID) {
@@ -1159,7 +1159,7 @@ export function DirectMessageChat({ conversation, onBack }: DirectMessageChatPro
           initError && isVirtualConv
             ? 'Connection failed — tap Retry above'
             : feeSendDisabled
-            ? `Insufficient DHB (need ${activeFee.toLocaleString()})`
+            ? `Insufficient Coins (need ${activeFee.toLocaleString()})`
             : undefined
         }
         isSendingFee={isSendingFee}

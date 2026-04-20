@@ -123,7 +123,7 @@ export function TransactionsTab() {
         id: p.id,
         type: 'ppv' as any,
         amount: Number(p.amount),
-        tokenSymbol: p.currency || 'DHB',
+        tokenSymbol: p.currency || 'Coins',
         status: 'completed' as any,
         createdAt: p.created_at,
         txHash: p.tx_hash,

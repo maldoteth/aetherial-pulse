@@ -596,10 +596,10 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
                   </div>
                 </div>
                 <p className="text-white font-semibold text-sm mb-1">
-                  Unlock for {formatCompact(Number(post.ppvPrice))} {post.ppvCurrency || 'DHB'}
+                  Unlock for {formatCompact(Number(post.ppvPrice))} {post.ppvCurrency || 'Coins'}
                 </p>
                 <p className="text-white/70 text-xs">
-                  Must be holding {formatCompact(Number(post.lockedPrice))} {post.lockedCurrency || 'DHB'}
+                  Must be holding {formatCompact(Number(post.lockedPrice))} {post.lockedCurrency || 'Coins'}
                 </p>
               </div>
             </div>
@@ -654,7 +654,7 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
                 </div>
                 <p className="text-white font-semibold text-sm mb-1">Holdings Required</p>
                 <p className="text-white/70 text-xs">
-                  Must be holding {formatCompact(Number(post.lockedPrice))} {post.lockedCurrency || 'DHB'}
+                  Must be holding {formatCompact(Number(post.lockedPrice))} {post.lockedCurrency || 'Coins'}
                 </p>
               </div>
             </div>
@@ -690,7 +690,7 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
                 <Gift className="w-3 h-3 text-white" />
                 <span className="text-white text-xs font-medium">
                   {post.bountyAmount && post.bountyAmount > 0 
-                    ? `${formatCompact(post.bountyAmount)} ${post.bountyCurrency || 'DHB'}` 
+                    ? `${formatCompact(post.bountyAmount)} ${post.bountyCurrency || 'Coins'}` 
                     : 'Bounty'}
                 </span>
               </button>
@@ -705,7 +705,7 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
                 <Lock className="w-3 h-3 text-white" />
                 <span className="text-white text-xs font-medium">
                   {post.lockedPrice && post.lockedPrice > 0 
-                    ? `${formatCompact(post.lockedPrice)} ${post.lockedCurrency || 'DHB'}` 
+                    ? `${formatCompact(post.lockedPrice)} ${post.lockedCurrency || 'Coins'}` 
                     : ''}
                 </span>
               </button>
@@ -841,7 +841,7 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
           <PPVDrawerContent
             tokenId={post.id}
             price={Number(post.ppvPrice ?? 0)}
-            currency={post.ppvCurrency || 'DHB'}
+            currency={post.ppvCurrency || 'Coins'}
             creatorAddress={post.creatorId}
             chainId={post.chainId}
             onClose={() => setShowPPVDrawer(false)}
@@ -899,8 +899,8 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
                 <div className="flex items-center justify-between px-4 py-4 bg-white/5 rounded-xl border border-white/10">
                   <span className="text-white text-sm">{t('drawers.rewardPerUser')}</span>
                   <div className="flex items-center gap-2">
-                    <img src={dehubCoinSmall} alt="DHB" className="w-5 h-5" />
-                    <span className="text-white text-lg font-bold">{post.bountyAmount} {post.bountyCurrency || 'DHB'}</span>
+                    <img src={dehubCoinSmall} alt="Coins" className="w-5 h-5" />
+                    <span className="text-white text-lg font-bold">{post.bountyAmount} {post.bountyCurrency || 'Coins'}</span>
                   </div>
                 </div>
               )}
@@ -930,8 +930,8 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
                 <div className="flex items-center justify-between px-4 py-4 bg-white/5 rounded-xl border border-white/10">
                   <span className="text-white text-sm">{t('drawers.mustHoldToView')}</span>
                   <div className="flex items-center gap-2">
-                    <img src={dehubCoinSmall} alt="DHB" className="w-5 h-5" />
-                    <span className="text-white text-lg font-bold">{formatCompact(post.lockedPrice)} {post.lockedCurrency || 'DHB'}</span>
+                    <img src={dehubCoinSmall} alt="Coins" className="w-5 h-5" />
+                    <span className="text-white text-lg font-bold">{formatCompact(post.lockedPrice)} {post.lockedCurrency || 'Coins'}</span>
                   </div>
                 </div>
               )}
@@ -941,7 +941,7 @@ export const ImageCard = memo(function ImageCard({ post, aboveFold = false }: Im
               {post.lockedPrice && post.lockedPrice > 0 && (
                 <VerifyUnlockButton
                   requiredAmount={post.lockedPrice}
-                  currency={post.lockedCurrency || 'DHB'}
+                  currency={post.lockedCurrency || 'Coins'}
                   onUnlocked={() => {
                     setShowLockedDrawer(false);
                     setLocallyUnlocked(true);

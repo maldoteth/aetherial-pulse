@@ -84,7 +84,7 @@ function videoItemToNFT(video: VideoItem): Partial<DeHubNFT> {
       addBountyFirstXViewers: video.bountyViews,
       addBountyFirstXComments: video.bountyComments,
       addBountyAmount: video.bountyAmount,
-      addBountyTokenSymbol: video.bountyCurrency || 'DHB',
+      addBountyTokenSymbol: video.bountyCurrency || 'Coins',
     } : undefined,
   };
 }

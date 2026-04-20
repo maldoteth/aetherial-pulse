@@ -43,14 +43,14 @@ export interface MintWithBountyParams {
   v: number;
   r: string;
   s: string;
-  bountyAmount: number; // Human-readable DHB amount per person
+  bountyAmount: number; // Human-readable Coins amount per person
   countOfViewers: number;
   countOfCommentors: number;
   chainId?: ChainId;
 }
 
 /**
- * Check DHB token balance
+ * Check Coins token balance
  */
 export async function getDHBBalance(address: string, chainId: ChainId = BASE_CHAIN_ID): Promise<bigint> {
   const chainConfig = getChainConfig(chainId);
@@ -58,7 +58,7 @@ export async function getDHBBalance(address: string, chainId: ChainId = BASE_CHA
 }
 
 /**
- * Check DHB allowance for StreamController
+ * Check Coins allowance for StreamController
  */
 export async function getDHBAllowance(owner: string, chainId: ChainId = BASE_CHAIN_ID): Promise<bigint> {
   const chainConfig = getChainConfig(chainId);
@@ -66,11 +66,11 @@ export async function getDHBAllowance(owner: string, chainId: ChainId = BASE_CHA
 }
 
 /**
- * Approve DHB tokens for StreamController spending
+ * Approve Coins tokens for StreamController spending
  */
 export async function approveDHB(amount: bigint, chainId: ChainId = BASE_CHAIN_ID): Promise<string> {
   const chainConfig = getChainConfig(chainId);
-  console.log('[StreamController] Approving DHB:', amount.toString(), 'on', chainConfig.name);
+  console.log('[StreamController] Approving Coins:', amount.toString(), 'on', chainConfig.name);
   
   const result = await approveERC20(chainConfig.dhbToken, chainConfig.streamController, amount);
   
@@ -84,7 +84,7 @@ export async function approveDHB(amount: bigint, chainId: ChainId = BASE_CHAIN_I
 /**
  * Parameters for sendTip
  * @param tokenId - Stream/post token ID. Use 0 for DM tips (no associated post).
- * @param amount - Human-readable DHB amount
+ * @param amount - Human-readable Coins amount
  * @param to - Recipient address
  * @param chainId - Chain ID (default: Base)
  */
@@ -98,7 +98,7 @@ export interface SendTipParams {
 /**
  * Send tip via StreamController.sendTip().
  * Emits SendFunds(FundType.TIP) so backend can detect tips (unlike direct ERC20 transfer).
- * Requires prior DHB approval for StreamController — will approve if needed.
+ * Requires prior Coins approval for StreamController — will approve if needed.
  */
 // Cache of chains where max-approval has already been granted this session
 const approvedChains = new Set<string>();
@@ -147,12 +147,12 @@ export async function sendTip(params: SendTipParams & { skipBalanceCheck?: boole
 
     if (!params.skipBalanceCheck && balance < amountWei) {
       throw new Error(
-        `Insufficient DHB balance. Need ${params.amount} DHB but have ${Number(balance) / 1e18} DHB`
+        `Insufficient Coins balance. Need ${params.amount} Coins but have ${Number(balance) / 1e18} Coins`
       );
     }
 
     if (needsAllowanceCheck && allowance < amountWei) {
-      console.log('[StreamController] Approving DHB for sendTip...');
+      console.log('[StreamController] Approving Coins for sendTip...');
       const maxApproval = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
       await approveDHB(maxApproval, chainId);
       approvedChains.add(chainKey);
@@ -194,7 +194,7 @@ export function calculateTotalBounty(
 
 /**
  * Execute mintWithBounty on StreamController contract
- * Requires prior DHB approval for the total bounty amount
+ * Requires prior Coins approval for the total bounty amount
  */
 export async function mintWithBounty(params: MintWithBountyParams): Promise<string> {
   const chainId = params.chainId || BASE_CHAIN_ID;
@@ -216,14 +216,14 @@ export async function mintWithBounty(params: MintWithBountyParams): Promise<stri
   );
   const totalBountyWei = toWei(totalBounty, DHB_TOKEN.decimals);
   
-  console.log('[StreamController] Total bounty needed:', totalBounty, 'DHB (', totalBountyWei.toString(), 'wei)');
+  console.log('[StreamController] Total bounty needed:', totalBounty, 'Coins (', totalBountyWei.toString(), 'wei)');
   
   // Check balance
   const balance = await getDHBBalance(signerAddress, chainId);
-  console.log('[StreamController] DHB balance:', balance.toString());
+  console.log('[StreamController] Coins balance:', balance.toString());
   
   if (balance < totalBountyWei) {
-    throw new Error(`Insufficient DHB balance. Need ${totalBounty} DHB but have ${Number(balance) / 1e18} DHB`);
+    throw new Error(`Insufficient Coins balance. Need ${totalBounty} Coins but have ${Number(balance) / 1e18} Coins`);
   }
   
   // Check allowance and approve if needed
@@ -231,7 +231,7 @@ export async function mintWithBounty(params: MintWithBountyParams): Promise<stri
   console.log('[StreamController] Current allowance:', allowance.toString());
   
   if (allowance < totalBountyWei) {
-    console.log('[StreamController] Approving DHB tokens...');
+    console.log('[StreamController] Approving Coins tokens...');
     // Approve max uint256 to avoid repeated approvals
     const maxApproval = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
     await approveDHB(maxApproval, chainId);

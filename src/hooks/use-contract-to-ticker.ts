@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 /**
  * Resolves a contract address to a token symbol via DexScreener.
- * Returns the symbol prefixed with $ (e.g. "$DHB") or null.
+ * Returns the symbol prefixed with $ (e.g. "$Coins") or null.
  */
 async function resolveContractToSymbol(address: string): Promise<string | null> {
   const res = await fetch(`https://api.dexscreener.com/tokens/v1/${address}`);

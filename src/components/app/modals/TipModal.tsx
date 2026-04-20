@@ -76,7 +76,7 @@ export function TipModal({
     },
   });
 
-  // Fetch user's DHB balance when drawer opens
+  // Fetch user's Coins balance when drawer opens
   useEffect(() => {
     if (open && walletAddress) {
       getDHBBalance(walletAddress, BASE_CHAIN_ID)
@@ -150,7 +150,7 @@ export function TipModal({
                       : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1">{val.toLocaleString()} <img src={dehubCoin} alt="DHB" className="w-4 h-4" style={{ marginTop: '-1px' }} /></span>
+                  <span className="inline-flex items-center gap-1">{val.toLocaleString()} <img src={dehubCoin} alt="Coins" className="w-4 h-4" style={{ marginTop: '-1px' }} /></span>
                 </button>
               ))}
             </div>
@@ -162,13 +162,13 @@ export function TipModal({
               <p className="text-white/60 text-xs">{t('tip.customAmount', 'Or enter amount')}</p>
               {dhbBalance != null && (
                 <p className="text-white/30 text-xs">
-                  Balance: {dhbBalance.toLocaleString()} DHB
+                  Balance: {dhbBalance.toLocaleString()} Coins
                 </p>
               )}
             </div>
             <div className="relative flex items-center gap-2">
               <div className="relative flex-1">
-                <img src={dehubCoin} alt="DHB" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" />
+                <img src={dehubCoin} alt="Coins" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" />
                 <Input
                   type="text"
                   inputMode="decimal"

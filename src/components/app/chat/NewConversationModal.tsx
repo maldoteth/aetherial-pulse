@@ -3,9 +3,9 @@
  * ==============================
  * Modal for searching and selecting a user to start a new DM conversation.
  * If the recipient has a perMessageFee, shows a payment step first:
- *   1. Check sender's DHB balance
+ *   1. Check sender's Coins balance
  *   2. Show fee confirmation with option to tip more
- *   3. Process on-chain DHB transfer
+ *   3. Process on-chain Coins transfer
  *   4. Only then create the conversation
  */
 
@@ -95,8 +95,8 @@ function UserSearchResult({
         )}
         {!dmDisabled && perMessageFee && perMessageFee > 0 && (
           <p className="text-xs text-amber-400 mt-1 flex items-center gap-1">
-            <img src={dehubCoin} alt="DHB" className="w-3 h-3" />
-            {perMessageFee.toLocaleString()} DHB to message
+            <img src={dehubCoin} alt="Coins" className="w-3 h-3" />
+            {perMessageFee.toLocaleString()} Coins to message
           </p>
         )}
       </div>
@@ -168,7 +168,7 @@ function FeePaymentStep({
 
   const handlePay = async (amount: number) => {
     if (Number.isNaN(amount) || amount < fee) {
-      toast.error(dhbText(`Minimum tip is ${fee.toLocaleString()} DHB`));
+      toast.error(dhbText(`Minimum tip is ${fee.toLocaleString()} Coins`));
       return;
     }
     if (!messageText.trim()) {
@@ -187,7 +187,7 @@ function FeePaymentStep({
 
       if (balance < amountWei) {
         const balanceHuman = Number(balance) / 1e18;
-        toast.error(dhbText(`Insufficient DHB. Need ${amount.toLocaleString()} but have ${balanceHuman.toFixed(2)}`));
+        toast.error(dhbText(`Insufficient Coins. Need ${amount.toLocaleString()} but have ${balanceHuman.toFixed(2)}`));
         setBalanceInfo({ checked: true, balance: balanceHuman, sufficient: false });
         setIsSending(false);
         return;
@@ -203,7 +203,7 @@ function FeePaymentStep({
       });
       const txHash = tipResult.hash;
 
-      toast.success(dhbText(`Paid ${amount.toLocaleString()} DHB — opening chat! 🎉`), { id: 'dm-fee-gate' });
+      toast.success(dhbText(`Paid ${amount.toLocaleString()} Coins — opening chat! 🎉`), { id: 'dm-fee-gate' });
       onPaid(messageText.trim(), txHash);
     } catch (error: unknown) {
       console.error('[NewConversationModal] Payment failed:', error);
@@ -248,7 +248,7 @@ function FeePaymentStep({
           <h3 className="text-white font-semibold text-sm">Tip to Message</h3>
           <p className="text-zinc-400 text-xs leading-relaxed">
             {displayName} requires a minimum tip of{' '}
-            <span className="text-amber-400 font-medium">{fee.toLocaleString()} DHB</span> to start a conversation.
+            <span className="text-amber-400 font-medium">{fee.toLocaleString()} Coins</span> to start a conversation.
           </p>
         </div>
       </div>
@@ -257,18 +257,18 @@ function FeePaymentStep({
       {isCheckingBalance ? (
         <div className="flex items-center gap-2 text-sm text-zinc-400 justify-center py-2">
           <Loader2 className="w-4 h-4 animate-spin" />
-          Checking your DHB balance...
+          Checking your Coins balance...
         </div>
       ) : balanceInfo.checked && !balanceInfo.sufficient ? (
         <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
           <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
           <p className="text-xs text-red-400">
-            Insufficient balance. You have {Math.floor(balanceInfo.balance).toLocaleString()} DHB but need {fee.toLocaleString()} DHB.
+            Insufficient balance. You have {Math.floor(balanceInfo.balance).toLocaleString()} Coins but need {fee.toLocaleString()} Coins.
           </p>
         </div>
       ) : balanceInfo.checked ? (
         <p className="text-xs text-zinc-500 text-center">
-          Your balance: {Math.floor(balanceInfo.balance).toLocaleString()} DHB
+          Your balance: {Math.floor(balanceInfo.balance).toLocaleString()} Coins
         </p>
       ) : null}
 
@@ -299,8 +299,8 @@ function FeePaymentStep({
           </>
         ) : (
           <>
-            <img src={dehubCoin} alt="DHB" className="w-4 h-4 mr-2" />
-            Pay {fee.toLocaleString()} DHB & Start Chat
+            <img src={dehubCoin} alt="Coins" className="w-4 h-4 mr-2" />
+            Pay {fee.toLocaleString()} Coins & Start Chat
           </>
         )}
       </Button>
@@ -315,7 +315,7 @@ function FeePaymentStep({
       {/* Custom higher tip */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <img src={dehubCoin} alt="DHB" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10" />
+          <img src={dehubCoin} alt="Coins" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10" />
           <Input
             type="number"
             min={fee}
@@ -343,7 +343,7 @@ function FeePaymentStep({
 
       {customAmount && isValidAmount && tipAmount > fee && (
         <p className="text-[10px] text-amber-400/70 text-center">
-          🔥 Tipping {tipAmount.toLocaleString()} DHB will rank you higher in {displayName}'s inbox
+          🔥 Tipping {tipAmount.toLocaleString()} Coins will rank you higher in {displayName}'s inbox
         </p>
       )}
     </div>

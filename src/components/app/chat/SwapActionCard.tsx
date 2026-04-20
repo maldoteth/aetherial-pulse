@@ -33,7 +33,7 @@ interface SwapActionCardProps {
 const TOKEN_DECIMALS: Record<string, number> = {
   '0x0': 18, // ETH
   '0x4200000000000000000000000000000000000006': 18, // WETH
-  '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c': 18, // DHB
+  '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c': 18, // Coins
   '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913': 6, // USDC
 };
 
