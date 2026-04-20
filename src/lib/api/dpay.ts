@@ -63,7 +63,7 @@ export interface OnrampSessionResponse {
 }
 
 /**
- * Get DHB token price
+ * Get Coins token price
  */
 export async function getDPayPrice(): Promise<DPayPrice> {
   console.log('[DPay API] Fetching price...');
@@ -183,7 +183,7 @@ export async function getAvailableTokens(): Promise<DPayToken[]> {
           });
         }
       }
-      return tokens.length > 0 ? tokens : [{ symbol: 'DHB', name: 'DeHub Token', decimals: 18 }];
+      return tokens.length > 0 ? tokens : [{ symbol: 'Coins', name: 'DeHub Token', decimals: 18 }];
     }
 
     // Handle legacy response formats
@@ -200,9 +200,9 @@ export async function getAvailableTokens(): Promise<DPayToken[]> {
       }));
     }
 
-    // Default to DHB if API returns nothing useful
+    // Default to Coins if API returns nothing useful
     return [{
-      symbol: 'DHB',
+      symbol: 'Coins',
       name: 'DeHub Token',
       decimals: 18,
     }];
@@ -210,7 +210,7 @@ export async function getAvailableTokens(): Promise<DPayToken[]> {
     console.error('[DPay API] Error fetching tokens:', error);
     // Return default token on error
     return [{
-      symbol: 'DHB',
+      symbol: 'Coins',
       name: 'DeHub Token',
       decimals: 18,
     }];
@@ -249,12 +249,12 @@ export async function getTokenAvailableSupply(tokenSymbol: string): Promise<numb
     // { balance: { total: 12345 } }
     if (typeof balance?.total === 'number') return balance.total;
 
-    // { balance: { DHB: 12345 } } or { balance: { dhb: 12345 } }
+    // { balance: { Coins: 12345 } } or { balance: { dhb: 12345 } }
     const bySymbol = balance?.[tokenSymbol] ?? balance?.[tokenSymbol.toUpperCase()] ?? balance?.[tokenSymbol.toLowerCase()];
     if (typeof bySymbol === 'number') return bySymbol;
     if (typeof bySymbol?.available === 'number') return bySymbol.available;
 
-    // Nested chain structure: { balance: { "8453": { "DHB": 12345 }, "56": { "DHB": 500 } } }
+    // Nested chain structure: { balance: { "8453": { "Coins": 12345 }, "56": { "Coins": 500 } } }
     if (typeof balance === 'object' && balance !== null) {
       let totalSupply = 0;
       let found = false;
@@ -391,7 +391,7 @@ export async function getDPayTransactions(): Promise<DPayTransaction[]> {
           type: (tx.type === 'buy_token' || tx.type === 'buy') ? 'buy' : (tx.type || 'buy'),
           amount: tx.amount,
           tokenReceived: tx.tokenReceived ? parseFloat(tx.tokenReceived) : undefined,
-          tokenSymbol: tx.tokenSymbol || tx.symbol || 'DHB',
+          tokenSymbol: tx.tokenSymbol || tx.symbol || 'Coins',
           status: 'completed' as const,
           createdAt: tx.createdAt || tx.created_at,
           txHash: tx.tokenSendTxnHash || tx.txHash || tx.hash,
@@ -456,7 +456,7 @@ export async function getAllDPayTransactions(params: { page?: number; limit?: nu
             amount: tx.amount,
             tokenReceived: tx.tokenReceived ? parseFloat(tx.tokenReceived) : undefined,
             approxTokensToReceive: tx.approxTokensToReceive ? String(tx.approxTokensToReceive) : undefined,
-            tokenSymbol: tx.tokenSymbol || tx.symbol || 'DHB',
+            tokenSymbol: tx.tokenSymbol || tx.symbol || 'Coins',
             status: isComplete ? 'completed' as const : isFailed ? 'failed' as const : 'pending' as const,
             failureReason,
             createdAt: tx.createdAt || tx.created_at,
@@ -560,8 +560,8 @@ export async function createOnrampSession(request: OnrampSessionRequest): Promis
 }
 
 /**
- * Create a checkout session for fiat-to-DHB purchase (Stripe flow)
- * Flow: POST /dpay/checkout → Stripe Checkout → webhook → Backend sends DHB → redirect
+ * Create a checkout session for fiat-to-Coins purchase (Stripe flow)
+ * Flow: POST /dpay/checkout → Stripe Checkout → webhook → Backend sends Coins → redirect
  */
 export async function createCheckoutSession(request: {
   amount: number;

@@ -464,7 +464,7 @@ export default function ProfilePage() {
             </p>
             <div className="relative">
               <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+                <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
               </div>
               <Input
                 type="number"
@@ -474,7 +474,7 @@ export default function ProfilePage() {
                 className="pl-10 pr-14 bg-zinc-800 border-zinc-700 text-white"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-medium">
-                DHB
+                Coins
               </span>
             </div>
             <Button 

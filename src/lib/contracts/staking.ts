@@ -1,7 +1,7 @@
 /**
  * Staking Contract Configuration
  * ===============================
- * Addresses and helpers for DHB staking on BNB and Base chains.
+ * Addresses and helpers for Coins staking on BNB and Base chains.
  */
 
 import { Interface, parseUnits } from 'ethers';
@@ -33,7 +33,7 @@ const stakingInterface = new Interface([
 ]);
 
 /**
- * Get total DHB staked on a given chain by reading balanceOf on the DHB token
+ * Get total Coins staked on a given chain by reading balanceOf on the Coins token
  */
 export async function getTotalStaked(chainId: ChainId): Promise<bigint> {
   const config = CHAIN_CONFIGS[chainId];
@@ -92,7 +92,7 @@ export async function getUserEarnedBNB(userAddress: string): Promise<bigint> {
 }
 
 /**
- * Get user's DHB token allowance for the BNB staking contract
+ * Get user's Coins token allowance for the BNB staking contract
  */
 export async function getStakingAllowance(userAddress: string): Promise<bigint> {
   try {
@@ -110,7 +110,7 @@ export async function getStakingAllowance(userAddress: string): Promise<bigint> 
 }
 
 /**
- * Approve DHB token spending for BNB staking contract
+ * Approve Coins token spending for BNB staking contract
  */
 export async function approveBNBStaking(amount: string): Promise<AAWriteResult> {
   await switchChain(BNB_CHAIN_ID);
@@ -120,12 +120,12 @@ export async function approveBNBStaking(amount: string): Promise<AAWriteResult> 
     erc20Interface,
     'approve',
     [BNB_STAKING_CONTRACT, amountWei],
-    { context: 'approve DHB for staking', chainId: BNB_CHAIN_ID }
+    { context: 'approve Coins for staking', chainId: BNB_CHAIN_ID }
   );
 }
 
 /**
- * Stake DHB on BNB chain via staking contract
+ * Stake Coins on BNB chain via staking contract
  */
 export async function stakeBNB(amount: string): Promise<AAWriteResult> {
   await switchChain(BNB_CHAIN_ID);
@@ -135,12 +135,12 @@ export async function stakeBNB(amount: string): Promise<AAWriteResult> {
     stakingInterface,
     'stake',
     [amountWei],
-    { context: 'stake DHB', chainId: BNB_CHAIN_ID }
+    { context: 'stake Coins', chainId: BNB_CHAIN_ID }
   );
 }
 
 /**
- * Unstake DHB on BNB chain via staking contract
+ * Unstake Coins on BNB chain via staking contract
  */
 export async function unstakeBNB(amount: string): Promise<AAWriteResult> {
   await switchChain(BNB_CHAIN_ID);
@@ -150,7 +150,7 @@ export async function unstakeBNB(amount: string): Promise<AAWriteResult> {
     stakingInterface,
     'unstake',
     [amountWei],
-    { context: 'unstake DHB', chainId: BNB_CHAIN_ID }
+    { context: 'unstake Coins', chainId: BNB_CHAIN_ID }
   );
 }
 

@@ -54,7 +54,7 @@ export function MakeOfferDrawer({ tokenId, chainId, targetSeller, open, onOpenCh
         targetSeller,
         chainId,
       });
-      toast.success(`Offer submitted for ${qty} fraction${qty > 1 ? 's' : ''} at ${prc} DHB each`);
+      toast.success(`Offer submitted for ${qty} fraction${qty > 1 ? 's' : ''} at ${prc} Coins each`);
       onOpenChange(false);
       setQuantity('');
       setPrice('');
@@ -90,7 +90,7 @@ export function MakeOfferDrawer({ tokenId, chainId, targetSeller, open, onOpenCh
 
           {/* Price per fraction */}
           <div>
-            <label className="text-sm text-white/60 mb-1.5 block">Your Offer (DHB per Fraction)</label>
+            <label className="text-sm text-white/60 mb-1.5 block">Your Offer (Coins per Fraction)</label>
             <div className="relative">
               <input
                 type="number"
@@ -101,7 +101,7 @@ export function MakeOfferDrawer({ tokenId, chainId, targetSeller, open, onOpenCh
                 placeholder="0.00"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-16 text-white placeholder:text-white/30 outline-none focus:border-white/30 transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">DHB</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">Coins</span>
             </div>
           </div>
 
@@ -111,8 +111,8 @@ export function MakeOfferDrawer({ tokenId, chainId, targetSeller, open, onOpenCh
               <div className="flex justify-between text-sm">
                 <span className="text-white/60">Total offer value</span>
                 <span className="text-white font-medium flex items-center gap-1.5">
-                  <img src={dehubCoin} alt="DHB" className="w-4 h-4" />
-                  {total.toLocaleString(undefined, { maximumFractionDigits: 2 })} DHB
+                  <img src={dehubCoin} alt="Coins" className="w-4 h-4" />
+                  {total.toLocaleString(undefined, { maximumFractionDigits: 2 })} Coins
                 </span>
               </div>
             </div>

@@ -87,7 +87,7 @@ function ListFractionsDrawer({
         pricePerFraction: prc,
         chainId,
       });
-      toast.success(`Listed ${qty} fraction${qty > 1 ? 's' : ''} at ${prc} DHB each`);
+      toast.success(`Listed ${qty} fraction${qty > 1 ? 's' : ''} at ${prc} Coins each`);
       onOpenChange(false);
       setQuantity('');
       setPrice('');
@@ -129,7 +129,7 @@ function ListFractionsDrawer({
           </div>
 
           <div>
-            <label className="text-sm text-white/60 mb-1.5 block">Price per Fraction (DHB)</label>
+            <label className="text-sm text-white/60 mb-1.5 block">Price per Fraction (Coins)</label>
             <div className="relative">
               <input
                 type="number"
@@ -140,7 +140,7 @@ function ListFractionsDrawer({
                 placeholder="0.00"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-16 text-white placeholder:text-white/30 outline-none focus:border-white/30 transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">DHB</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">Coins</span>
             </div>
           </div>
 
@@ -148,7 +148,7 @@ function ListFractionsDrawer({
             <div className="bg-white/5 rounded-xl p-3 border border-white/10">
               <div className="flex justify-between text-sm">
                 <span className="text-white/60">Total listing value</span>
-                <span className="text-white font-medium">{total.toLocaleString(undefined, { maximumFractionDigits: 2 })} DHB</span>
+                <span className="text-white font-medium">{total.toLocaleString(undefined, { maximumFractionDigits: 2 })} Coins</span>
               </div>
             </div>
           )}
@@ -334,10 +334,10 @@ function FractionMarketplace({ holders, nftInfo, truncateAddr }: FractionMarketp
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-white font-medium">{available} fractions</p>
-                        <p className="text-xs text-white/60">{listing.price_per_fraction} DHB each</p>
+                        <p className="text-xs text-white/60">{listing.price_per_fraction} Coins each</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-white font-bold">{(available * listing.price_per_fraction).toLocaleString(undefined, { maximumFractionDigits: 2 })} DHB</p>
+                        <p className="text-white font-bold">{(available * listing.price_per_fraction).toLocaleString(undefined, { maximumFractionDigits: 2 })} Coins</p>
                         {isMine ? (
                           <Button
                             size="sm"
@@ -418,10 +418,10 @@ function FractionMarketplace({ holders, nftInfo, truncateAddr }: FractionMarketp
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-white font-medium">{offer.quantity} fractions</p>
-                        <p className="text-xs text-white/60">{offer.price_per_fraction} DHB each</p>
+                        <p className="text-xs text-white/60">{offer.price_per_fraction} Coins each</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-white font-bold">{(offer.quantity * offer.price_per_fraction).toLocaleString(undefined, { maximumFractionDigits: 2 })} DHB</p>
+                        <p className="text-white font-bold">{(offer.quantity * offer.price_per_fraction).toLocaleString(undefined, { maximumFractionDigits: 2 })} Coins</p>
                         {isBuyer ? (
                           <Button
                             size="sm"
@@ -554,7 +554,7 @@ export default function PostInfoPage() {
   // PPV status and purchase count
   const isPPV = nftInfo?.is_ppv || nftInfo?.streamInfo?.isPayPerView || false;
   const ppvPrice = nftInfo?.ppv_price || nftInfo?.streamInfo?.payPerViewAmount;
-  const ppvCurrency = nftInfo?.ppv_currency || 'DHB';
+  const ppvCurrency = nftInfo?.ppv_currency || 'Coins';
   const { data: ppvPurchaseCount } = usePPVPurchaseCount(isPPV ? postId : undefined);
 
   // Fetch tips for this specific post from tip_records
@@ -950,18 +950,18 @@ export default function PostInfoPage() {
 
               {/* Tips on this Post */}
               <div className="col-span-2 bg-white/5 rounded-lg p-3 flex items-center gap-3">
-                <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+                <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
                 <div>
-                  <p className="text-lg font-bold text-white">{postTipTotal.toLocaleString()} DHB</p>
+                  <p className="text-lg font-bold text-white">{postTipTotal.toLocaleString()} Coins</p>
                   <p className="text-xs text-white/60">{t('postInfo.tipsOnPost', 'Tips on this Post')}</p>
                 </div>
               </div>
 
               {/* Total Tips */}
               <div className="col-span-2 bg-white/5 rounded-lg p-3 flex items-center gap-3">
-                <img src={dehubCoin} alt="DHB" className="w-5 h-5" />
+                <img src={dehubCoin} alt="Coins" className="w-5 h-5" />
                 <div>
-                  <p className="text-lg font-bold text-white">{totalTips.toLocaleString()} DHB</p>
+                  <p className="text-lg font-bold text-white">{totalTips.toLocaleString()} Coins</p>
                   <p className="text-xs text-white/60">{t('postInfo.totalTipsCreator')}</p>
                 </div>
               </div>
@@ -991,7 +991,7 @@ export default function PostInfoPage() {
                 )}
                 {ppvPrice && (
                   <div className="col-span-2 bg-primary/10 rounded-lg p-3 flex items-center gap-3 border border-primary/20">
-                    <img src={dehubCoin} alt="DHB" className="w-6 h-6" />
+                    <img src={dehubCoin} alt="Coins" className="w-6 h-6" />
                     <div>
                       <p className="text-lg font-bold text-white">
                         {((ppvPurchaseCount ?? 0) * Number(ppvPrice)).toLocaleString()} {ppvCurrency}

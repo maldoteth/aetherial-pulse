@@ -1,6 +1,6 @@
 /**
  * Verify & Unlock Button for gated content drawers.
- * Checks cached DHB balance from DeHub API profile on click.
+ * Checks cached Coins balance from DeHub API profile on click.
  */
 import { ShieldCheck } from 'lucide-react';
 import { LiquidGlassBubble } from '@/components/ui/liquid-glass-bubble';

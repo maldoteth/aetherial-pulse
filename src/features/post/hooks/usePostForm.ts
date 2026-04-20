@@ -903,7 +903,7 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
       const minterAddress = await getWeb3AuthSigner();
       console.log('[Mint] User wallet address (minter):', minterAddress);
 
-      // Build streamInfo for monetization - ONLY DHB on Base chain
+      // Build streamInfo for monetization - ONLY Coins on Base chain
       const streamInfo: StreamInfo = {
         isLockContent: false,
         isPayPerView: false,
@@ -914,13 +914,13 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
       if (isTokenGated && tokenAmount) {
         streamInfo.isLockContent = true;
         streamInfo.lockContentContractAddress = DHB_TOKEN.address;
-        streamInfo.lockContentTokenSymbol = 'DHB';
+        streamInfo.lockContentTokenSymbol = 'Coins';
         streamInfo.lockContentAmount = parseFloat(tokenAmount);
         streamInfo.lockContentChainIds = [BASE_CHAIN_ID];
       } else if (isSubscribersOnly) {
         streamInfo.isLockContent = true;
         streamInfo.lockContentContractAddress = DHB_TOKEN.address;
-        streamInfo.lockContentTokenSymbol = 'DHB';
+        streamInfo.lockContentTokenSymbol = 'Coins';
         streamInfo.lockContentChainIds = [BASE_CHAIN_ID];
       }
 
@@ -931,14 +931,14 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
           streamInfo.isPayPerView = true;
           streamInfo.payPerViewTokenSymbol = ppvCurrency;
           streamInfo.payPerViewAmount = ppvValue;
-          if (ppvCurrency === 'DHB') {
+          if (ppvCurrency === 'Coins') {
             streamInfo.payPerViewContractAddress = DHB_TOKEN.address;
             streamInfo.payPerViewChainIds = [BASE_CHAIN_ID];
           }
         }
       }
 
-      // Add Bounty (W2E) settings - DHB only
+      // Add Bounty (W2E) settings - Coins only
       const hasBounty = isWatch2Earn && w2eTotal && w2eViews;
       if (hasBounty) {
         const bountyAmount = parseFloat(w2eTotal);
@@ -949,18 +949,18 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
           // Calculate total bounty needed
           const totalBounty = calculateTotalBounty(bountyAmount, viewerCount, commentCount);
           
-          // Check DHB balance
+          // Check Coins balance
           const balance = await getDHBBalance(minterAddress);
           const balanceNum = Number(balance) / 1e18;
           
           if (balanceNum < totalBounty) {
-            toast.error(dhbText(`Insufficient DHB balance. Need ${totalBounty} DHB but have ${balanceNum.toFixed(2)} DHB`));
+            toast.error(dhbText(`Insufficient Coins balance. Need ${totalBounty} Coins but have ${balanceNum.toFixed(2)} Coins`));
             setIsPosting(false);
             return;
           }
           
           streamInfo.isAddBounty = true;
-          streamInfo.addBountyTokenSymbol = 'DHB';
+          streamInfo.addBountyTokenSymbol = 'Coins';
           streamInfo.addBountyAmount = bountyAmount;
           streamInfo.addBountyFirstXViewers = viewerCount;
           streamInfo.addBountyFirstXComments = commentCount;

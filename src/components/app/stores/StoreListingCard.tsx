@@ -19,7 +19,7 @@ export const StoreListingCard = memo(function StoreListingCard({ listing, onClic
   const firstImage = images[0];
   const storeName = listing.stores?.name || 'Unknown Store';
   const { data: prices } = useTokenPrices();
-  const dhbPrice = prices?.DHB ?? 0;
+  const dhbPrice = prices?.Coins ?? 0;
   const priceUsd = Number(listing.price);
   const priceDhb = dhbPrice > 0 ? priceUsd / dhbPrice : 0;
 
@@ -51,7 +51,7 @@ export const StoreListingCard = memo(function StoreListingCard({ listing, onClic
         <p className="text-xs text-zinc-400 truncate">{storeName}</p>
         <p className="text-sm font-semibold text-white flex items-center gap-1">
           {dhbPrice > 0 ? (
-            <><img src={dehubCoin} alt="DHB" className="w-4 h-4" />{Math.ceil(priceDhb).toLocaleString()}</>
+            <><img src={dehubCoin} alt="Coins" className="w-4 h-4" />{Math.ceil(priceDhb).toLocaleString()}</>
           ) : (
             `$${priceUsd.toLocaleString()}`
           )}

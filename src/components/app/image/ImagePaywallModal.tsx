@@ -60,15 +60,15 @@ export function ImagePaywallModal({
     try {
       const { data, error: fetchError } = await supabase.functions.invoke('get-dhb-price');
       if (fetchError) throw fetchError;
-      const price = data?.prices?.DHB;
+      const price = data?.prices?.Coins;
       if (price) {
         setDhbPrice(price);
       } else {
-        throw new Error('Failed to get DHB price');
+        throw new Error('Failed to get Coins price');
       }
     } catch (err) {
-      console.error('Error fetching DHB price:', err);
-      setError('Failed to fetch DHB price. Using fallback.');
+      console.error('Error fetching Coins price:', err);
+      setError('Failed to fetch Coins price. Using fallback.');
       setDhbPrice(0.0006191);
     } finally {
       setLoading(false);
@@ -111,7 +111,7 @@ export function ImagePaywallModal({
         const baseDhb = Number(baseBalance) / 1e18;
         const bnbDhb = Number(bnbBalance) / 1e18;
         toast.error(
-          `Insufficient DHB. Need ${formatDhb(costDhb)} DHB (Base: ${formatDhb(baseDhb)}, BNB: ${formatDhb(bnbDhb)})`
+          `Insufficient Coins. Need ${formatDhb(costDhb)} Coins (Base: ${formatDhb(baseDhb)}, BNB: ${formatDhb(bnbDhb)})`
         );
         setIsPaying(false);
         return;
@@ -202,7 +202,7 @@ export function ImagePaywallModal({
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-medium text-white">${optionCostUsd.toFixed(2)}</p>
-                        <p className="text-xs text-zinc-500">{formatDhb(optionCostDhb)} DHB</p>
+                        <p className="text-xs text-zinc-500">{formatDhb(optionCostDhb)} Coins</p>
                       </div>
                     </button>
                   );
@@ -229,7 +229,7 @@ export function ImagePaywallModal({
             </div>
           </div>
 
-          {/* DHB Cost */}
+          {/* Coins Cost */}
           <div className="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 rounded-xl p-4 border border-cyan-500/20">
             {loading ? (
               <div className="flex items-center justify-center py-2">
@@ -240,13 +240,13 @@ export function ImagePaywallModal({
               <>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <img src={dhbCoinImage} alt="DHB" className="w-6 h-6" />
-                    <span className="text-white font-medium">Pay with DHB</span>
+                    <img src={dhbCoinImage} alt="Coins" className="w-6 h-6" />
+                    <span className="text-white font-medium">Pay with Coins</span>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-white">{formatDhb(costDhb)} DHB</p>
+                    <p className="text-xl font-bold text-white">{formatDhb(costDhb)} Coins</p>
                     <p className="text-xs text-zinc-500">
-                      @ ${dhbPrice?.toFixed(6)}/DHB
+                      @ ${dhbPrice?.toFixed(6)}/Coins
                     </p>
                   </div>
                 </div>
@@ -265,12 +265,12 @@ export function ImagePaywallModal({
           <div className="flex items-center justify-between text-sm bg-zinc-800/30 rounded-lg p-3">
             <span className="text-zinc-400">Your Balance</span>
             <div className="flex items-center gap-2">
-              <img src={dhbCoinImage} alt="DHB" className="w-4 h-4" />
+              <img src={dhbCoinImage} alt="Coins" className="w-4 h-4" />
               {isBalanceLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
               ) : (
                 <span className={hasEnoughBalance ? 'text-white font-bold' : 'text-red-400'}>
-                  {formatDhb(userBalance)} DHB
+                  {formatDhb(userBalance)} Coins
                 </span>
               )}
             </div>
@@ -279,7 +279,7 @@ export function ImagePaywallModal({
           {!hasEnoughBalance && !loading && !isBalanceLoading && (
             <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
               <p className="text-red-400 text-sm text-center">
-                Insufficient DHB balance. You need {formatDhb(costDhb - userBalance)} more DHB.
+                Insufficient Coins balance. You need {formatDhb(costDhb - userBalance)} more Coins.
               </p>
             </div>
           )}

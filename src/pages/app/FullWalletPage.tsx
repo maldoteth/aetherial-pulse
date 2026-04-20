@@ -42,7 +42,7 @@ const CHAIN_OPTIONS: { id: ChainId; name: string; icon: string }[] = [
 ];
 
 const TOKEN_ICONS: Record<string, string> = {
-  DHB: dehubCoin,
+  Coins: dehubCoin,
   ETH: ethLogo,
   BNB: bnbLogo,
   USDT: usdtLogo,
@@ -149,7 +149,7 @@ export default function FullWalletPage() {
         });
       }
     }
-    const ORDER: Record<string, number> = { DHB: 0, ETH: 1, BNB: 2, BTC: 3, USDT: 4, USDC: 5 };
+    const ORDER: Record<string, number> = { Coins: 0, ETH: 1, BNB: 2, BTC: 3, USDT: 4, USDC: 5 };
     return Array.from(map.values()).sort((a, b) => (ORDER[a.symbol] ?? 99) - (ORDER[b.symbol] ?? 99));
   }, [allTokens]);
 
@@ -223,10 +223,10 @@ export default function FullWalletPage() {
         <div className="flex items-center justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <img src={dehubCoin} alt="DHB" className="w-7 h-7" />
+              <img src={dehubCoin} alt="Coins" className="w-7 h-7" />
               <p className="text-white text-2xl font-bold">
                 {(() => {
-                  const dhb = groupedTokens.find(t => t.symbol === 'DHB');
+                  const dhb = groupedTokens.find(t => t.symbol === 'Coins');
                   const walletBal = dhb ? parseFloat(dhb.totalFormattedBalance) : 0;
                   const stakedBal = userStakingData?.totalStaked ?? 0;
                   const total = walletBal + stakedBal;
@@ -255,7 +255,7 @@ export default function FullWalletPage() {
             className="mt-3 pt-3 border-t border-zinc-800 space-y-1.5"
           >
             {(() => {
-              const dhb = groupedTokens.find(t => t.symbol === 'DHB');
+              const dhb = groupedTokens.find(t => t.symbol === 'Coins');
               const baseBal = dhb?.chains.find(c => c.chainId === BASE_CHAIN_ID);
               const bnbBal = dhb?.chains.find(c => c.chainId === BNB_CHAIN_ID);
               const baseVal = baseBal ? parseFloat(baseBal.formattedBalance) : 0;
@@ -265,15 +265,15 @@ export default function FullWalletPage() {
                 <>
                   <div className="flex justify-between text-xs">
                     <span className="text-zinc-500">Base</span>
-                    <span className="text-white font-medium">{Math.floor(baseVal).toLocaleString()} DHB</span>
+                    <span className="text-white font-medium">{Math.floor(baseVal).toLocaleString()} Coins</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-zinc-500">BNB Chain</span>
-                    <span className="text-white font-medium">{Math.floor(bnbVal).toLocaleString()} DHB</span>
+                    <span className="text-white font-medium">{Math.floor(bnbVal).toLocaleString()} Coins</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-zinc-500">Staked</span>
-                    <span className="text-white font-medium">{Math.floor(stakedVal).toLocaleString()} DHB</span>
+                    <span className="text-white font-medium">{Math.floor(stakedVal).toLocaleString()} Coins</span>
                   </div>
                 </>
               );
@@ -455,7 +455,7 @@ export default function FullWalletPage() {
         onImported={() => { setImportDialogOpen(false); }}
       />
 
-      {/* Buy Options Drawer — top-level Buy button (DHB-focused) */}
+      {/* Buy Options Drawer — top-level Buy button (Coins-focused) */}
       <Drawer open={buyDrawerOpen} onOpenChange={setBuyDrawerOpen}>
         <DrawerContent glass hideHandle={false}>
           <div className="p-5 pb-8 space-y-2">
@@ -479,8 +479,8 @@ export default function FullWalletPage() {
             >
               <Wallet className="w-5 h-5 text-white/70" />
               <div className="text-left">
-                <span className="text-sm font-medium text-white">Swap to DHB</span>
-                <p className="text-xs text-white/40">Convert your tokens to DHB</p>
+                <span className="text-sm font-medium text-white">Swap to Coins</span>
+                <p className="text-xs text-white/40">Convert your tokens to Coins</p>
               </div>
             </button>
           </div>
@@ -608,7 +608,7 @@ function GroupedActionDrawer({ open, onOpenChange, grouped, onSend, onReceive, o
             variant="glass"
             className="flex-col h-auto py-4 gap-2 rounded-xl"
             onClick={() => {
-              if (grouped.symbol === 'DHB') {
+              if (grouped.symbol === 'Coins') {
                 setBuyMethodOpen(true);
               } else {
                 setBuyMethodOpen(true);
@@ -627,7 +627,7 @@ function GroupedActionDrawer({ open, onOpenChange, grouped, onSend, onReceive, o
         <DrawerContent glass hideHandle={false}>
           <div className="p-5 pb-8 space-y-2">
             <h3 className="text-white font-semibold text-base mb-4">Buy {grouped?.symbol}</h3>
-            {grouped?.symbol === 'DHB' ? (
+            {grouped?.symbol === 'Coins' ? (
               <>
                 <button
                   onClick={() => {
@@ -654,7 +654,7 @@ function GroupedActionDrawer({ open, onOpenChange, grouped, onSend, onReceive, o
                   <Wallet className="w-5 h-5 text-white/70" />
                   <div className="text-left">
                     <span className="text-sm font-medium text-white">Buy with Crypto</span>
-                    <p className="text-xs text-white/40">Convert your ETH to DHB</p>
+                    <p className="text-xs text-white/40">Convert your ETH to Coins</p>
                   </div>
                 </button>
               </>

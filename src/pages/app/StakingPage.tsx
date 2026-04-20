@@ -1,7 +1,7 @@
 /**
  * Staking Page
  * ============
- * Chain-abstracted DHB staking. Auto-detects which chain(s) user has balance on.
+ * Chain-abstracted Coins staking. Auto-detects which chain(s) user has balance on.
  */
 
 import { useState, useEffect } from 'react';
@@ -367,7 +367,7 @@ export default function StakingPage() {
         const maxBal = Math.max(bnbBal, baseBal);
         const maxChain = bnbBal >= baseBal ? 'BNB Chain' : 'Base';
         toast.error(t('toasts.insufficient_balance', 'Insufficient balance'), {
-          description: t('toasts.max_available_on_chain', 'Max available: {{amount}} DHB on {{chain}}', { amount: maxBal.toFixed(2), chain: maxChain }),
+          description: t('toasts.max_available_on_chain', 'Max available: {{amount}} Coins on {{chain}}', { amount: maxBal.toFixed(2), chain: maxChain }),
         });
         return;
       }
@@ -535,7 +535,7 @@ export default function StakingPage() {
 
   return (
     <div className={cn("min-h-screen pb-24 px-3 sm:px-4 max-w-5xl mx-auto", isCollapsed && "pt-16 md:pt-0")}>
-      <SEOHead title="Stake DHB — Earn Rewards & Unlock Badges" description="Stake your DHB tokens on Fansite to earn BNB rewards, unlock staking badges, and gain governance voting weight. 12-day cooldown on unstaking." url="https://fansite.app/stake" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'DHB Staking', url: 'https://fansite.app/stake', description: 'Stake DHB tokens to earn BNB rewards and unlock badges on Fansite.', isPartOf: { '@type': 'WebSite', name: 'Fansite', url: 'https://fansite.app' } }} />
+      <SEOHead title="Stake Coins — Earn Rewards & Unlock Badges" description="Stake your Coins tokens on Fansite to earn BNB rewards, unlock staking badges, and gain governance voting weight. 12-day cooldown on unstaking." url="https://fansite.app/stake" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Coins Staking', url: 'https://fansite.app/stake', description: 'Stake Coins tokens to earn BNB rewards and unlock badges on Fansite.', isPartOf: { '@type': 'WebSite', name: 'Fansite', url: 'https://fansite.app' } }} />
       <h1 className="sr-only">Fansite Staking — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <motion.div
@@ -545,7 +545,7 @@ export default function StakingPage() {
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center flex-shrink-0">
-            <img src={dehubCoin} alt="DHB" className="w-6 h-6" />
+            <img src={dehubCoin} alt="Coins" className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">{t('staking.title')}</h1>
@@ -563,7 +563,7 @@ export default function StakingPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <StatCard icon={Lock} label={t('staking.totalStaked')} value={statsLoading ? '—' : formatNumber(stats?.totalStaked ?? '0')} subtitle={statsLoading ? '' : `${((Number(stats?.totalStaked ?? 0) / 4_200_000_000) * 100).toFixed(2)}% ${t('staking.ofSupply')}`} accent="bg-white/20" delay={0} />
-        <StatCard icon={DollarSign} label={t('staking.totalValueLocked')} value={statsLoading ? '—' : formatUSD(tvl)} subtitle={`@ $${dhbPrice.toFixed(6)}/DHB`} accent="bg-white/20" delay={0.05} />
+        <StatCard icon={DollarSign} label={t('staking.totalValueLocked')} value={statsLoading ? '—' : formatUSD(tvl)} subtitle={`@ $${dhbPrice.toFixed(6)}/Coins`} accent="bg-white/20" delay={0.05} />
         <StatCard icon={TrendingUp} label={t('staking.estApy')} value={`${ESTIMATED_APY}%`} subtitle={t('staking.variableRate')} accent="bg-white/20" delay={0.1} />
       </div>
 
@@ -818,7 +818,7 @@ export default function StakingPage() {
                   : `https://basescan.org/tx/${rec.tx_hash}`;
                 return (
                   <div key={idx} className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-5 py-3 text-xs text-white/70 items-center">
-                    <span className="font-medium">{formatNumber(rec.amount)} DHB</span>
+                    <span className="font-medium">{formatNumber(rec.amount)} Coins</span>
                     <span className="text-white/50">{rec.chain}</span>
                     <span className="text-white/40 hidden sm:block">{new Date(rec.created_at).toLocaleDateString()}</span>
                     <a
@@ -879,7 +879,7 @@ export default function StakingPage() {
                   : `https://basescan.org/tx/${rec.tx_hash}`;
                 return (
                   <div key={idx} className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-5 py-3 text-xs text-white/70 items-center">
-                    <span className="font-medium">{formatNumber(rec.amount)} DHB</span>
+                    <span className="font-medium">{formatNumber(rec.amount)} Coins</span>
                     <span className="text-white/50">{rec.chain}</span>
                     <span className="text-white/40 hidden sm:block">{new Date(rec.created_at).toLocaleDateString()}</span>
                     <a

@@ -154,7 +154,7 @@ export function renderTextWithLinks(text: string): ReactNode[] {
       );
     } else if (fullMatch.startsWith('$')) {
       // $cashtag — render as clickable bold white, searches on click
-      const tag = fullMatch; // e.g. $DHB
+      const tag = fullMatch; // e.g. $Coins
       parts.push(
         <a
           key={`cashtag-${tag}-${match.index}`}

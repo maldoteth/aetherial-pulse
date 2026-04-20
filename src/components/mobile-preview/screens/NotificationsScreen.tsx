@@ -10,7 +10,7 @@ const MOCK_NOTIFICATIONS = [
   { id: '2', type: 'follow', user: 'crypto_sarah', content: 'started following you', time: '10m', read: false, icon: UserPlus },
   { id: '3', type: 'comment', user: 'defi_whale', content: 'replied to your post: "Great analysis!"', time: '30m', read: false, icon: MessageSquare },
   { id: '4', type: 'repost', user: 'nft_artist', content: 'reposted your video', time: '1h', read: true, icon: Repeat2 },
-  { id: '5', type: 'tip', user: 'dao_voter', content: 'tipped you 50 $DHB', time: '2h', read: true, icon: Coins },
+  { id: '5', type: 'tip', user: 'dao_voter', content: 'tipped you 50 $Coins', time: '2h', read: true, icon: Coins },
   { id: '6', type: 'mention', user: 'web3_dev', content: 'mentioned you in a post', time: '5h', read: true, icon: AtSign },
   { id: '7', type: 'like', user: 'music_prod', content: 'liked your comment', time: '1d', read: true, icon: Heart },
   { id: '8', type: 'follow', user: 'alpha_trader', content: 'started following you', time: '1d', read: true, icon: UserPlus },

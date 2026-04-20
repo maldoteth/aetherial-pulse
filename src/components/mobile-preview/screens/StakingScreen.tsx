@@ -4,9 +4,9 @@ import { MobileBottomBar } from '../MobileBottomBar';
 import { Lock, TrendingUp, Clock, Coins } from 'lucide-react';
 
 const STAKING_OPTIONS = [
-  { period: '7 Days', apy: '8.2%', minStake: '100 DHB', locked: '2.4M DHB' },
-  { period: '30 Days', apy: '12.4%', minStake: '500 DHB', locked: '8.1M DHB' },
-  { period: '90 Days', apy: '18.7%', minStake: '1,000 DHB', locked: '15.3M DHB' },
+  { period: '7 Days', apy: '8.2%', minStake: '100 Coins', locked: '2.4M Coins' },
+  { period: '30 Days', apy: '12.4%', minStake: '500 Coins', locked: '8.1M Coins' },
+  { period: '90 Days', apy: '18.7%', minStake: '1,000 Coins', locked: '15.3M Coins' },
 ];
 
 export function StakingScreen() {
@@ -18,9 +18,9 @@ export function StakingScreen() {
       {/* Stats overview */}
       <div className="grid grid-cols-2 gap-2 mx-4 my-3">
         {[
-          { icon: Coins, label: 'Total Staked', value: '25.8M DHB' },
+          { icon: Coins, label: 'Total Staked', value: '25.8M Coins' },
           { icon: TrendingUp, label: 'Avg APY', value: '12.4%' },
-          { icon: Lock, label: 'Your Staked', value: '10,000 DHB' },
+          { icon: Lock, label: 'Your Staked', value: '10,000 Coins' },
           { icon: Clock, label: 'Lock Remaining', value: '23 days' },
         ].map((stat) => (
           <div key={stat.label} className="p-3 rounded-xl border border-white/[0.08] bg-white/[0.02]">
@@ -36,9 +36,9 @@ export function StakingScreen() {
         <h3 className="text-white text-sm font-semibold mb-3">Your Position</h3>
         <div className="space-y-2">
           {[
-            ['Staked Amount', '10,000 DHB'],
+            ['Staked Amount', '10,000 Coins'],
             ['Lock Period', '90 Days'],
-            ['Earned Rewards', '+461 DHB'],
+            ['Earned Rewards', '+461 Coins'],
             ['Current APY', '18.7%'],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between">

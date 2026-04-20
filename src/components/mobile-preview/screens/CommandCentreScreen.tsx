@@ -23,7 +23,7 @@ export function CommandCentreScreen() {
       <div className="grid grid-cols-2 gap-2 mx-4 mb-4">
         {[
           { label: 'Income (30d)', value: '$842', icon: DollarSign, trend: '+12%' },
-          { label: 'Tips Received', value: '1,240 DHB', icon: ArrowUpRight, trend: '+8%' },
+          { label: 'Tips Received', value: '1,240 Coins', icon: ArrowUpRight, trend: '+8%' },
           { label: 'Subscribers', value: '2,431', icon: Activity, trend: '+15%' },
           { label: 'Content Views', value: '45.2K', icon: TrendingUp, trend: '+22%' },
         ].map((stat) => (
@@ -60,9 +60,9 @@ export function CommandCentreScreen() {
         <h3 className="text-white text-sm font-semibold mb-3">Recent Transactions</h3>
         <div className="space-y-2">
           {[
-            { type: 'Tip received', amount: '+50 DHB', from: 'bob_dev', time: '2h ago' },
-            { type: 'Subscription', amount: '+100 DHB', from: 'crypto_sarah', time: '5h ago' },
-            { type: 'Withdrawal', amount: '-500 DHB', from: 'To wallet', time: '1d ago' },
+            { type: 'Tip received', amount: '+50 Coins', from: 'bob_dev', time: '2h ago' },
+            { type: 'Subscription', amount: '+100 Coins', from: 'crypto_sarah', time: '5h ago' },
+            { type: 'Withdrawal', amount: '-500 Coins', from: 'To wallet', time: '1d ago' },
           ].map((tx, i) => (
             <div key={i} className="flex items-center gap-3 py-2 rounded-lg">
               <div className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center">

@@ -47,7 +47,7 @@ export function DmFeeGate({
 
   const handlePay = async (amount: number) => {
     if (Number.isNaN(amount) || amount < fee) {
-      toast.error(dhbText(`Minimum tip is ${fee.toLocaleString()} DHB`));
+      toast.error(dhbText(`Minimum tip is ${fee.toLocaleString()} Coins`));
       return;
     }
 
@@ -81,7 +81,7 @@ export function DmFeeGate({
         txHash,
       });
 
-      toast.success(dhbText(`Sent ${amount.toLocaleString()} DHB + message to ${recipientName}! 🎉`), { id: 'dm-fee-gate' });
+      toast.success(dhbText(`Sent ${amount.toLocaleString()} Coins + message to ${recipientName}! 🎉`), { id: 'dm-fee-gate' });
       onUnlocked();
     } catch (error: unknown) {
       console.error('[DmFeeGate] Payment failed:', error);
@@ -103,7 +103,7 @@ export function DmFeeGate({
           <h3 className="text-white font-semibold text-sm">Tip to Message</h3>
           <p className="text-zinc-400 text-xs leading-relaxed">
             {recipientName} requires a minimum tip of{' '}
-            <span className="text-amber-400 font-medium">{fee.toLocaleString()} DHB</span>.
+            <span className="text-amber-400 font-medium">{fee.toLocaleString()} Coins</span>.
             The more you tip, the higher you rank in their inbox — more chance of a reply.
           </p>
         </div>
@@ -137,8 +137,8 @@ export function DmFeeGate({
             </>
           ) : (
             <>
-              <img src={dehubCoin} alt="DHB" className="w-4 h-4 mr-2" />
-              Pay {fee.toLocaleString()} DHB & Send
+              <img src={dehubCoin} alt="Coins" className="w-4 h-4 mr-2" />
+              Pay {fee.toLocaleString()} Coins & Send
             </>
           )}
         </Button>
@@ -153,7 +153,7 @@ export function DmFeeGate({
         {/* Custom higher tip */}
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <img src={dehubCoin} alt="DHB" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10" />
+            <img src={dehubCoin} alt="Coins" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10" />
             <Input
               type="number"
               min={fee}
@@ -181,7 +181,7 @@ export function DmFeeGate({
 
         {isAboveMinimum && (
           <p className="text-[10px] text-amber-400/70 text-center">
-            🔥 Tipping {tipAmount.toLocaleString()} DHB will rank you higher in {recipientName}'s inbox
+            🔥 Tipping {tipAmount.toLocaleString()} Coins will rank you higher in {recipientName}'s inbox
           </p>
         )}
       </div>

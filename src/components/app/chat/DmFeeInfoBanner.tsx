@@ -48,7 +48,7 @@ export function DmFeeInfoBanner({
             <h3 className="text-white font-semibold text-sm mb-1">Tip to Message</h3>
             <p className="text-zinc-400 text-xs leading-relaxed">
               {recipientName} requires a minimum tip of{' '}
-              <span className="text-white font-semibold">{fee.toLocaleString()} DHB</span>{' '}
+              <span className="text-white font-semibold">{fee.toLocaleString()} Coins</span>{' '}
               per message. Each message you send will deduct this amount.
             </p>
           </div>
@@ -58,16 +58,16 @@ export function DmFeeInfoBanner({
         <div className="px-3 py-2 rounded-xl bg-zinc-900/60 border border-white/5">
           {balanceLoading ? (
             <div className="flex items-center gap-2">
-              <img src={dehubCoin} alt="DHB" className="w-4 h-4" />
+              <img src={dehubCoin} alt="Coins" className="w-4 h-4" />
               <span className="text-xs text-zinc-500">Loading balance...</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <img src={dehubCoin} alt="DHB" className="w-4 h-4" />
+              <img src={dehubCoin} alt="Coins" className="w-4 h-4" />
               <span className="text-xs text-zinc-400">Your balance:</span>
               {totalBalance !== null ? (
                 <span className={`text-xs font-medium ${hasSufficientBalance ? 'text-green-400' : 'text-red-400'}`}>
-                  {totalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} DHB
+                  {totalBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} Coins
                 </span>
               ) : (
                 <span className="text-xs text-zinc-500">Unavailable</span>
@@ -91,12 +91,12 @@ export function DmFeeInfoBanner({
         </div>
 
         <div className="relative">
-          <img src={dehubCoin} alt="DHB" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10" />
+          <img src={dehubCoin} alt="Coins" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 z-10" />
           <Input
             type="number"
             min={fee}
             step={1}
-            placeholder={`Custom tip (min ${fee.toLocaleString()} DHB)`}
+            placeholder={`Custom tip (min ${fee.toLocaleString()} Coins)`}
             value={customTipAmount}
             onChange={(e) => onCustomTipChange(e.target.value)}
             className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 h-10 text-sm rounded-xl"
@@ -105,12 +105,12 @@ export function DmFeeInfoBanner({
 
         {isAboveMinimum && hasCustomSufficient && (
           <p className="text-[10px] text-amber-400/70 text-center mt-2">
-            🔥 Tipping {tipAmount.toLocaleString()} DHB per message will rank you higher in {recipientName}'s inbox
+            🔥 Tipping {tipAmount.toLocaleString()} Coins per message will rank you higher in {recipientName}'s inbox
           </p>
         )}
         {isAboveMinimum && !hasCustomSufficient && (
           <p className="text-[10px] text-red-400/70 text-center mt-2">
-            Insufficient balance for {tipAmount.toLocaleString()} DHB tip
+            Insufficient balance for {tipAmount.toLocaleString()} Coins tip
           </p>
         )}
       </div>

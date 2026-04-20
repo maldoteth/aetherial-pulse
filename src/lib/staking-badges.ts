@@ -1,7 +1,7 @@
 /**
  * Staking Badge Utility
  * =====================
- * Determines user tier badges based on DHB token staking amount.
+ * Determines user tier badges based on Coins token staking amount.
  * 13-tier system from Tortoise (0+) to Megalodon (100,000+).
  * 
  * @module lib/staking-badges
@@ -29,7 +29,7 @@ const BADGE_LEVELS: BadgeDef[] = [
   { name: "Meglodon", min: 50000000 },
 ];
 
-/** Minimum DHB to qualify for any badge */
+/** Minimum Coins to qualify for any badge */
 const MIN_BADGE_THRESHOLD = 10000;
 
 /** Username-based badge overrides (always get this badge regardless of balance) */

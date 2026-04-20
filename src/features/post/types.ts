@@ -37,7 +37,7 @@ export interface MediaFile {
   trimEnd?: number;
 }
 
-export type Currency = 'USD' | 'DHB';
+export type Currency = 'USD' | 'Coins';
 
 export type LiveMode = 'video' | 'townhall' | null;
 

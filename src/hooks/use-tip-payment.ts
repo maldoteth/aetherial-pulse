@@ -100,7 +100,7 @@ export function useTipPayment({
       }
 
       if (amount < MIN_TIP_DHB || amount > MAX_TIP_DHB) {
-        toast.error(dhbText(`Amount must be between ${MIN_TIP_DHB} and ${MAX_TIP_DHB} DHB`));
+        toast.error(dhbText(`Amount must be between ${MIN_TIP_DHB} and ${MAX_TIP_DHB} Coins`));
         return;
       }
 
@@ -120,7 +120,7 @@ export function useTipPayment({
         });
 
         // Optimistic: show success immediately after tx submitted
-        toast.success(dhbText(`DHB ${amount.toLocaleString()} tip sent!`), { id: 'tip-payment' });
+        toast.success(dhbText(`Coins ${amount.toLocaleString()} tip sent!`), { id: 'tip-payment' });
         onSuccess?.();
 
         // Background: confirm on-chain + persist decoded on-chain values to DB

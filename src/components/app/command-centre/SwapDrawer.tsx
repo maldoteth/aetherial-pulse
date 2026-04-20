@@ -110,7 +110,7 @@ export function SwapDrawer({ open, onOpenChange }: SwapDrawerProps) {
       <DrawerContent glass hideHandle={false}>
         <div className="p-5 pb-8 space-y-4">
           <h3 className="text-white font-semibold text-base">Buy with Crypto</h3>
-          <p className="text-xs text-white/40">Swap ETH → DHB on Base via Uniswap V3</p>
+          <p className="text-xs text-white/40">Swap ETH → Coins on Base via Uniswap V3</p>
           <div className="flex justify-end mt-1">
             <SlippageSettings slippageBps={slippageBps} onSlippageChange={setSlippageBps} />
           </div>
@@ -123,9 +123,9 @@ export function SwapDrawer({ open, onOpenChange }: SwapDrawerProps) {
                 <span className="text-white/70 font-mono">{ethBalanceFormatted} ETH</span>
               </div>
 
-              {/* DHB Amount Input */}
+              {/* Coins Amount Input */}
               <div className="space-y-1.5">
-                <label className="text-sm text-white/50">DHB Amount</label>
+                <label className="text-sm text-white/50">Coins Amount</label>
                 <Input
                   type="number"
                   min="0"
@@ -175,7 +175,7 @@ export function SwapDrawer({ open, onOpenChange }: SwapDrawerProps) {
                 onClick={handleSwap}
               >
                 <ArrowDownUp className="w-4 h-4 mr-2" />
-                Swap ETH → DHB
+                Swap ETH → Coins
               </Button>
             </>
           )}
@@ -194,7 +194,7 @@ export function SwapDrawer({ open, onOpenChange }: SwapDrawerProps) {
                 <ArrowDownUp className="w-6 h-6 text-emerald-400" />
               </div>
               <p className="text-sm text-white font-medium">Swap Successful!</p>
-              <p className="text-xs text-white/40">{dhbAmount} DHB received</p>
+              <p className="text-xs text-white/40">{dhbAmount} Coins received</p>
               {txHash && (
                 <button
                   onClick={() => window.open(`https://basescan.org/tx/${txHash}`, '_blank')}

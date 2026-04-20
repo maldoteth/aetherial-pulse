@@ -32,7 +32,7 @@ export const getVideoCostUsd = (model: VideoModel): number => {
 };
 
 /**
- * Calculate the cost in DHB tokens
+ * Calculate the cost in Coins tokens
  */
 export const getVideoCostDhb = (model: VideoModel, dhbPriceUsd: number): number => {
   if (dhbPriceUsd <= 0) return 0;

@@ -135,7 +135,7 @@ export function MyStoreTab({ createListingOpen = false, onCreateListingClose, cr
             <p className="text-[10px] text-zinc-300 mt-0.5 flex items-center gap-2">
               <span>{storeListings.length} listing{storeListings.length !== 1 ? 's' : ''}</span>
               <span>·</span>
-              <span>{sellerOrders.reduce((sum: number, o: any) => sum + Number(o.amount || 0), 0).toLocaleString()} DHB earned</span>
+              <span>{sellerOrders.reduce((sum: number, o: any) => sum + Number(o.amount || 0), 0).toLocaleString()} Coins earned</span>
               <span>·</span>
               <span>Since {activeStore?.created_at ? new Date(activeStore.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</span>
             </p>
@@ -188,8 +188,8 @@ export function MyStoreTab({ createListingOpen = false, onCreateListingClose, cr
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     {(() => {
                       const usd = Number(l.price);
-                      const dhb = prices?.DHB && prices.DHB > 0 ? Math.ceil(usd / prices.DHB) : null;
-                      return dhb ? (<><img src={dehubCoin} alt="DHB" className="w-3.5 h-3.5 inline" />{dhb.toLocaleString()} · ${usd.toFixed(2)}</>) : `$${usd.toFixed(2)}`;
+                      const dhb = prices?.Coins && prices.Coins > 0 ? Math.ceil(usd / prices.Coins) : null;
+                      return dhb ? (<><img src={dehubCoin} alt="Coins" className="w-3.5 h-3.5 inline" />{dhb.toLocaleString()} · ${usd.toFixed(2)}</>) : `$${usd.toFixed(2)}`;
                     })()}
                      · <span className="capitalize">{l.status}</span>
                   </p>
@@ -268,7 +268,7 @@ function OrderRow({ order, type, onUpdateStatus }: { order: any; type: 'buyer' |
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate text-primary-foreground">{listing?.title || 'Listing'}</p>
-        <p className="text-xs text-muted-foreground">{Number(order.amount).toLocaleString()} DHB</p>
+        <p className="text-xs text-muted-foreground">{Number(order.amount).toLocaleString()} Coins</p>
       </div>
       <span className={`text-[10px] px-2 py-0.5 rounded-full capitalize ${statusColors[order.status] || 'bg-white/10 text-muted-foreground'}`}>
         {order.status}

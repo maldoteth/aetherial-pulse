@@ -55,7 +55,7 @@ function formatDPayTx(tx: DPayTransaction, t: (key: string, opts?: any) => strin
       description = t('commandCentre.txTransfer', { amount });
       break;
     default:
-      description = `${tx.type} — ${amount} DHB`;
+      description = `${tx.type} — ${amount} Coins`;
   }
   return { id: tx.id, type: tx.type, amount: tx.amount, createdAt: tx.createdAt, isCredit, description, txHash: tx.txHash, chainId: tx.chainId };
 }
@@ -72,7 +72,7 @@ export function RecentTransactions() {
     staleTime: 60_000,
   });
 
-  // On-chain DHB transfers (Base chain)
+  // On-chain Coins transfers (Base chain)
   const { data: onchainTransfers = [], isLoading: onchainLoading } = useOnchainDHBTransfers(walletAddress);
 
   const { data: ppvPurchases = [], isLoading: ppvLoading } = useQuery({
@@ -208,7 +208,7 @@ export function RecentTransactions() {
       });
     });
 
-    // Add on-chain DHB transfers (deduplicate against DPay txs and tip_records by txHash)
+    // Add on-chain Coins transfers (deduplicate against DPay txs and tip_records by txHash)
     const dpayHashes = new Set(dpayTxs.map(tx => tx.txHash?.toLowerCase()).filter(Boolean));
     const tipHashes = new Set(tipRecords.map((t: any) => t.tx_hash?.toLowerCase()).filter(Boolean));
     // Collect DPay buy txHashes so we can label matching on-chain transfers as purchases
@@ -219,7 +219,7 @@ export function RecentTransactions() {
     const dpayBuys = dpayTxs.filter(tx => tx.type === 'buy');
     const matchesDPayBuyByAmountTime = (amount: number, timestamp: number) => {
       return dpayBuys.some(buy => {
-        const amountMatch = Math.abs(buy.amount - amount) < 1; // within 1 DHB
+        const amountMatch = Math.abs(buy.amount - amount) < 1; // within 1 Coins
         const buyTime = new Date(buy.createdAt).getTime() / 1000;
         const timeMatch = Math.abs(buyTime - timestamp) < 300; // within 5 minutes
         return amountMatch && timeMatch;
@@ -241,13 +241,13 @@ export function RecentTransactions() {
       const amountStr = transfer.formattedAmount;
       let description: string;
       if (transfer.isAiPayment) {
-        description = `Spent ${amountStr} DHB on AI prompt`;
+        description = `Spent ${amountStr} Coins on AI prompt`;
       } else if (transfer.isIncoming) {
         const fromShort = `${transfer.from.slice(0, 6)}...${transfer.from.slice(-4)}`;
-        description = `Received ${amountStr} DHB from ${fromShort}`;
+        description = `Received ${amountStr} Coins from ${fromShort}`;
       } else {
         const toShort = `${transfer.to.slice(0, 6)}...${transfer.to.slice(-4)}`;
-        description = `Sent ${amountStr} DHB to ${toShort}`;
+        description = `Sent ${amountStr} Coins to ${toShort}`;
       }
 
       unified.push({
@@ -274,7 +274,7 @@ export function RecentTransactions() {
       const isDuplicate = unified.some(u => {
         if (u.type !== 'tip' && u.type !== 'transfer') return false;
         const timeDiff = Math.abs(new Date(u.createdAt).getTime() - notiTime);
-        return Math.abs(u.amount - amount) < 1 && timeDiff < 300_000; // within 5 min & 1 DHB
+        return Math.abs(u.amount - amount) < 1 && timeDiff < 300_000; // within 5 min & 1 Coins
       });
       if (isDuplicate) return;
 
@@ -285,7 +285,7 @@ export function RecentTransactions() {
         createdAt: noti.createdAt,
         isCredit: true,
         description: amountStr
-          ? `@${actorName} tipped you ${amountStr} ${noti.currency || 'DHB'}`
+          ? `@${actorName} tipped you ${amountStr} ${noti.currency || 'Coins'}`
           : `@${actorName} tipped you`,
         counterpartyAddress: noti.actorAddress,
         counterpartyUsername: actorName,

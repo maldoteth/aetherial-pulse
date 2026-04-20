@@ -11,9 +11,9 @@ import { useUserCommunities } from '@/hooks/use-communities';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Currency } from '../types';
 
-// DHB is the only supported token
+// Coins is the only supported token
 const DHB_INFO = {
-  symbol: 'DHB',
+  symbol: 'Coins',
   chainId: 8453,
   address: '0xD20ab1015f6a2De4a6FdDEbAB270113F689c2F7c',
 };
@@ -219,7 +219,7 @@ export function PostAccessToggles({
     setW2eViews(tempW2eViews);
     setW2eComments(tempW2eComments);
     setW2eTotal(tempW2eTotal);
-    setW2eCurrency('DHB'); // Always DHB
+    setW2eCurrency('Coins'); // Always Coins
     setIsWatch2Earn(true);
     setBountyDrawerOpen(false);
   };
@@ -229,7 +229,7 @@ export function PostAccessToggles({
   };
 
   const confirmToken = () => {
-    setTokenContract(DHB_INFO.address); // Always DHB contract
+    setTokenContract(DHB_INFO.address); // Always Coins contract
     setTokenAmount(tempTokenAmount);
     setIsTokenGated(true);
     setTokenDrawerOpen(false);
@@ -377,7 +377,7 @@ export function PostAccessToggles({
             <Gift className="w-4 h-4 text-white" />
             <span className="text-sm text-white">Bounty</span>
             {isWatch2Earn && w2eTotal && (
-              <span className="text-xs text-white/50">({w2eTotal} DHB)</span>
+              <span className="text-xs text-white/50">({w2eTotal} Coins)</span>
             )}
           </div>
           <Switch checked={isWatch2Earn} onCheckedChange={handleBountyToggle} className="data-[state=checked]:bg-white scale-75" onClick={e => e.stopPropagation()} />
@@ -389,7 +389,7 @@ export function PostAccessToggles({
             <Shield className="w-4 h-4 text-white" />
             <span className="text-sm text-white">Token Gated</span>
             {isTokenGated && tokenAmount && (
-              <span className="text-xs text-white/50">({tokenAmount} DHB)</span>
+              <span className="text-xs text-white/50">({tokenAmount} Coins)</span>
             )}
           </div>
           <Switch checked={isTokenGated} onCheckedChange={handleTokenToggle} className="data-[state=checked]:bg-white scale-75" onClick={e => e.stopPropagation()} />
@@ -577,7 +577,7 @@ export function PostAccessToggles({
             <div className="space-y-2">
               <label className="text-sm text-white/70">{t('drawers.currency')}</label>
               <div className="flex gap-2">
-                {(['USD', 'DHB'] as Currency[]).map((cur) => (
+                {(['USD', 'Coins'] as Currency[]).map((cur) => (
                   <button
                     key={cur}
                     type="button"
@@ -607,7 +607,7 @@ export function PostAccessToggles({
             <div className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/30 border border-white/10">
               <Info className="w-4 h-4 text-white/50 shrink-0" />
               <span className="text-xs text-white/50">
-                {tempPpvCurrency === 'DHB' ? t('drawers.ppvDhbInfo') : t('drawers.ppvUsdInfo')}
+                {tempPpvCurrency === 'Coins' ? t('drawers.ppvDhbInfo') : t('drawers.ppvUsdInfo')}
               </span>
             </div>
           </div>

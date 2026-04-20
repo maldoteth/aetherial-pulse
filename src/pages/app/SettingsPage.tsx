@@ -1146,7 +1146,7 @@ function PrivacySettings() {
               <Coins className="w-5 h-5 text-zinc-500" />
               <div>
                 <p className="text-white font-medium">{t('settings.messageFee', 'Message fee')}</p>
-                <p className="text-zinc-500 text-sm">{t('settings.messageFeeDesc', 'Require a minimum DHB tip to message you')}</p>
+                <p className="text-zinc-500 text-sm">{t('settings.messageFeeDesc', 'Require a minimum Coins tip to message you')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1166,7 +1166,7 @@ function PrivacySettings() {
                 className="w-24 h-9 rounded-xl bg-zinc-800 border-zinc-700 text-white text-right"
                 disabled={isDmUpdating}
               />
-              <span className="text-zinc-400 text-sm">DHB</span>
+              <span className="text-zinc-400 text-sm">Coins</span>
               {feeInput !== '' && parseFloat(feeInput) !== messageFee && (
                 <Button
                   size="sm"
@@ -1796,7 +1796,7 @@ function AssetsSettings() {
         </button>
       </div>
 
-      {/* DHB Balance */}
+      {/* Coins Balance */}
       <div>
         <button
           onClick={() => setWalletDrawerOpen(true)}
@@ -1804,9 +1804,9 @@ function AssetsSettings() {
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-zinc-700 rounded-xl flex items-center justify-center">
-              <img src={dehubCoin} alt="DHB" className="w-6 h-6" />
+              <img src={dehubCoin} alt="Coins" className="w-6 h-6" />
             </div>
-            <span className="text-white font-semibold">{coinBalance.toLocaleString()} DHB</span>
+            <span className="text-white font-semibold">{coinBalance.toLocaleString()} Coins</span>
           </div>
           <span className="text-zinc-500 group-hover:text-white transition-colors text-sm">{t('settings.manage')}</span>
         </button>
@@ -1919,7 +1919,7 @@ function MessagesSettings() {
               <Coins className="w-5 h-5 text-zinc-500" />
               <div>
                 <p className="text-white font-medium">{t('settings.messageFee', 'Message fee')}</p>
-                <p className="text-zinc-500 text-sm">{t('settings.messageFeeDesc', 'Require a minimum DHB tip to message you')}</p>
+                <p className="text-zinc-500 text-sm">{t('settings.messageFeeDesc', 'Require a minimum Coins tip to message you')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1939,7 +1939,7 @@ function MessagesSettings() {
                 className="w-24 h-9 rounded-xl bg-zinc-800 border-zinc-700 text-white text-right"
                 disabled={isDmUpdating}
               />
-              <span className="text-zinc-400 text-sm">DHB</span>
+              <span className="text-zinc-400 text-sm">Coins</span>
               {feeInput !== '' && parseFloat(feeInput) !== messageFee && (
                 <Button
                   size="sm"

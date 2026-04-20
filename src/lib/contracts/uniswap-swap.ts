@@ -1,7 +1,7 @@
 /**
  * Uniswap V3 Swap Utility (Base Chain)
  * ======================================
- * Swaps any token → DHB via Uniswap V3 SwapRouter on Base.
+ * Swaps any token → Coins via Uniswap V3 SwapRouter on Base.
  * Supports native ETH and ERC20 tokens as input.
  */
 
@@ -171,7 +171,7 @@ async function ensureAllowance(
  * @param recipient        - address to receive the output token
  * @param tokenInAddress   - input token address ('0x0' for native ETH)
  * @param feeTier          - Uniswap fee tier to use
- * @param tokenOutAddress  - output token address (defaults to DHB)
+ * @param tokenOutAddress  - output token address (defaults to Coins)
  * @returns transaction receipt
  */
 export async function swapTokens(
@@ -253,7 +253,7 @@ export async function swapETHForDHB(
 
 /**
  * Check if auto-swap is supported for the given chain.
- * Currently only Base has DHB liquidity on Uniswap V3.
+ * Currently only Base has Coins liquidity on Uniswap V3.
  */
 export function isAutoSwapSupported(chainId: ChainId): boolean {
   return chainId === BASE_CHAIN_ID;

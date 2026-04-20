@@ -91,7 +91,7 @@ const sections: GuideSection[] = [
       "To record a voice note, click the microphone icon.",
       "To add a GIF, click the GIF icon and search for one.",
       "Use #hashtags to categorize your post (e.g., #crypto, #defi).",
-      "Use $cashtags to reference tokens (e.g., $DHB, $ETH).",
+      "Use $cashtags to reference tokens (e.g., $Coins, $ETH).",
       "Use @mentions to tag other users (e.g., @username).",
       "Click 'Post' to publish. Your post appears in the feed immediately."
     ],
@@ -110,7 +110,7 @@ const sections: GuideSection[] = [
     steps: [
       "Upvote or downvote a post using the arrow icons on the left side of any post.",
       "Click the comment icon to open the comment section and leave a reply.",
-      "Click the gem/tip icon to send a DHB tip to the post creator.",
+      "Click the gem/tip icon to send a Coins tip to the post creator.",
       "Click the bookmark icon to save a post for later.",
       "Click the share icon to copy the post link or share externally.",
       "Click the translate button (globe icon) on any post to translate text to your language.",
@@ -118,7 +118,7 @@ const sections: GuideSection[] = [
       "Click on any post to open it in full-screen single-post view."
     ],
     tips: [
-      "Tips go directly to the creator's wallet in DHB tokens.",
+      "Tips go directly to the creator's wallet in Coins tokens.",
       "You can set a tip amount via quick-select buttons or enter a custom amount.",
       "Bookmarked posts are accessible from the Bookmarks page in the sidebar."
     ]
@@ -216,7 +216,7 @@ const sections: GuideSection[] = [
     ],
     tips: [
       "The notification badge shows the count of unread notifications.",
-      "Tip notifications show the amount of DHB you received."
+      "Tip notifications show the amount of Coins you received."
     ]
   },
   {
@@ -224,10 +224,10 @@ const sections: GuideSection[] = [
     screenshot: screenshotCommandCentre,
     title: "Wallet",
     icon: Wallet,
-    intro: "View your DHB balances across multiple chains, check staking deposits, and manage your assets.",
+    intro: "View your Coins balances across multiple chains, check staking deposits, and manage your assets.",
     steps: [
       "Click 'Wallet' in the sidebar to open the wallet page.",
-      "View your total DHB balance aggregated across all supported chains.",
+      "View your total Coins balance aggregated across all supported chains.",
       "See per-chain breakdowns: Ethereum, Base, BNB Chain, and more.",
       "Check your staking deposits and rewards.",
       "Click 'Refresh Scan' to update your balances from on-chain data.",
@@ -243,10 +243,10 @@ const sections: GuideSection[] = [
     screenshot: screenshotCommandCentre,
     title: "Staking",
     icon: Landmark,
-    intro: "Stake your DHB tokens to earn rewards and increase your governance voting power.",
+    intro: "Stake your Coins tokens to earn rewards and increase your governance voting power.",
     steps: [
       "Navigate to the 'Staking' page from the sidebar.",
-      "Enter the amount of DHB you want to stake.",
+      "Enter the amount of Coins you want to stake.",
       "Select the chain you want to stake on.",
       "Confirm the transaction in your wallet (external wallets) or it auto-executes (social login).",
       "View your staked amounts and any pending rewards.",
@@ -267,7 +267,7 @@ const sections: GuideSection[] = [
     steps: [
       "Navigate to the 'Leaderboard' page from the sidebar.",
       "Switch between tabs: Balance, Daily Spent, and Talk of the Town.",
-      "Balance tab ranks users by their total DHB holdings.",
+      "Balance tab ranks users by their total Coins holdings.",
       "Daily Spent tab shows who's been most active tipping in the last 24 hours.",
       "Talk of the Town shows the most-discussed topics/categories.",
       "Click on any user to visit their profile.",
@@ -304,12 +304,12 @@ const sections: GuideSection[] = [
       "Navigate to 'Governance' from the sidebar.",
       "Browse active proposals submitted by the community.",
       "Click on a proposal to read its full description and discussion.",
-      "Vote on proposals using the thumbs up/down buttons — your vote weight depends on your DHB stake.",
+      "Vote on proposals using the thumbs up/down buttons — your vote weight depends on your Coins stake.",
       "Leave comments on proposals to discuss with the community.",
       "Submit your own proposal by clicking the 'Create Proposal' button."
     ],
     tips: [
-      "Your voting power is determined by your staked DHB amount.",
+      "Your voting power is determined by your staked Coins amount.",
       "Badge holders may get additional vote weight.",
       "Proposals go through stages: Active → Passed/Rejected."
     ]
@@ -352,17 +352,17 @@ const sections: GuideSection[] = [
   {
     id: "buying-dhb",
     screenshot: screenshotCommandCentre,
-    title: "Buying DHB",
+    title: "Buying Coins",
     icon: ShoppingCart,
-    intro: "Buy DHB tokens directly within the app using the built-in swap interface.",
+    intro: "Buy Coins tokens directly within the app using the built-in swap interface.",
     steps: [
       "Navigate to the 'Buy' page from the sidebar.",
       "Select the token you want to swap from (e.g., ETH, USDC).",
-      "Enter the amount you want to spend or the amount of DHB you want to receive.",
+      "Enter the amount you want to spend or the amount of Coins you want to receive.",
       "Review the exchange rate and estimated output.",
       "Click the settings gear icon to adjust slippage tolerance (default is 1%).",
       "Confirm the swap transaction.",
-      "DHB tokens will appear in your wallet once the transaction completes."
+      "Coins tokens will appear in your wallet once the transaction completes."
     ],
     tips: [
       "Higher slippage tolerance = more likely to execute, but potential for worse pricing.",
@@ -375,12 +375,12 @@ const sections: GuideSection[] = [
     screenshot: screenshotCommandCentre,
     title: "Bridge",
     icon: ArrowLeftRight,
-    intro: "Move your DHB tokens between supported blockchains using the cross-chain bridge.",
+    intro: "Move your Coins tokens between supported blockchains using the cross-chain bridge.",
     steps: [
       "Navigate to the 'Bridge' page from the sidebar.",
-      "Select the source chain (where your DHB currently is).",
-      "Select the destination chain (where you want to send DHB).",
-      "Enter the amount of DHB to bridge.",
+      "Select the source chain (where your Coins currently is).",
+      "Select the destination chain (where you want to send Coins).",
+      "Enter the amount of Coins to bridge.",
       "Review the bridge fee and estimated arrival time.",
       "Confirm the bridge transaction.",
       "Wait for the transaction to complete — bridging may take a few minutes."
@@ -439,11 +439,11 @@ const sections: GuideSection[] = [
     steps: [
       "Open the Post Info page for the post you're interested in (tap the 'ⓘ' icon).",
       "Switch to the 'Marketplace' tab to see available listings and offers.",
-      "Browse listed fractions — each listing shows the seller, quantity, price per fraction, and total cost in DHB.",
+      "Browse listed fractions — each listing shows the seller, quantity, price per fraction, and total cost in Coins.",
       "Click 'Make Offer' to submit a buy offer at a price you choose.",
-      "Enter the number of fractions you want and the price per fraction in DHB.",
+      "Enter the number of fractions you want and the price per fraction in Coins.",
       "Confirm your offer — the fraction holder can then accept or reject it.",
-      "Once accepted, the fractions transfer to your wallet and the DHB is sent to the seller."
+      "Once accepted, the fractions transfer to your wallet and the Coins is sent to the seller."
     ],
     tips: [
       "Check the holders list to see the current ownership distribution before buying.",
@@ -462,7 +462,7 @@ const sections: GuideSection[] = [
       "Switch to the 'Marketplace' tab.",
       "Click the 'List Fractions' button (only visible if you hold fractions).",
       "Enter the number of fractions you want to sell.",
-      "Set your asking price per fraction in DHB.",
+      "Set your asking price per fraction in Coins.",
       "Review the total listing value and confirm.",
       "Your fractions are now listed — other users can purchase them or make counter-offers."
     ],

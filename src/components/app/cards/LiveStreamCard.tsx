@@ -66,7 +66,7 @@ export function LiveStreamCard({ stream }: LiveStreamCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [giftAmount, setGiftAmount] = useState('');
-  const [giftCurrency, setGiftCurrency] = useState('DHB');
+  const [giftCurrency, setGiftCurrency] = useState('Coins');
   const [dhbBalance, setDhbBalance] = useState<string | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -82,7 +82,7 @@ export function LiveStreamCard({ stream }: LiveStreamCardProps) {
     showActivityLog ? stream.id : null
   );
 
-  // Fetch DHB balance when gift drawer opens
+  // Fetch Coins balance when gift drawer opens
   useEffect(() => {
     if (!showGiftDrawer || !walletAddress) return;
     let cancelled = false;
@@ -543,12 +543,12 @@ export function LiveStreamCard({ stream }: LiveStreamCardProps) {
               <span className="text-xs text-zinc-400">Your balance</span>
               <div className="flex items-center gap-1.5">
                 <img
-                  src={giftCurrency === 'DHB' ? dehubCoin : usdcLogo}
+                  src={giftCurrency === 'Coins' ? dehubCoin : usdcLogo}
                   alt={giftCurrency}
                   className="w-4 h-4"
                 />
                 <span className="text-sm font-medium text-white">
-                  {balanceLoading ? '...' : giftCurrency === 'DHB' ? (dhbBalance ?? '—') : '—'}
+                  {balanceLoading ? '...' : giftCurrency === 'Coins' ? (dhbBalance ?? '—') : '—'}
                 </span>
                 <span className="text-xs text-zinc-500">{giftCurrency}</span>
               </div>
@@ -569,7 +569,7 @@ export function LiveStreamCard({ stream }: LiveStreamCardProps) {
             <div className="space-y-2">
               <label className="text-sm text-zinc-400">Currency</label>
               <div className="flex gap-2">
-                {['DHB', 'USDC'].map((c) => (
+                {['Coins', 'USDC'].map((c) => (
                   <button
                     key={c}
                     onClick={() => setGiftCurrency(c)}

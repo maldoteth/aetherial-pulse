@@ -1,7 +1,7 @@
 /**
  * Quick Buy Button — shown on cashtag/ticker cards in search.
- * Opens a Uniswap swap drawer for any Base token, or the DHB-specific
- * buy flow for DHB.
+ * Opens a Uniswap swap drawer for any Base token, or the Coins-specific
+ * buy flow for Coins.
  */
 
 import { useState } from 'react';
@@ -37,7 +37,7 @@ export function QuickBuyButton({ symbol, tokenType, tokenAddress, tokenDecimals,
   const [swapTokenOpen, setSwapTokenOpen] = useState(false);
   const navigate = useNavigate();
 
-  const isDHB = symbol.toUpperCase() === 'DHB';
+  const isDHB = symbol.toUpperCase() === 'Coins';
   const isBaseChain = !chainId || chainId === 'base';
   const hasSwapSupport = isBaseChain && !!tokenAddress && !isDHB;
 
@@ -64,7 +64,7 @@ export function QuickBuyButton({ symbol, tokenType, tokenAddress, tokenDecimals,
 
             {isDHB ? (
               <>
-                {/* DHB: Card purchase + Swap from ETH */}
+                {/* Coins: Card purchase + Swap from ETH */}
                 <button
                   onClick={() => {
                     setOpen(false);
@@ -88,7 +88,7 @@ export function QuickBuyButton({ symbol, tokenType, tokenAddress, tokenDecimals,
                   <ArrowRightLeft className="w-5 h-5 text-white/70" />
                   <div className="text-left">
                     <span className="text-sm font-medium text-white">Buy with Crypto</span>
-                    <p className="text-xs text-white/40">Convert your ETH to DHB</p>
+                    <p className="text-xs text-white/40">Convert your ETH to Coins</p>
                   </div>
                 </button>
               </>
@@ -111,7 +111,7 @@ export function QuickBuyButton({ symbol, tokenType, tokenAddress, tokenDecimals,
                   </button>
                 )}
 
-                {/* Buy with Card (coming soon for non-DHB) */}
+                {/* Buy with Card (coming soon for non-Coins) */}
                 <button
                   disabled
                   className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.06] border border-white/10 opacity-50 cursor-not-allowed"
@@ -146,14 +146,14 @@ export function QuickBuyButton({ symbol, tokenType, tokenAddress, tokenDecimals,
         </DrawerContent>
       </Drawer>
 
-      {/* Cross-chain deposit for non-DHB tokens */}
+      {/* Cross-chain deposit for non-Coins tokens */}
       <CrossChainDepositDrawer
         open={crossChainOpen}
         onOpenChange={setCrossChainOpen}
         destinationSymbol={symbol.toUpperCase()}
       />
 
-      {/* Swap ETH→DHB drawer */}
+      {/* Swap ETH→Coins drawer */}
       <SwapToDHBDrawer open={swapDHBOpen} onOpenChange={setSwapDHBOpen} />
 
       {/* Generic swap drawer for any Base token */}

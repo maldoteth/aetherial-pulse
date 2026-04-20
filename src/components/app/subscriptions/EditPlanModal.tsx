@@ -74,7 +74,7 @@ export function EditPlanModal({ open, onOpenChange, plan }: EditPlanModalProps) 
         name: name.trim(),
         description: description.trim() || undefined,
         price: parseFloat(price),
-        currency: 'DHB',
+        currency: 'Coins',
         duration,
         benefits: filteredBenefits.length > 0 ? filteredBenefits : undefined,
         isActive,
@@ -150,8 +150,8 @@ export function EditPlanModal({ open, onOpenChange, plan }: EditPlanModalProps) 
                 className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500 pr-16"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                <img src={dehubCoin} alt="DHB" className="w-4 h-4" />
-                <span className="text-sm text-zinc-400">DHB</span>
+                <img src={dehubCoin} alt="Coins" className="w-4 h-4" />
+                <span className="text-sm text-zinc-400">Coins</span>
               </div>
             </div>
           </div>

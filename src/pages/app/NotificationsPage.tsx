@@ -511,7 +511,7 @@ function getNotificationContent(
     case 'mention':
       return `${actorName} mentioned you in a comment`;
     case 'tip':
-      const tipAmount = notification.amount ? ` ${notification.amount} ${notification.currency || 'DHB'}` : '';
+      const tipAmount = notification.amount ? ` ${notification.amount} ${notification.currency || 'Coins'}` : '';
       return tr('notifications.tippedYou', { name: actorName }) + tipAmount;
     case 'subscription':
       return tr('notifications.subscribedPlan', { name: actorName });

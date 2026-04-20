@@ -21,7 +21,7 @@ export function BalanceCard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // DHB balance from API profile (no edge function needed)
+  // Coins balance from API profile (no edge function needed)
   const { data: profile, isLoading: badgeLoading } = useDeHubProfile({ userId: walletAddress || undefined, enabled: !!walletAddress });
   const badgeBalance = profile?.badgeBalance;
 

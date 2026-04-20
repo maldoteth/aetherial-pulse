@@ -5,7 +5,7 @@ import { MockAvatar } from '../MockAvatar';
 import { Bookmark, MoreHorizontal, Heart } from 'lucide-react';
 
 const MOCK_BOOKMARKS = [
-  { id: '1', user: 'defi_whale', content: 'Complete guide to staking $DHB: APY breakdown, lock periods, and reward multipliers explained.', likes: 342, time: '2d' },
+  { id: '1', user: 'defi_whale', content: 'Complete guide to staking $Coins: APY breakdown, lock periods, and reward multipliers explained.', likes: 342, time: '2d' },
   { id: '2', user: 'crypto_sarah', content: 'The future of decentralized governance — why DAOs will replace traditional corporate structures.', likes: 189, time: '3d' },
   { id: '3', user: 'bob_dev', content: 'New smart contract audit results are in. Everything passed with flying colors ✅', likes: 421, time: '5d' },
   { id: '4', user: 'nft_artist', content: 'Behind the scenes of my latest digital art collection — process from sketch to mint.', likes: 567, time: '1w' },

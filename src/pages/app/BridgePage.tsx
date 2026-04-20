@@ -1,7 +1,7 @@
 /**
  * Bridge Page
  * ===========
- * Bridge DHB tokens between Base and BNB Chain.
+ * Bridge Coins tokens between Base and BNB Chain.
  * Transfers go to the bridge relay address on both chains.
  */
 
@@ -67,9 +67,9 @@ export default function BridgePage() {
   const [amount, setAmount] = useState('');
   const [isBridging, setIsBridging] = useState(false);
 
-  // Derive DHB balances per chain
-  const baseDHB = allTokens?.find(t => t.symbol === 'DHB' && t.chainId === BASE_CHAIN_ID);
-  const bnbDHB = allTokens?.find(t => t.symbol === 'DHB' && t.chainId === BNB_CHAIN_ID);
+  // Derive Coins balances per chain
+  const baseDHB = allTokens?.find(t => t.symbol === 'Coins' && t.chainId === BASE_CHAIN_ID);
+  const bnbDHB = allTokens?.find(t => t.symbol === 'Coins' && t.chainId === BNB_CHAIN_ID);
 
   const sourceToken = direction === 'base-to-bnb' ? baseDHB : bnbDHB;
   const sourceBalanceRaw = sourceToken
@@ -94,7 +94,7 @@ export default function BridgePage() {
     }
 
     if (parsedAmount > sourceBalance) {
-      toast.error('Insufficient balance', { description: `You only have ${formatNumber(sourceBalance, 2)} DHB on ${sourceChainLabel}.` });
+      toast.error('Insufficient balance', { description: `You only have ${formatNumber(sourceBalance, 2)} Coins on ${sourceChainLabel}.` });
       return;
     }
 
@@ -120,7 +120,7 @@ export default function BridgePage() {
       const dhbTokenAddress = CHAIN_CONFIGS[sourceChainId]?.dhbToken;
       if (!dhbTokenAddress) {
         toast.dismiss(loadingToastId);
-        toast.error('Error', { description: `DHB token not configured on ${sourceChainLabel}.` });
+        toast.error('Error', { description: `Coins token not configured on ${sourceChainLabel}.` });
         return;
       }
 
@@ -134,8 +134,8 @@ export default function BridgePage() {
         const msg = String(sendErr?.message || sendErr || '').toLowerCase();
         
         if (msg.includes('transfer amount exceeds balance') || msg.includes('exceeds balance')) {
-          toast.error('Insufficient DHB balance', {
-            description: `Your on-chain DHB balance on ${sourceChainLabel} is too low. The displayed balance may not have synced yet.`,
+          toast.error('Insufficient Coins balance', {
+            description: `Your on-chain Coins balance on ${sourceChainLabel} is too low. The displayed balance may not have synced yet.`,
           });
         } else if (msg.includes('user rejected') || msg.includes('user denied') || msg.includes('cancelled')) {
           toast.error('Transaction cancelled', { description: 'You rejected the transaction in your wallet.' });
@@ -166,7 +166,7 @@ export default function BridgePage() {
 
       if (receipt.status === 1) {
         toast.success('Bridge initiated!', {
-          description: `${amount} DHB sent from ${sourceChainLabel} to ${destChainLabel}. Tokens will arrive shortly.`,
+          description: `${amount} Coins sent from ${sourceChainLabel} to ${destChainLabel}. Tokens will arrive shortly.`,
         });
         setAmount('');
         queryClient.invalidateQueries({ queryKey: ['wallet-tokens'] });
@@ -188,7 +188,7 @@ export default function BridgePage() {
 
   return (
     <div className={cn("min-h-screen pb-24 px-3 sm:px-4 max-w-5xl mx-auto", isCollapsed && "pt-16 md:pt-0")}>
-      <SEOHead title="Bridge — Transfer DHB Cross-Chain" description="Bridge your DHB tokens between Base and BNB Chain seamlessly on Fansite. Fast, secure cross-chain transfers with live transaction tracking." url="https://fansite.app/bridge" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Fansite Token Bridge', url: 'https://fansite.app/bridge', applicationCategory: 'FinanceApplication', description: 'Bridge DHB tokens between Base and BNB Chain.', operatingSystem: 'Web' }} />
+      <SEOHead title="Bridge — Transfer Coins Cross-Chain" description="Bridge your Coins tokens between Base and BNB Chain seamlessly on Fansite. Fast, secure cross-chain transfers with live transaction tracking." url="https://fansite.app/bridge" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Fansite Token Bridge', url: 'https://fansite.app/bridge', applicationCategory: 'FinanceApplication', description: 'Bridge Coins tokens between Base and BNB Chain.', operatingSystem: 'Web' }} />
       <h1 className="sr-only">Fansite Bridge — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <motion.div
@@ -198,11 +198,11 @@ export default function BridgePage() {
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center flex-shrink-0">
-            <img src={dehubCoin} alt="DHB" className="w-6 h-6" />
+            <img src={dehubCoin} alt="Coins" className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Bridge</h1>
-            <p className="text-xs text-white/40">Transfer DHB between chains</p>
+            <p className="text-xs text-white/40">Transfer Coins between chains</p>
           </div>
         </div>
         <button
@@ -215,8 +215,8 @@ export default function BridgePage() {
 
       {/* Balance Stats */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <StatCard label="Base Balance" value={formatNumber(parseFloat(baseDHB?.formattedBalance ?? '0'), 2)} subtitle="DHB on Base" delay={0} />
-        <StatCard label="BNB Chain Balance" value={formatNumber(parseFloat(bnbDHB?.formattedBalance ?? '0'), 2)} subtitle="DHB on BNB Chain" delay={0.05} />
+        <StatCard label="Base Balance" value={formatNumber(parseFloat(baseDHB?.formattedBalance ?? '0'), 2)} subtitle="Coins on Base" delay={0} />
+        <StatCard label="BNB Chain Balance" value={formatNumber(parseFloat(bnbDHB?.formattedBalance ?? '0'), 2)} subtitle="Coins on BNB Chain" delay={0.05} />
       </div>
 
       {/* Bridge Card */}
@@ -248,7 +248,7 @@ export default function BridgePage() {
 
         {/* Available balance */}
         <p className="text-xs text-white/40 mb-4">
-          Available: <span className="text-white/70 font-medium">{formatNumber(sourceBalance, 2)} DHB</span> on {sourceChainLabel}
+          Available: <span className="text-white/70 font-medium">{formatNumber(sourceBalance, 2)} Coins</span> on {sourceChainLabel}
         </p>
 
         {/* Input + Bridge button */}
@@ -314,7 +314,7 @@ export default function BridgePage() {
           {[
             { step: '1', text: 'Select the chain you want to bridge from and enter the amount.' },
             { step: '2', text: 'Confirm the transaction in your wallet.' },
-            { step: '3', text: 'Your DHB tokens will be delivered on the destination chain shortly.' },
+            { step: '3', text: 'Your Coins tokens will be delivered on the destination chain shortly.' },
           ].map((item) => (
             <div key={item.step} className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
@@ -467,7 +467,7 @@ function BridgeQueue() {
 
               {/* Amount + status + time */}
               <div className="text-right flex-shrink-0">
-                <p className="text-xs font-semibold text-white">{t.amount} DHB</p>
+                <p className="text-xs font-semibold text-white">{t.amount} Coins</p>
                 <div className="flex items-center justify-end gap-1.5 mt-0.5">
                   <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     {t.status || 'Complete'}
