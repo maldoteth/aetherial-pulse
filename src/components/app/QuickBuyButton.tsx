@@ -111,18 +111,6 @@ export function QuickBuyButton({ symbol, tokenType, tokenAddress, tokenDecimals,
                   </button>
                 )}
 
-                {/* Buy with Card (coming soon for non-Coins) */}
-                <button
-                  disabled
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.06] border border-white/10 opacity-50 cursor-not-allowed"
-                >
-                  <CreditCard className="w-5 h-5 text-white/70" />
-                  <div className="text-left flex-1">
-                    <span className="text-sm font-medium text-white">Buy with Card</span>
-                    <p className="text-xs text-white/40">Purchase using Visa, Mastercard, Apple Pay</p>
-                  </div>
-                  <span className="text-[10px] text-white/30 font-medium bg-white/[0.06] px-2 py-0.5 rounded">Coming soon</span>
-                </button>
 
                 {/* Cross-chain deposit */}
                 {hasCrossChain && (
