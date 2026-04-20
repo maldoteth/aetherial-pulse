@@ -161,6 +161,30 @@ async function fetchKnownBasePair(symbol: string): Promise<DexPair | null> {
   };
 }
 
+/**
+ * Probe DexScreener's tokens endpoint directly on Base for any candidate
+ * contract addresses returned by search on other chains. Many tokens are
+ * deployed on multiple chains (often by the same team or as bridged versions),
+ * but DexScreener's /search may only surface the highest-volume chain.
+ */
+async function probeBaseForAddresses(addresses: string[]): Promise<DexPair[]> {
+  if (addresses.length === 0) return [];
+  const unique = Array.from(new Set(addresses.map((a) => a.toLowerCase()))).slice(0, 5);
+  const results = await Promise.all(
+    unique.map((addr) =>
+      fetch(`https://api.dexscreener.com/tokens/v1/base/${addr}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)
+    )
+  );
+  const pairs: DexPair[] = [];
+  for (const res of results) {
+    const arr: DexPair[] = Array.isArray(res) ? res : (res?.pairs || []);
+    for (const p of arr) if (p?.chainId === 'base') pairs.push(p);
+  }
+  return pairs;
+}
+
 async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
   const symbol = query.replace(/^\$/, '').toUpperCase();
   if (!symbol) return [];
@@ -176,18 +200,28 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
     (p) => p.baseToken.symbol.toUpperCase() === symbol
   );
 
-  // Merge: prepend the known Base pair if API didn't already include one for it.
+  // Universal Base discovery: for every candidate token address surfaced on
+  // *any* chain, probe Base directly. Catches tokens deployed on Base where
+  // DexScreener's search didn't surface the Base pair (low volume, new pool, etc.)
+  const hasBaseInSearch = apiPairs.some((p) => p.chainId === 'base');
+  const candidateAddresses = apiPairs
+    .filter((p) => p.chainId !== 'base')
+    .map((p) => p.baseToken.address);
+  const probedBasePairs = !hasBaseInSearch ? await probeBaseForAddresses(candidateAddresses) : [];
+
+  // Merge: prepend known Base pair (DHB), then any probed Base pairs, then API pairs.
   const exactMatches: DexPair[] = [];
-  if (knownBasePair) {
-    const dup = apiPairs.find(
-      (p) => p.chainId === 'base' &&
-        p.baseToken.address.toLowerCase() === knownBasePair.baseToken.address.toLowerCase()
-    );
-    exactMatches.push(dup || knownBasePair);
-    for (const p of apiPairs) if (p !== dup) exactMatches.push(p);
-  } else {
-    exactMatches.push(...apiPairs);
-  }
+  const seenPairKeys = new Set<string>();
+  const pushUnique = (p: DexPair) => {
+    const key = `${p.chainId}:${p.pairAddress.toLowerCase()}`;
+    if (seenPairKeys.has(key)) return;
+    seenPairKeys.add(key);
+    exactMatches.push(p);
+  };
+
+  if (knownBasePair) pushUnique(knownBasePair);
+  for (const p of probedBasePairs) pushUnique(p);
+  for (const p of apiPairs) pushUnique(p);
 
   if (exactMatches.length === 0) return [];
 
