@@ -758,32 +758,16 @@ export default function PostInfoPage() {
       
       <div className="h-[calc(100vh-65px)] overflow-y-auto scrollbar-none">
         <div className="p-4 space-y-6">
-          {/* Transaction & Mint Info */}
+          {/* Post Info */}
           <section className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-medium text-white/60 mb-2">{t('postInfo.tokenId')}</h2>
-                <p className="text-xl font-bold text-white">#{nftInfo.tokenId}</p>
-              </div>
-              {nftInfo.status && (
-                <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${
-                  nftInfo.status === 'minted' 
-                    ? 'bg-green-500/20 text-green-400' 
-                    : 'bg-yellow-500/20 text-yellow-400'
-                }`}>
-                  {nftInfo.status}
-                </span>
-              )}
-            </div>
-            
-            <div className="border-t border-white/10 pt-4">
-              <h2 className="text-sm font-medium text-white/60 mb-2">{t('postInfo.mintedOn')}</h2>
+            <div>
+              <h2 className="text-sm font-medium text-white/60 mb-2">Posted on</h2>
               <div className="space-y-1">
                 <p className="text-white font-medium">{formatDate(nftInfo.createdAt)}</p>
                 <p className="text-sm text-white/60">{formatTime(nftInfo.createdAt)}</p>
               </div>
             </div>
-            
+
             {nftInfo.mintTxHash && (
               <div className="border-t border-white/10 pt-4">
                 <h2 className="text-sm font-medium text-white/60 mb-2">{t('postInfo.transactionHash')}</h2>
@@ -908,120 +892,7 @@ export default function PostInfoPage() {
             </section>
           )}
 
-          {/* Listings & Offers Tabs */}
-          <FractionMarketplace 
-            holders={holders} 
-            nftInfo={nftInfo} 
-            truncateAddr={truncateAddr}
-          />
-
-          {/* Fraction Ownership */}
-          <section className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-medium text-white/60">{t('postInfo.fractionOwnership')}</h2>
-              <span className="text-xs font-mono text-white/40">{t('postInfo.total', { count: TOTAL_FRACTIONS })}</span>
-            </div>
-            
-            {/* Distribution Progress */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-white/60">{t('postInfo.distribution')}</span>
-                <span className="text-xs font-medium text-white">
-                  {isLoadingHolders 
-                    ? t('postInfo.loading')
-                    : holders.length > 0 
-                      ? t('postInfo.owner', { count: holders.length })
-                      : t('postInfo.owner', { count: 1 })
-                  }
-                </span>
-              </div>
-              <Progress 
-                value={holders.length > 0 ? 100 : 0} 
-                className="h-2 bg-white/10"
-              />
-            </div>
-            
-            {/* Owners List */}
-            <div className="space-y-3">
-              {isLoadingHolders ? (
-                // Loading skeletons
-                <>
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <Skeleton className="w-10 h-10 rounded-md" />
-                      <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-3 w-32" />
-                      </div>
-                    </div>
-                  ))}
-                </>
-              ) : holders.length > 0 ? (
-                // Real holders from on-chain data
-                holders.map((holder, index) => {
-                  const rank = index + 1;
-                  return (
-                    <div key={holder.address} className="flex items-center gap-3">
-                      {rank <= 3 ? (
-                        <div className="medal-shine-container w-10 h-10 shrink-0">
-                          <img 
-                            src={rank === 1 ? medal1 : rank === 2 ? medal2 : medal3} 
-                            alt={`Rank ${rank}`} 
-                            className="w-10 h-10 object-contain"
-                          />
-                          <div 
-                            className="medal-shine-overlay"
-                            style={{ '--medal-mask': `url(${rank === 1 ? medal1 : rank === 2 ? medal2 : medal3})` } as React.CSSProperties}
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl bg-zinc-700 flex items-center justify-center shrink-0">
-                          <span className="text-sm font-bold text-white">{rank}</span>
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate font-mono text-sm">
-                          {truncateAddr(holder.address)}
-                        </p>
-                        <p className="text-xs text-white/60">
-                          {holder.balance}/{TOTAL_FRACTIONS} fractions ({holder.percentage}%)
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => copyToClipboard(holder.address, 'Wallet address')}
-                        className="p-2 text-white/60 hover:text-white transition-colors shrink-0"
-                        aria-label="Copy wallet address"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-                  );
-                })
-              ) : (
-                // Fallback: Show creator as 100% owner
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 text-white/60" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate font-mono text-sm">
-                      {truncateAddr(nftInfo.minter)}
-                    </p>
-                    <p className="text-xs text-white/60">
-                      {TOTAL_FRACTIONS}/{TOTAL_FRACTIONS} fractions (100%)
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(nftInfo.minter, 'Owner wallet')}
-                    className="p-2 text-white/60 hover:text-white transition-colors shrink-0"
-                    aria-label="Copy owner wallet"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
+          {/* Fractional ownership sections removed */}
 
           {/* Engagement Stats */}
           <section className="bg-white/5 rounded-xl p-4 border border-white/10">
