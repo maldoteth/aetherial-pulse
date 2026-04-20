@@ -90,17 +90,44 @@ export async function getAccountByUsername(username: string, address?: string): 
   return { username } as DeHubUser;
 }
 
+async function uploadProfileImage(file: File, wallet: string, kind: 'avatar' | 'cover'): Promise<string> {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${wallet.toLowerCase()}/${kind}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('profile-media').upload(path, file, {
+    upsert: true,
+    contentType: file.type || undefined,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('profile-media').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export async function updateProfile(data: UpdateProfileData): Promise<{ result: boolean }> {
   const wallet = localStorage.getItem('dehub_wallet');
   if (!wallet) return { result: false };
+
+  // Upload File objects first if present, then forward resulting URLs
+  let avatarUrl = data.avatarImageUrl;
+  let coverUrl = data.coverImageUrl;
+  try {
+    if (data.avatarImg instanceof File) {
+      avatarUrl = await uploadProfileImage(data.avatarImg, wallet, 'avatar');
+    }
+    if (data.coverImg instanceof File) {
+      coverUrl = await uploadProfileImage(data.coverImg, wallet, 'cover');
+    }
+  } catch (err) {
+    console.error('[updateProfile] image upload failed:', err);
+    return { result: false };
+  }
 
   const payload: Record<string, unknown> = { action: 'profile.update' };
   if (data.username !== undefined) payload.username = data.username;
   if (data.displayName !== undefined) payload.display_name = data.displayName;
   if (data.bio !== undefined) payload.bio = data.bio;
   if (data.aboutMe !== undefined) payload.about_me = data.aboutMe;
-  if (data.avatarImageUrl !== undefined) payload.avatar_url = data.avatarImageUrl;
-  if (data.coverImageUrl !== undefined) payload.cover_url = data.coverImageUrl;
+  if (avatarUrl !== undefined) payload.avatar_url = avatarUrl;
+  if (coverUrl !== undefined) payload.cover_url = coverUrl;
   if (data.isPrivate !== undefined) payload.is_private = data.isPrivate;
   if (data.customs !== undefined) payload.customs = data.customs;
   if (data.dmSettings !== undefined) payload.dm_settings = data.dmSettings;
