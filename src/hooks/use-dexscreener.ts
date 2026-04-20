@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { CHAIN_CONFIGS, BASE_CHAIN_ID, BNB_CHAIN_ID } from '@/lib/contracts/dhb-token';
+import { fetchBaseErc20Metadata } from '@/lib/onchain-erc20';
 
 /**
  * Internal tokens we know are swappable on Base via Uniswap, even if
@@ -162,6 +163,31 @@ async function fetchKnownBasePair(symbol: string): Promise<DexPair | null> {
 }
 
 /**
+ * Build a synthetic DexPair from raw on-chain ERC20 metadata. Used as a last
+ * resort when DexScreener has no pair indexed for a Base token (brand-new pool,
+ * unindexed deployment, etc.) so the Uniswap Instant Swap drawer still renders.
+ */
+async function buildSyntheticBasePairFromOnchain(address: string): Promise<DexPair | null> {
+  const meta = await fetchBaseErc20Metadata(address);
+  if (!meta) return null;
+  return {
+    chainId: 'base',
+    dexId: 'uniswap',
+    url: `https://dexscreener.com/base/${meta.address}`,
+    pairAddress: '',
+    baseToken: { address: meta.address, name: meta.name, symbol: meta.symbol },
+    quoteToken: { address: '0x4200000000000000000000000000000000000006', name: 'Wrapped Ether', symbol: 'WETH' },
+    priceNative: '0',
+    priceUsd: null,
+    priceChange: null,
+    volume: undefined,
+    liquidity: null,
+    marketCap: null,
+    fdv: null,
+  };
+}
+
+/**
  * Probe DexScreener's tokens endpoint directly on Base for any candidate
  * contract addresses returned by search on other chains. Many tokens are
  * deployed on multiple chains (often by the same team or as bridged versions),
@@ -186,8 +212,12 @@ async function probeBaseForAddresses(addresses: string[]): Promise<DexPair[]> {
 }
 
 async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
-  const symbol = query.replace(/^\$/, '').toUpperCase();
+  const trimmed = query.trim();
+  const symbol = trimmed.replace(/^\$/, '').toUpperCase();
   if (!symbol) return [];
+
+  // If the query *is* a Base contract address, allow on-chain metadata fallback later.
+  const queryIsAddress = /^0x[a-f0-9]{40}$/i.test(trimmed);
 
   const [searchRes, knownBasePair] = await Promise.all([
     fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(symbol)}`)
@@ -196,9 +226,9 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
     fetchKnownBasePair(symbol),
   ]);
 
-  const apiPairs = (searchRes?.pairs || []).filter(
-    (p) => p.baseToken.symbol.toUpperCase() === symbol
-  );
+  const apiPairs = queryIsAddress
+    ? (searchRes?.pairs || [])
+    : (searchRes?.pairs || []).filter((p) => p.baseToken.symbol.toUpperCase() === symbol);
 
   // Universal Base discovery: for every candidate token address surfaced on
   // *any* chain, probe Base directly. Catches tokens deployed on Base where
@@ -207,6 +237,7 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
   const candidateAddresses = apiPairs
     .filter((p) => p.chainId !== 'base')
     .map((p) => p.baseToken.address);
+  if (queryIsAddress) candidateAddresses.push(trimmed.toLowerCase());
   const probedBasePairs = !hasBaseInSearch ? await probeBaseForAddresses(candidateAddresses) : [];
 
   // Merge: prepend known Base pair (DHB), then any probed Base pairs, then API pairs.
@@ -222,6 +253,14 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
   if (knownBasePair) pushUnique(knownBasePair);
   for (const p of probedBasePairs) pushUnique(p);
   for (const p of apiPairs) pushUnique(p);
+
+  // Final fallback: if NOTHING found and the query is a Base contract address,
+  // read the token's ERC20 metadata directly from a Base RPC and synthesise a
+  // pair so the Uniswap Instant Swap drawer can still try to quote a swap.
+  if (exactMatches.length === 0 && queryIsAddress) {
+    const synthetic = await buildSyntheticBasePairFromOnchain(trimmed);
+    if (synthetic) pushUnique(synthetic);
+  }
 
   if (exactMatches.length === 0) return [];
 
