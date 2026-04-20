@@ -1,4 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
+import { CHAIN_CONFIGS, BASE_CHAIN_ID, BNB_CHAIN_ID } from '@/lib/contracts/dhb-token';
+
+/**
+ * Internal tokens we know are swappable on Base via Uniswap, even if
+ * DexScreener doesn't surface a pair (e.g. no listed pool).
+ * Keyed by uppercase symbol.
+ */
+const KNOWN_BASE_TOKENS: Record<string, { name: string; address: string; logo?: string }> = {
+  DHB: {
+    name: 'DeHub',
+    address: CHAIN_CONFIGS[BASE_CHAIN_ID].dhbToken,
+    logo: '/icons/Coins.png',
+  },
+  COINS: {
+    name: 'DeHub',
+    address: CHAIN_CONFIGS[BASE_CHAIN_ID].dhbToken,
+    logo: '/icons/Coins.png',
+  },
+};
 
 export interface DexPair {
   chainId: string;
@@ -83,19 +102,92 @@ function compareDexPairs(a: DexPair, b: DexPair) {
   return aCreated - bCreated;
 }
 
+/**
+ * Build a synthetic DexPair entry for a known internal Base token so the UI
+ * can render swap controls even when DexScreener has no pair for it.
+ */
+async function fetchKnownBasePair(symbol: string): Promise<DexPair | null> {
+  const known = KNOWN_BASE_TOKENS[symbol];
+  if (!known) return null;
+
+  // Try to enrich with on-chain price/liquidity if DexScreener tokens endpoint has data.
+  let priceUsd: string | null = null;
+  let priceChange: DexPair['priceChange'] = null;
+  let liquidity: DexPair['liquidity'] = null;
+  let volume: DexPair['volume'] = undefined;
+  let marketCap: number | null = null;
+  let fdv: number | null = null;
+  let pairAddress = '';
+  let dexId = 'uniswap';
+  let url = '';
+
+  try {
+    const r = await fetch(`https://api.dexscreener.com/tokens/v1/base/${known.address}`);
+    if (r.ok) {
+      const list = await r.json();
+      const arr: DexPair[] = Array.isArray(list) ? list : (list?.pairs || []);
+      const best = arr.sort(compareDexPairs)[0];
+      if (best) {
+        priceUsd = best.priceUsd;
+        priceChange = best.priceChange ?? null;
+        liquidity = best.liquidity ?? null;
+        volume = best.volume;
+        marketCap = best.marketCap ?? null;
+        fdv = best.fdv ?? null;
+        pairAddress = best.pairAddress;
+        dexId = best.dexId;
+        url = best.url;
+      }
+    }
+  } catch {
+    // ignore — fall back to static pair
+  }
+
+  return {
+    chainId: 'base',
+    dexId,
+    url: url || `https://dexscreener.com/base/${known.address}`,
+    pairAddress,
+    baseToken: { address: known.address, name: known.name, symbol },
+    quoteToken: { address: '0x4200000000000000000000000000000000000006', name: 'Wrapped Ether', symbol: 'WETH' },
+    priceNative: '0',
+    priceUsd,
+    priceChange,
+    volume,
+    liquidity,
+    marketCap,
+    fdv,
+    info: known.logo ? { imageUrl: known.logo } : undefined,
+  };
+}
+
 async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
   const symbol = query.replace(/^\$/, '').toUpperCase();
   if (!symbol) return [];
 
-  const res = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(symbol)}`);
-  if (!res.ok) return [];
+  const [searchRes, knownBasePair] = await Promise.all([
+    fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(symbol)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<DexSearchResponse>) : null))
+      .catch(() => null),
+    fetchKnownBasePair(symbol),
+  ]);
 
-  const data: DexSearchResponse = await res.json();
-  if (!data.pairs || data.pairs.length === 0) return [];
-
-  const exactMatches = data.pairs.filter(
+  const apiPairs = (searchRes?.pairs || []).filter(
     (p) => p.baseToken.symbol.toUpperCase() === symbol
   );
+
+  // Merge: prepend the known Base pair if API didn't already include one for it.
+  const exactMatches: DexPair[] = [];
+  if (knownBasePair) {
+    const dup = apiPairs.find(
+      (p) => p.chainId === 'base' &&
+        p.baseToken.address.toLowerCase() === knownBasePair.baseToken.address.toLowerCase()
+    );
+    exactMatches.push(dup || knownBasePair);
+    for (const p of apiPairs) if (p !== dup) exactMatches.push(p);
+  } else {
+    exactMatches.push(...apiPairs);
+  }
 
   if (exactMatches.length === 0) return [];
 
@@ -103,7 +195,6 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
   exactMatches.sort(compareDexPairs);
 
   // Deduplicate by token address — keep best pool per unique token
-  // This ensures different tokens with the same symbol each get a card
   const seenTokens = new Set<string>();
   const deduped: DexPair[] = [];
   for (const pair of exactMatches) {
