@@ -212,8 +212,12 @@ async function probeBaseForAddresses(addresses: string[]): Promise<DexPair[]> {
 }
 
 async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
-  const symbol = query.replace(/^\$/, '').toUpperCase();
+  const trimmed = query.trim();
+  const symbol = trimmed.replace(/^\$/, '').toUpperCase();
   if (!symbol) return [];
+
+  // If the query *is* a Base contract address, allow on-chain metadata fallback later.
+  const queryIsAddress = /^0x[a-f0-9]{40}$/i.test(trimmed);
 
   const [searchRes, knownBasePair] = await Promise.all([
     fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(symbol)}`)
@@ -222,9 +226,9 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
     fetchKnownBasePair(symbol),
   ]);
 
-  const apiPairs = (searchRes?.pairs || []).filter(
-    (p) => p.baseToken.symbol.toUpperCase() === symbol
-  );
+  const apiPairs = queryIsAddress
+    ? (searchRes?.pairs || [])
+    : (searchRes?.pairs || []).filter((p) => p.baseToken.symbol.toUpperCase() === symbol);
 
   // Universal Base discovery: for every candidate token address surfaced on
   // *any* chain, probe Base directly. Catches tokens deployed on Base where
@@ -233,6 +237,7 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
   const candidateAddresses = apiPairs
     .filter((p) => p.chainId !== 'base')
     .map((p) => p.baseToken.address);
+  if (queryIsAddress) candidateAddresses.push(trimmed.toLowerCase());
   const probedBasePairs = !hasBaseInSearch ? await probeBaseForAddresses(candidateAddresses) : [];
 
   // Merge: prepend known Base pair (DHB), then any probed Base pairs, then API pairs.
@@ -248,6 +253,14 @@ async function searchDexScreenerMulti(query: string): Promise<DexPair[]> {
   if (knownBasePair) pushUnique(knownBasePair);
   for (const p of probedBasePairs) pushUnique(p);
   for (const p of apiPairs) pushUnique(p);
+
+  // Final fallback: if NOTHING found and the query is a Base contract address,
+  // read the token's ERC20 metadata directly from a Base RPC and synthesise a
+  // pair so the Uniswap Instant Swap drawer can still try to quote a swap.
+  if (exactMatches.length === 0 && queryIsAddress) {
+    const synthetic = await buildSyntheticBasePairFromOnchain(trimmed);
+    if (synthetic) pushUnique(synthetic);
+  }
 
   if (exactMatches.length === 0) return [];
 
