@@ -758,32 +758,16 @@ export default function PostInfoPage() {
       
       <div className="h-[calc(100vh-65px)] overflow-y-auto scrollbar-none">
         <div className="p-4 space-y-6">
-          {/* Transaction & Mint Info */}
+          {/* Post Info */}
           <section className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-medium text-white/60 mb-2">{t('postInfo.tokenId')}</h2>
-                <p className="text-xl font-bold text-white">#{nftInfo.tokenId}</p>
-              </div>
-              {nftInfo.status && (
-                <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${
-                  nftInfo.status === 'minted' 
-                    ? 'bg-green-500/20 text-green-400' 
-                    : 'bg-yellow-500/20 text-yellow-400'
-                }`}>
-                  {nftInfo.status}
-                </span>
-              )}
-            </div>
-            
-            <div className="border-t border-white/10 pt-4">
-              <h2 className="text-sm font-medium text-white/60 mb-2">{t('postInfo.mintedOn')}</h2>
+            <div>
+              <h2 className="text-sm font-medium text-white/60 mb-2">Posted on</h2>
               <div className="space-y-1">
                 <p className="text-white font-medium">{formatDate(nftInfo.createdAt)}</p>
                 <p className="text-sm text-white/60">{formatTime(nftInfo.createdAt)}</p>
               </div>
             </div>
-            
+
             {nftInfo.mintTxHash && (
               <div className="border-t border-white/10 pt-4">
                 <h2 className="text-sm font-medium text-white/60 mb-2">{t('postInfo.transactionHash')}</h2>
