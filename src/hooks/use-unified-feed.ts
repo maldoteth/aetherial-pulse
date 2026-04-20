@@ -400,8 +400,9 @@ async function fetchUnifiedFeedFromAPI(params: UnifiedFeedParams = {}): Promise<
     likes: nft.likes || 0,
     commentCount: nft.commentCount || 0,
     createdAt: nft.createdAt || '',
-    minterUsername: nft.mintername,
+    minterUsername: (nft as any).minterUsername || (nft as any).mintername,
     minterDisplayName: nft.minterDisplayName,
+    minterAvatarUrl: (nft as any).minterAvatarUrl,
   }));
 
   const totalPages = Math.ceil((response.total || 0) / limit);
