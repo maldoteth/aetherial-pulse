@@ -9,12 +9,12 @@ import { fetchBaseErc20Metadata } from '@/lib/onchain-erc20';
  */
 const KNOWN_BASE_TOKENS: Record<string, { name: string; address: string; logo?: string }> = {
   DHB: {
-    name: 'DeHub',
+    name: 'Coins',
     address: CHAIN_CONFIGS[BASE_CHAIN_ID].dhbToken,
     logo: '/icons/Coins.png',
   },
   COINS: {
-    name: 'DeHub',
+    name: 'Coins',
     address: CHAIN_CONFIGS[BASE_CHAIN_ID].dhbToken,
     logo: '/icons/Coins.png',
   },
