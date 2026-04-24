@@ -154,9 +154,32 @@ export async function getFollowList(
   }
 
   const { data, count } = await query;
-  const items: FollowListItem[] = (data || []).map((f: any) => ({
-    address: type === 'followers' ? f.follower_address : f.following_address,
-  }));
+  const addresses = (data || []).map((f: any) =>
+    type === 'followers' ? f.follower_address : f.following_address
+  );
+
+  // Batch-fetch profiles for all addresses in one query
+  let profileMap: Record<string, { username?: string; display_name?: string; avatar_url?: string; is_verified?: boolean }> = {};
+  if (addresses.length > 0) {
+    const { data: profiles } = await supabase.from('profiles')
+      .select('wallet_address, username, display_name, avatar_url, is_verified')
+      .in('wallet_address', addresses);
+    for (const p of profiles || []) {
+      profileMap[p.wallet_address] = p;
+    }
+  }
+
+  const items: FollowListItem[] = addresses.map((addr: string) => {
+    const p = profileMap[addr] || {};
+    return {
+      address: addr,
+      username: p.username,
+      displayName: p.display_name || p.username,
+      avatarUrl: p.avatar_url,
+      avatarImageUrl: p.avatar_url,
+      isVerified: p.is_verified,
+    };
+  });
 
   return {
     items,
