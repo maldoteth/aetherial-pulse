@@ -82,6 +82,8 @@ export async function searchNFTs(params: SearchNFTsParams = {}): Promise<Paginat
   if (params.postType) {
     if (params.postType === 'feed-images') {
       query = query.in('media_type', ['feed-images', 'image']);
+    } else if (params.postType === 'feed-audio') {
+      query = query.eq('media_type', 'audio');
     } else {
       query = query.eq('media_type', params.postType);
     }

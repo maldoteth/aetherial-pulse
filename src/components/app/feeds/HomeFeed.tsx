@@ -780,6 +780,12 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
           return (hasImages || hasSingleImage)
             ? { type: 'image', data: mapToImagePost(item, index) }
             : { type: 'post', data: mapToTextPost(item, index) };
+        case 'audio':
+        case 'feed-audio':
+          // Render audio posts as VideoCard (which has AudioVisualizer support)
+          return item.audioUrl
+            ? { type: 'video', data: mapToVideoItem(item, index) }
+            : { type: 'post', data: mapToTextPost(item, index) };
         case 'live':
         case 'video':
           // Only render as video card if there is actually a video URL
