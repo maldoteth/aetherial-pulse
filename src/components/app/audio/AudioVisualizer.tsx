@@ -104,9 +104,6 @@ export function AudioVisualizer({
 
     try {
       if (!audioRef.current) {
-        // Do NOT set crossOrigin here — it forces a CORS preflight on the R2 URL
-        // which blocks playback entirely when R2 CORS headers are absent.
-        // crossOrigin is only needed for Web Audio API (analyser), handled below.
         audioRef.current = new Audio(audioUrl);
         audioRef.current.muted = mutedRef.current;
         audioRef.current.addEventListener('ended', () => {
@@ -114,25 +111,35 @@ export function AudioVisualizer({
         });
       }
 
-      try {
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // Only wire up Web Audio API for same-origin sources (blob: or same host).
+      // For cross-origin R2 URLs, calling createMediaElementSource throws a
+      // SecurityError which taints the audio element and breaks play() in some
+      // browsers. Skip it entirely and use the static waveform instead.
+      const isSameOrigin = audioUrl.startsWith('blob:') || (() => {
+        try { return new URL(audioUrl).origin === window.location.origin; } catch { return false; }
+      })();
+
+      if (isSameOrigin) {
+        try {
+          if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          }
+          const ctx = audioContextRef.current;
+          if (ctx.state === 'suspended') ctx.resume();
+
+          analyserRef.current = ctx.createAnalyser();
+          analyserRef.current.fftSize = 256;
+          analyserRef.current.smoothingTimeConstant = 0.8;
+
+          sourceRef.current = ctx.createMediaElementSource(audioRef.current);
+          sourceRef.current.connect(analyserRef.current);
+          analyserRef.current.connect(ctx.destination);
+        } catch {
+          analyserRef.current = null;
+          setStyle('static');
         }
-        const ctx = audioContextRef.current;
-        if (ctx.state === 'suspended') ctx.resume();
-
-        analyserRef.current = ctx.createAnalyser();
-        analyserRef.current.fftSize = 256;
-        analyserRef.current.smoothingTimeConstant = 0.8;
-
-        // createMediaElementSource requires CORS headers on the audio resource.
-        // If the source is cross-origin without CORS, this throws a SecurityError.
-        // In that case we skip the analyser but still play audio with static style.
-        sourceRef.current = ctx.createMediaElementSource(audioRef.current);
-        sourceRef.current.connect(analyserRef.current);
-        analyserRef.current.connect(ctx.destination);
-      } catch {
-        // No CORS — fall back to static waveform (progress only, no frequency data)
+      } else {
+        // Cross-origin: static waveform only (peaks come from decodeAudioWaveform)
         analyserRef.current = null;
         setStyle('static');
       }
@@ -141,7 +148,6 @@ export function AudioVisualizer({
       setIsInitialized(true);
     } catch (err) {
       console.error('Failed to setup audio:', err);
-      // Even on error, mark connected so play() can still be attempted
       isConnectedRef.current = true;
       setIsInitialized(true);
     }
@@ -206,12 +212,20 @@ export function AudioVisualizer({
   // We wrap the original callback so that setupAudio + play() happen in the same
   // synchronous call-stack as the click, satisfying browser autoplay policy.
   const handlePlayPause = useCallback(() => {
-    // If we're about to play and haven't initialised yet, do it now (synchronously)
     if (!isPlaying && !isConnectedRef.current) {
       setupAudio();
     }
 
-    // Toggle via parent
+    // Call play/pause synchronously within the user-gesture call stack.
+    // For cross-origin audio the useEffect fires too late (outside the gesture
+    // window) and some browsers silently reject the play() call.
+    if (!isPlaying && audioRef.current) {
+      audioRef.current.play().catch(console.error);
+    } else if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    // Toggle state in parent (VideoCard tracks isPlaying)
     onPlayPauseRef.current();
   }, [isPlaying, setupAudio]);
 
