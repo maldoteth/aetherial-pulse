@@ -27,7 +27,7 @@ function postToNFT(p: any): DeHubNFT {
     tokenId: p.token_id,
     name: p.title || '',
     description: p.description || '',
-    imageUrl: p.media_type === 'image' ? p.media_url : p.thumbnail_url || '',
+    imageUrl: (p.media_type === 'image' || p.media_type === 'feed-images') ? p.media_url : p.thumbnail_url || '',
     videoUrl,
     audioUrl: p.media_type === 'audio' ? p.media_url : undefined,
     postType: (isLive ? 'video' : p.media_type) || 'text',

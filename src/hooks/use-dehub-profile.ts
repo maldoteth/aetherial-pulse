@@ -66,9 +66,11 @@ export function mapUserToProfile(user: DeHubUser): ProfileData {
     : 'Unknown';
 
   // Calculate follower/following counts - handle both number and array types
-  const followerCount = user.follower_count ?? 
+  const followerCount = user.follower_count ??
+    user.followerCount ??
     (typeof user.followers === 'number' ? user.followers : user.followers?.length) ?? 0;
-  const followingCount = user.following_count ?? 
+  const followingCount = user.following_count ??
+    user.followingCount ??
     (typeof user.followings === 'number' ? user.followings : user.followings?.length) ?? 0;
 
   // Get raw avatar/cover paths (API uses avatarImageUrl/coverImageUrl)
@@ -111,7 +113,7 @@ export function mapUserToProfile(user: DeHubUser): ProfileData {
     joinedDate: joinDate,
     following: followingCount,
     followers: followerCount,
-    postsCount: user.post_count || user.uploads || 0,
+    postsCount: user.post_count || user.postCount || user.uploads || 0,
     walletAddress: user.address || user.wallet_address,
     isFollowing: user.isFollowing,
     followsYou: user.followsYou,

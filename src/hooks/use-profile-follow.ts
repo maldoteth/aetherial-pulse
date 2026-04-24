@@ -63,7 +63,10 @@ export function useProfileFollow({
     }
 
     try {
-      await followUser(profile.walletAddress);
+      const response = await followUser(profile.walletAddress);
+      if (!response?.result) {
+        throw new Error('Follow request was not completed');
+      }
       if (isTargetPrivate) {
         toast.success(`Follow request sent to ${profile.name}`);
       } else {
@@ -99,7 +102,10 @@ export function useProfileFollow({
     setFollowStatus(false);
 
     try {
-      await unfollowUser(profile.walletAddress);
+      const response = await unfollowUser(profile.walletAddress);
+      if (!response?.result) {
+        throw new Error('Unfollow request was not completed');
+      }
       toast.success(`Unfollowed ${profile.name}`);
       invalidateProfileQueries();
     } catch (error) {

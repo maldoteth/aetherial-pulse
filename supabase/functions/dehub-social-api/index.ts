@@ -16,6 +16,17 @@ function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: corsHeaders });
 }
 
+function parseCategories(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((v) => String(v).trim()).filter(Boolean);
+  }
+  return String(raw)
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
 async function validateDeHubToken(token: string, address: string): Promise<boolean> {
   try {
     const res = await fetch(`https://api.dehub.io/api/account_info/${address}`, {
@@ -104,6 +115,21 @@ Deno.serve(async (req) => {
           .select("*")
           .single();
         if (error) throw error;
+
+        // Keep trending category log in sync for 1D/1W/1M/1Y tabs
+        const categories = parseCategories(body.category);
+        const filtered = categories
+          .map((c) => c.toLowerCase())
+          .filter((c) => c && c !== "general");
+        if (filtered.length > 0 && post?.token_id) {
+          const unique = Array.from(new Set(filtered));
+          const logRows = unique.map((name) => ({ token_id: Number(post.token_id), name }));
+          await admin.from("category_post_log").upsert(logRows, {
+            onConflict: "token_id,name",
+            ignoreDuplicates: true,
+          });
+        }
+
         return json({ ok: true, post });
       }
 
@@ -123,6 +149,24 @@ Deno.serve(async (req) => {
         }
         const { error } = await admin.from("posts").update(updates).eq("id", row.id);
         if (error) throw error;
+
+        // If categories changed, refresh category_post_log rows for this token
+        if (updates.category !== undefined) {
+          const categories = parseCategories(body.category)
+            .map((c) => c.toLowerCase())
+            .filter((c) => c && c !== "general");
+
+          await admin.from("category_post_log").delete().eq("token_id", tokenId);
+          if (categories.length > 0) {
+            const unique = Array.from(new Set(categories));
+            const logRows = unique.map((name) => ({ token_id: tokenId, name }));
+            await admin.from("category_post_log").upsert(logRows, {
+              onConflict: "token_id,name",
+              ignoreDuplicates: true,
+            });
+          }
+        }
+
         return json({ ok: true, result: true, data: { tokenId, ...updates } });
       }
 
@@ -185,6 +229,72 @@ Deno.serve(async (req) => {
         );
         if (error) throw error;
         return json({ ok: true, success: true, tokenId, voteType: null });
+      }
+
+      case "comment.create": {
+        const tokenId = Number(body.tokenId);
+        const content = String(body.content ?? "").trim();
+        const parentId = body.parentId ? String(body.parentId) : null;
+        if (!Number.isFinite(tokenId)) {
+          return json({ ok: false, error: "tokenId required" }, 400);
+        }
+        if (!content) {
+          return json({ ok: false, error: "content required" }, 400);
+        }
+
+        const { data: post } = await admin
+          .from("posts")
+          .select("id, token_id, creator_wallet_address")
+          .eq("token_id", tokenId)
+          .maybeSingle();
+        if (!post) {
+          return json({ ok: false, error: "Post not found" }, 404);
+        }
+
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("username, avatar_url")
+          .eq("wallet_address", wallet)
+          .maybeSingle();
+
+        const insertPayload: Record<string, unknown> = {
+          post_id: post.id,
+          wallet_address: wallet,
+          content,
+          username: profile?.username ?? null,
+          avatar_url: profile?.avatar_url ?? null,
+          parent_id: parentId,
+        };
+
+        const { data: comment, error: commentError } = await admin
+          .from("post_comments")
+          .insert(insertPayload as never)
+          .select("*")
+          .single();
+        if (commentError) throw commentError;
+
+        if (parentId) {
+          const { data: parentComment } = await admin
+            .from("post_comments")
+            .select("wallet_address")
+            .eq("id", parentId)
+            .maybeSingle();
+
+          const parentRecipient = parentComment?.wallet_address?.toLowerCase();
+          if (parentRecipient && parentRecipient !== wallet && parentRecipient !== post.creator_wallet_address?.toLowerCase()) {
+            await admin.from("custom_notifications").insert({
+              recipient_address: parentRecipient,
+              actor_address: wallet,
+              actor_username: profile?.username ?? null,
+              actor_avatar: profile?.avatar_url ?? null,
+              type: "comment_reply",
+              content: content.slice(0, 100),
+              reference_id: String(post.token_id),
+            });
+          }
+        }
+
+        return json({ ok: true, result: true, comment });
       }
 
       case "follow.follow": {

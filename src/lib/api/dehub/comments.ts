@@ -3,6 +3,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { withWalletHeader } from '@/lib/supabase-wallet-client';
+import { invokeDehubSocialApi } from './social-edge-client';
 import type { DeHubUser } from './types';
 
 export interface ApiCommentResponse {
@@ -91,52 +92,32 @@ function getWallet(): string | null {
 export async function postComment(tokenId: string, content: string, replyToId?: string): Promise<PostCommentResponse> {
   const wallet = getWallet();
   if (!wallet) return { result: false };
-
-  const { data: post } = await supabase.from('posts').select('id').eq('token_id', Number(tokenId)).maybeSingle();
-  if (!post) return { result: false };
-
-  // Get profile info
-  const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('wallet_address', wallet.toLowerCase()).maybeSingle();
-
-  const insertData: any = {
-    post_id: post.id,
-    wallet_address: wallet.toLowerCase(),
-    content,
-    username: profile?.username || undefined,
-    avatar_url: profile?.avatar_url || undefined,
-  };
-  if (replyToId) insertData.parent_id = replyToId;
-
-  const { error } = await withWalletHeader(
-    supabase.from('post_comments').insert(insertData),
-    wallet
-  );
-  return { result: !error };
+  try {
+    const response = await invokeDehubSocialApi<{ ok?: boolean; result?: boolean }>({
+      action: 'comment.create',
+      tokenId: Number(tokenId),
+      content,
+      parentId: replyToId,
+    });
+    return { result: Boolean(response?.ok && response?.result) };
+  } catch {
+    return { result: false };
+  }
 }
 
 export async function addComment(params: { tokenId: number; content: string; parentId?: string }): Promise<CommentResponse> {
   const wallet = getWallet();
   if (!wallet) throw new Error('Not authenticated');
-
-  const { data: post } = await supabase.from('posts').select('id').eq('token_id', params.tokenId).maybeSingle();
-  if (!post) throw new Error('Post not found');
-
-  const { data: profile } = await supabase.from('profiles').select('username, avatar_url').eq('wallet_address', wallet.toLowerCase()).maybeSingle();
-
-  const insertData: any = {
-    post_id: post.id,
-    wallet_address: wallet.toLowerCase(),
+  const response = await invokeDehubSocialApi<{ ok?: boolean; result?: boolean; comment?: any }>({
+    action: 'comment.create',
+    tokenId: params.tokenId,
     content: params.content,
-    username: profile?.username || undefined,
-    avatar_url: profile?.avatar_url || undefined,
-  };
-  if (params.parentId) insertData.parent_id = params.parentId;
-
-  const { data, error } = await withWalletHeader(
-    supabase.from('post_comments').insert(insertData).select().single(),
-    wallet
-  );
-  if (error || !data) throw new Error(error?.message || 'Failed to add comment');
+    parentId: params.parentId,
+  });
+  if (!response?.ok || !response?.result || !response.comment) {
+    throw new Error('Failed to add comment');
+  }
+  const data = response.comment;
   return {
     id: data.id,
     tokenId: params.tokenId,
