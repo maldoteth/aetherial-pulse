@@ -18,6 +18,19 @@ import {
 import { deletePost } from '@/lib/api/dehub';
 import { toast } from 'sonner';
 
+const LOCAL_DELETED_POSTS_KEY = 'dehub-locally-deleted-posts';
+
+function rememberDeletedPost(tokenId: number | string) {
+  try {
+    const raw = localStorage.getItem(LOCAL_DELETED_POSTS_KEY);
+    const existing = raw ? (JSON.parse(raw) as string[]) : [];
+    const next = Array.from(new Set([String(tokenId), ...existing])).slice(0, 200);
+    localStorage.setItem(LOCAL_DELETED_POSTS_KEY, JSON.stringify(next));
+  } catch {
+    // non-fatal
+  }
+}
+
 interface DeletePostModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -38,6 +51,7 @@ export function DeletePostModal({
     try {
       const result = await deletePost(tokenId);
       if (result.result) {
+        rememberDeletedPost(tokenId);
         toast.success('Post deleted');
         onSuccess?.();
         onOpenChange(false);

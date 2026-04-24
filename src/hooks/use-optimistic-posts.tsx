@@ -32,7 +32,13 @@ function loadFromStorage(): OptimisticPost[] {
     return parsed
       .map(p => ({ ...p, createdAt: new Date(p.createdAt) }))
       .filter(p => now - p.createdAt.getTime() < MAX_AGE_MS)
-      .map(p => ({ ...p, mediaExpired: true }));
+      .map(p => ({ ...p, mediaExpired: true }))
+      .filter((p) => {
+        // Blob media cannot survive page refresh; drop those optimistic cards
+        // so users don't see broken thumbnails/images after reload.
+        if (!p.mediaExpired) return true;
+        return p.type === 'post';
+      });
   } catch {
     return [];
   }

@@ -84,6 +84,7 @@ const SHORTS_INSERT_INTERVAL = 5;
 const RADIO_INSERT_AFTER = 8;
 /** Insert an all-time most-liked post every N items in trending feed */
 const CLASSIC_INSERT_INTERVAL = 6;
+const LOCAL_DELETED_POSTS_KEY = 'dehub-locally-deleted-posts';
 
 interface HomeFeedProps {
   shuffleKey: number;
@@ -337,6 +338,25 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
   const [selectedPostType, setSelectedPostType] = usePersistedFeedFilter<PostTypeFilterValue>('home', 'postType', 'all');
   const [contentFilters, toggleContentFilter, resetContentFilters] = usePersistedContentFilters('home');
   const [selectedCategories, setSelectedCategories] = usePersistedFeedFilter<string[]>('home', 'categories', []);
+  const [locallyDeletedTokenIds, setLocallyDeletedTokenIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const loadDeleted = () => {
+      try {
+        const raw = localStorage.getItem(LOCAL_DELETED_POSTS_KEY);
+        const arr = raw ? (JSON.parse(raw) as string[]) : [];
+        setLocallyDeletedTokenIds(new Set(arr.map(String)));
+      } catch {
+        setLocallyDeletedTokenIds(new Set());
+      }
+    };
+    loadDeleted();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === LOCAL_DELETED_POSTS_KEY) loadDeleted();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   // Listen for external category changes (e.g. from Talk of the Town sidebar)
   // Set a transitioning flag so we force skeleton state (bypasses placeholderData)
@@ -780,14 +800,15 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
   
   // Client-side multi-category filtering (when >1 category selected, API returns all)
   const items = useMemo(() => {
-    if (selectedCategories.length <= 1) return rawItems; // 0 = all, 1 = API-filtered
+    const withoutDeleted = rawItems.filter((item) => !locallyDeletedTokenIds.has(String((item.data as any)?.id)));
+    if (selectedCategories.length <= 1) return withoutDeleted; // 0 = all, 1 = API-filtered
     const catSet = new Set(selectedCategories.map(c => c.toLowerCase()));
-    return rawItems.filter(item => {
+    return withoutDeleted.filter(item => {
       const itemCats: string[] = (item.data as any)?.category || (item.data as any)?.categories || [];
       if (!itemCats.length) return false;
       return itemCats.some(c => catSet.has(String(c).toLowerCase()));
     });
-  }, [rawItems, selectedCategories]);
+  }, [rawItems, selectedCategories, locallyDeletedTokenIds]);
 
   // Auto-remove optimistic posts once their real counterpart appears in the feed
   useEffect(() => {
