@@ -78,15 +78,33 @@ function profileToUser(p: any): DeHubUser {
   } as DeHubUser;
 }
 
+async function resolveFollowStatus(viewerAddress: string, targetAddress: string): Promise<boolean> {
+  if (!viewerAddress || !targetAddress || viewerAddress.toLowerCase() === targetAddress.toLowerCase()) return false;
+  const { data } = await supabase.from('follows').select('id')
+    .eq('follower_address', viewerAddress.toLowerCase())
+    .eq('following_address', targetAddress.toLowerCase())
+    .eq('status', 'accepted')
+    .maybeSingle();
+  return !!data;
+}
+
 export async function getAccountInfo(userId: string, address?: string): Promise<DeHubUser> {
   const { data } = await supabase.from('profiles').select('*').eq('wallet_address', userId.toLowerCase()).maybeSingle();
-  if (data) return profileToUser(data);
+  if (data) {
+    const user = profileToUser(data);
+    if (address) user.isFollowing = await resolveFollowStatus(address, data.wallet_address);
+    return user;
+  }
   return { address: userId } as DeHubUser;
 }
 
 export async function getAccountByUsername(username: string, address?: string): Promise<DeHubUser> {
   const { data } = await supabase.from('profiles').select('*').ilike('username', username).maybeSingle();
-  if (data) return profileToUser(data);
+  if (data) {
+    const user = profileToUser(data);
+    if (address) user.isFollowing = await resolveFollowStatus(address, data.wallet_address);
+    return user;
+  }
   return { username } as DeHubUser;
 }
 
