@@ -19,13 +19,16 @@ export interface DeHubUser {
   is_verified?: boolean;
   followers?: number | string[];
   follower_count?: number;
-  followings?: string[];
+  followerCount?: number;
+  followings?: number | string[];
   followingsList?: string[];
   followersList?: string[];
   following_count?: number;
+  followingCount?: number;
   likes?: number | number[];
   uploads?: number;
   post_count?: number;
+  postCount?: number;
   sentTips?: number;
   receivedTips?: number;
   unlocked?: number[];
