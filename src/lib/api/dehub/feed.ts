@@ -35,7 +35,7 @@ function postToNFT(p: any): DeHubNFT {
     imageUrls,
     videoUrl,
     audioUrl: p.media_type === 'audio' ? p.media_url : undefined,
-    postType: (isLive ? 'video' : p.media_type) || 'text',
+    postType: (isLive ? 'video' : (p.media_type === 'image' ? 'feed-images' : p.media_type)) || 'text',
     minter: p.creator_wallet_address,
     minterDisplayName: prof?.display_name,
     minterUsername: prof?.username,
@@ -79,7 +79,13 @@ export async function searchNFTs(params: SearchNFTsParams = {}): Promise<Paginat
     .range(from, from + limit - 1);
 
   if (params.category) query = query.ilike('category', `%${params.category}%`);
-  if (params.postType) query = query.eq('media_type', params.postType);
+  if (params.postType) {
+    if (params.postType === 'feed-images') {
+      query = query.in('media_type', ['feed-images', 'image']);
+    } else {
+      query = query.eq('media_type', params.postType);
+    }
+  }
   if (params.address) query = query.eq('creator_wallet_address', params.address.toLowerCase());
   if (params.search) query = query.textSearch('search_vector', params.search);
 

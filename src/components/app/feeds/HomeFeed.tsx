@@ -767,16 +767,17 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
     const mapItem = (item: any, index: number): FeedItemType => {
       const hasVideo = !!item.videoUrl;
       const hasImages = Array.isArray(item.imageUrls) && item.imageUrls.length > 0;
+      const hasSingleImage = !!(item.imageUrl && item.imageUrl !== '' && !item.videoUrl);
       const inferredType = item.postType || (
         hasVideo ? 'video' :
-        hasImages ? 'feed-images' :
+        (hasImages || hasSingleImage) ? 'feed-images' :
         'feed-simple'
       );
 
       switch (inferredType) {
         case 'feed-images':
-          // Only render as image card if there are actual images
-          return hasImages
+          // Only render as image card if there is actual image media
+          return (hasImages || hasSingleImage)
             ? { type: 'image', data: mapToImagePost(item, index) }
             : { type: 'post', data: mapToTextPost(item, index) };
         case 'live':
