@@ -90,7 +90,58 @@ async function buildAuthHeader(
   };
 }
 
+// ── Presigned URL (PUT) for direct browser→R2 uploads ───────────────────────
+
+async function buildPresignedUrl(key: string, contentType: string, expiresIn = 3600): Promise<string> {
+  const now = new Date();
+  const amzDate  = now.toISOString().replace(/[:\-]/g, '').replace(/\.\d{3}/, '');
+  const dateOnly = amzDate.slice(0, 8);
+  const region   = 'auto';
+  const service  = 's3';
+  const endpoint = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const url = new URL(`${endpoint}/${R2_BUCKET_NAME}/${key}`);
+  const host = url.host;
+
+  const credentialScope = `${dateOnly}/${region}/${service}/aws4_request`;
+  const credential = `${R2_ACCESS_KEY_ID}/${credentialScope}`;
+
+  const queryParams = new URLSearchParams({
+    'X-Amz-Algorithm':     'AWS4-HMAC-SHA256',
+    'X-Amz-Credential':    credential,
+    'X-Amz-Date':          amzDate,
+    'X-Amz-Expires':       String(expiresIn),
+    'X-Amz-SignedHeaders': 'content-type;host',
+  });
+
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\n`;
+  const canonicalRequest = [
+    'PUT',
+    url.pathname,
+    queryParams.toString(),
+    canonicalHeaders,
+    'content-type;host',
+    'UNSIGNED-PAYLOAD',
+  ].join('\n');
+
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    await sha256Hex(new TextEncoder().encode(canonicalRequest)),
+  ].join('\n');
+
+  const signingKey = await getSigningKey(R2_SECRET_ACCESS_KEY, dateOnly, region, service);
+  const sigBuf = await hmacSha256(signingKey, stringToSign);
+  const signature = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  queryParams.set('X-Amz-Signature', signature);
+  return `${endpoint}/${R2_BUCKET_NAME}/${key}?${queryParams.toString()}`;
+}
+
 // ── Handler ──────────────────────────────────────────────────────────────────
+
+// Files larger than this (in bytes) get a presigned URL instead of buffering through the edge fn
+const DIRECT_UPLOAD_THRESHOLD = 10 * 1024 * 1024; // 10 MB
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -99,6 +150,32 @@ Deno.serve(async (req) => {
 
   const t0 = Date.now();
   console.log('[r2-upload] Request received');
+
+  // ── Presigned URL request (/presign endpoint) ────────────────────────────
+  const url = new URL(req.url);
+  if (url.pathname.endsWith('/presign')) {
+    try {
+      const walletAddress = req.headers.get('x-wallet-address')?.toLowerCase() || '';
+      const dehubToken    = req.headers.get('x-dehub-token') || '';
+      if (!walletAddress || !dehubToken) {
+        return new Response(JSON.stringify({ error: 'Authentication required' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { folder = 'uploads', filename = 'file', contentType = 'application/octet-stream' } = await req.json();
+      const ext = (filename as string).split('.').pop() || 'bin';
+      const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const presignedUrl = await buildPresignedUrl(key, contentType as string);
+      const publicUrl = `${R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`;
+      return new Response(JSON.stringify({ presignedUrl, publicUrl, key }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: String(err) }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
   try {
     const walletAddress = req.headers.get('x-wallet-address')?.toLowerCase() || '';

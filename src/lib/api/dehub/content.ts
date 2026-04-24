@@ -49,23 +49,49 @@ function getWallet(): string | null {
   return localStorage.getItem('dehub_wallet');
 }
 
+const DIRECT_UPLOAD_THRESHOLD = 10 * 1024 * 1024; // 10 MB — above this, use presigned URL
+
 /**
- * Upload a file to R2 via the edge function
+ * Upload a file to R2.
+ * Small files go through the edge function (simple).
+ * Large files (>10 MB) use a presigned URL so the upload goes browser→R2 directly,
+ * bypassing the edge function's memory limit.
  */
 async function uploadToR2(file: File | Blob, folder: string): Promise<string> {
+  const walletAddress = localStorage.getItem('dehub_wallet') || '';
+  const dehubToken = localStorage.getItem('dehub_token') || '';
+  const authHeaders = { 'x-wallet-address': walletAddress, 'x-dehub-token': dehubToken };
+
+  if (file.size > DIRECT_UPLOAD_THRESHOLD) {
+    // Get presigned URL from edge function
+    const filename = file instanceof File ? file.name : `upload.bin`;
+    const contentType = file.type || 'application/octet-stream';
+
+    const { data, error } = await supabase.functions.invoke('r2-upload/presign', {
+      body: { folder, filename, contentType },
+      headers: authHeaders,
+    });
+    if (error) throw new Error(`Presign failed: ${error.message}`);
+    if (!data?.presignedUrl) throw new Error('No presigned URL returned');
+
+    // Upload directly to R2
+    const res = await fetch(data.presignedUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: file,
+    });
+    if (!res.ok) throw new Error(`Direct R2 upload failed: ${res.status}`);
+    return data.publicUrl as string;
+  }
+
+  // Small file — buffer through edge function as before
   const formData = new FormData();
   formData.append('file', file);
   formData.append('folder', folder);
 
-  const walletAddress = localStorage.getItem('dehub_wallet') || '';
-  const dehubToken = localStorage.getItem('dehub_token') || '';
-
   const { data, error } = await supabase.functions.invoke('r2-upload', {
     body: formData,
-    headers: {
-      'x-wallet-address': walletAddress,
-      'x-dehub-token': dehubToken,
-    },
+    headers: authHeaders,
   });
 
   if (error) throw new Error(`Upload failed: ${error.message}`);

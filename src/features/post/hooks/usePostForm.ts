@@ -1254,6 +1254,37 @@ export function usePostForm(onClose: () => void): UsePostFormReturn {
           isOptimistic: true,
         };
         addOptimisticPost({ id: optimisticId, type: 'image', data: imagePost, createdAt: new Date() });
+      } else if (hasAudio) {
+        const audioMedia = media.find(m => m.type === 'audio');
+        const audioPost: VideoItem = {
+          id: optimisticId,
+          type: 'video',
+          thumbnail: '',
+          videoUrl: undefined,
+          audioUrl: audioMedia?.preview,
+          isAudio: true,
+          audioDuration: audioMedia?.duration,
+          duration: audioMedia?.duration
+            ? `${Math.floor(audioMedia.duration / 60)}:${String(Math.floor(audioMedia.duration % 60)).padStart(2, '0')}`
+            : '0:00',
+          durationSeconds: audioMedia?.duration || 0,
+          title: titleText.trim() || text.trim().split('\n')[0] || '',
+          description: text.trim(),
+          channel: username,
+          channelAvatar: avatar || '',
+          verified: false,
+          views: '0',
+          uploadedAgo: 'Just now',
+          creatorId: user?.address,
+          creatorUsername: username,
+          createdAt: new Date().toISOString(),
+          isLiked: false,
+          likeCount: 0,
+          dislikeCount: 0,
+          commentCount: 0,
+          isOptimistic: true,
+        };
+        addOptimisticPost({ id: optimisticId, type: 'video', data: audioPost, createdAt: new Date() });
       } else {
         // Text post
         const textPost: TextPost = {

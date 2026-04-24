@@ -616,6 +616,7 @@ export async function decodeAudioWaveform(
 
   try {
     const response = await fetch(audioUrl);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const arrayBuffer = await response.arrayBuffer();
     const offlineCtx = new (window.OfflineAudioContext || (window as any).webkitOfflineAudioContext)(1, 1, 44100);
     const audioBuffer = await offlineCtx.decodeAudioData(arrayBuffer);

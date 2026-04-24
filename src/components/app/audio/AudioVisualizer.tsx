@@ -104,38 +104,46 @@ export function AudioVisualizer({
 
     try {
       if (!audioRef.current) {
+        // Do NOT set crossOrigin here — it forces a CORS preflight on the R2 URL
+        // which blocks playback entirely when R2 CORS headers are absent.
+        // crossOrigin is only needed for Web Audio API (analyser), handled below.
         audioRef.current = new Audio(audioUrl);
-        audioRef.current.crossOrigin = 'anonymous';
-        // Set initial muted state from prop
         audioRef.current.muted = mutedRef.current;
-        
         audioRef.current.addEventListener('ended', () => {
           onPlayPauseRef.current();
         });
       }
 
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      try {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioContextRef.current;
+        if (ctx.state === 'suspended') ctx.resume();
+
+        analyserRef.current = ctx.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        analyserRef.current.smoothingTimeConstant = 0.8;
+
+        // createMediaElementSource requires CORS headers on the audio resource.
+        // If the source is cross-origin without CORS, this throws a SecurityError.
+        // In that case we skip the analyser but still play audio with static style.
+        sourceRef.current = ctx.createMediaElementSource(audioRef.current);
+        sourceRef.current.connect(analyserRef.current);
+        analyserRef.current.connect(ctx.destination);
+      } catch {
+        // No CORS — fall back to static waveform (progress only, no frequency data)
+        analyserRef.current = null;
+        setStyle('static');
       }
-
-      const ctx = audioContextRef.current;
-
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
-
-      analyserRef.current = ctx.createAnalyser();
-      analyserRef.current.fftSize = 256;
-      analyserRef.current.smoothingTimeConstant = 0.8;
-
-      sourceRef.current = ctx.createMediaElementSource(audioRef.current);
-      sourceRef.current.connect(analyserRef.current);
-      analyserRef.current.connect(ctx.destination);
 
       isConnectedRef.current = true;
       setIsInitialized(true);
     } catch (err) {
       console.error('Failed to setup audio:', err);
+      // Even on error, mark connected so play() can still be attempted
+      isConnectedRef.current = true;
+      setIsInitialized(true);
     }
   }, [audioUrl]);
 
