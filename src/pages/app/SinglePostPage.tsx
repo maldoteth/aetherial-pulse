@@ -158,7 +158,12 @@ function toImagePost(nft: DeHubNFT): ImagePost {
   const views = formatViews(nft.views || 0).replace(' views', '');
   
   // Canonical image resolution (matches feed normalization)
-  const primaryImage = buildImageUrl(nft.tokenId, nft.imageUrl) || '/placeholder.svg';
+  const directImage = nft.imageUrl?.startsWith('http')
+    ? nft.imageUrl
+    : nft.imageUrl?.includes('feed-images/')
+      ? `https://dehubcdn.ams3.cdn.digitaloceanspaces.com/feed-images/${nft.imageUrl.split('/').pop()}`
+      : '';
+  const primaryImage = directImage || buildImageUrl(nft.tokenId, nft.imageUrl) || '/placeholder.svg';
   const feedImages = buildFeedImageUrls(nft.imageUrls);
   const imageUrls = feedImages && feedImages.length > 0 ? feedImages : [primaryImage];
   

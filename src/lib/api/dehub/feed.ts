@@ -22,12 +22,17 @@ function postToNFT(p: any): DeHubNFT {
         : undefined;
 
   const prof = p.creator;
+  const rawImageUrls = p.image_urls ?? (meta.imageUrls as unknown);
+  const imageUrls = Array.isArray(rawImageUrls)
+    ? rawImageUrls.filter((u): u is string => typeof u === 'string' && u.length > 0)
+    : undefined;
 
   return {
     tokenId: p.token_id,
     name: p.title || '',
     description: p.description || '',
     imageUrl: (p.media_type === 'image' || p.media_type === 'feed-images') ? p.media_url : p.thumbnail_url || '',
+    imageUrls,
     videoUrl,
     audioUrl: p.media_type === 'audio' ? p.media_url : undefined,
     postType: (isLive ? 'video' : p.media_type) || 'text',

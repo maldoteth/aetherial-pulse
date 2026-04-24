@@ -264,7 +264,12 @@ export function mapToImagePost(item: UnifiedFeedItem, index: number): ImagePost 
   const id = String(item.tokenId);
   
   const imageUrls = buildFeedImageUrls(item.imageUrls);
-  const image = imageUrls?.[0] || buildImageUrl(item.tokenId, item.imageUrl);
+  const directImage = item.imageUrl?.startsWith('http')
+    ? item.imageUrl
+    : item.imageUrl?.includes('feed-images/')
+      ? `${DEHUB_CDN_BASE}feed-images/${item.imageUrl.split('/').pop()}`
+      : '';
+  const image = imageUrls?.[0] || directImage || buildImageUrl(item.tokenId, item.imageUrl);
   
   const rawAvatarPath = extractAvatarPath(item);
   const avatar = rawAvatarPath 
@@ -391,6 +396,7 @@ async function fetchUnifiedFeedFromAPI(params: UnifiedFeedParams = {}): Promise<
     name: nft.name || '',
     description: nft.description || '',
     imageUrl: nft.imageUrl || '',
+    imageUrls: nft.imageUrls,
     videoUrl: nft.videoUrl,
     audioUrl: nft.audioUrl,
     minter: nft.minter || '',

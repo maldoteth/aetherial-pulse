@@ -597,7 +597,12 @@ export function HomeFeed({ shuffleKey, isRefreshing, showFilters = false, pinned
     
     if (nftPostType === 'image' || (pinnedPost.imageUrls && pinnedPost.imageUrls.length > 0 && !pinnedPost.videoUrl)) {
       const imageUrls = buildFeedImageUrls(pinnedPost.imageUrls);
-      const image = imageUrls?.[0] || buildImageUrl(pinnedPost.tokenId, pinnedPost.imageUrl);
+      const directImage = pinnedPost.imageUrl?.startsWith('http')
+        ? pinnedPost.imageUrl
+        : pinnedPost.imageUrl?.includes('feed-images/')
+          ? `https://dehubcdn.ams3.cdn.digitaloceanspaces.com/feed-images/${pinnedPost.imageUrl.split('/').pop()}`
+          : '';
+      const image = imageUrls?.[0] || directImage || buildImageUrl(pinnedPost.tokenId, pinnedPost.imageUrl);
       const avatar = pinnedPost.minterAvatarUrl 
         ? buildAvatarUrl(pinnedPost.minter, pinnedPost.minterAvatarUrl) || 'user'
         : 'user';
