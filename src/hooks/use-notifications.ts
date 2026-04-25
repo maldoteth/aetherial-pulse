@@ -68,8 +68,8 @@ export function useNotifications(category?: NotificationCategory) {
       if (!isFirstLoad && !n.read) {
         const createdAt = new Date(n.createdAt || 0).getTime();
         if (createdAt > lastSeen) {
-          const title = n.actorUsername ? `${n.actorUsername}` : 'DeHub';
-          showNotification(title, n.content || '', n.actorAvatar, n.id);
+          const title = n.actorUsername || 'DeHub';
+          showNotification(title, getNotificationText(n), n.actorAvatar, n.id);
         }
       }
     }
@@ -150,6 +150,51 @@ export function useMarkAllNotificationsAsRead() {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
+}
+
+/** Derive a plain-text notification body from the notification type and actor. */
+function getNotificationText(n: DeHubNotification): string {
+  const actor = n.actorUsername || 'Someone';
+  switch (n.type as string) {
+    case 'like':
+      return `${actor} liked your post`;
+    case 'comment':
+      return `${actor} commented on your post`;
+    case 'comment_reply':
+      return `${actor} replied to your comment`;
+    case 'comment_like':
+      return `${actor} liked your comment`;
+    case 'mention':
+      return `${actor} mentioned you in a comment`;
+    case 'tip': {
+      const amount = n.amount ? ` ${n.amount} ${n.currency || 'Coins'}` : '';
+      return `${actor} sent you a tip${amount}`;
+    }
+    case 'subscription':
+      return `${actor} subscribed to your plan`;
+    case 'ppv_purchase':
+      return `${actor} purchased your content`;
+    case 'following':
+      return `${actor} started following you`;
+    case 'follow_request':
+      return `${actor} requested to follow you`;
+    case 'video_milestone':
+      return 'Your post reached a milestone';
+    case 'livestream_start':
+      return `${actor} started a livestream`;
+    case 'video_removal':
+      return 'One of your posts was removed';
+    case 'feature_request_like':
+      return `${actor} liked your feature request`;
+    case 'feature_request_comment':
+      return `${actor} commented on your feature request`;
+    case 'governance_vote':
+      return `${actor} voted on your proposal`;
+    case 'governance_comment':
+      return `${actor} commented on your proposal`;
+    default:
+      return n.content || 'New notification';
+  }
 }
 
 // Re-export types for convenience

@@ -146,7 +146,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoginModalOpen: false,
   requiresUsername: false,
 
-  openLoginModal: () => set({ isLoginModalOpen: true }),
+  openLoginModal: () => {
+    set({ isLoginModalOpen: true });
+    // Kick off Web3Auth init immediately so it's ready by the time the user
+    // picks a provider — eliminates the 3–8s cold-start delay on first click.
+    initWeb3Auth().catch(() => {});
+  },
   closeLoginModal: () => set({ isLoginModalOpen: false }),
   setRequiresUsername: (value) => set({ requiresUsername: value }),
 
