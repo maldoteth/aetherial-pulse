@@ -235,9 +235,9 @@ const tabs: { labelKey: string; value: NotificationTypeFilter; icon: React.Eleme
 // Map tab filter to notification types
 const filterTypeMap: Record<NotificationTypeFilter, string[] | null> = {
   all: null,
-  likes: ['like', 'comment_like', 'feature_request_like', 'governance_vote'],
-  follows: ['following', 'follow_request', 'followRequest', 'follow-request'],
-  comments: ['comment', 'comment_reply', 'mention', 'feature_request_comment', 'governance_comment'],
+  likes: ['like', 'post_like', 'comment_like', 'feature_request_like', 'governance_vote'],
+  follows: ['follow', 'following', 'follow_request', 'followRequest', 'follow-request'],
+  comments: ['comment', 'post_comment', 'comment_reply', 'mention', 'feature_request_comment', 'governance_comment'],
   reposts: ['repost', 'quote'],
   subscriptions: ['subscription', 'ppv_purchase'],
   tips: ['tip'],
@@ -247,10 +247,12 @@ const filterTypeMap: Record<NotificationTypeFilter, string[] | null> = {
 function getNotificationIcon(type: string) {
   switch (type) {
     case 'like':
+    case 'post_like':
     case 'comment_like':
     case 'feature_request_like':
       return <ThumbsUp className="w-4 h-4 text-white/70" />;
     case 'comment':
+    case 'post_comment':
     case 'comment_reply':
     case 'mention':
     case 'feature_request_comment':
@@ -261,6 +263,7 @@ function getNotificationIcon(type: string) {
     case 'subscription':
     case 'ppv_purchase':
       return <Users className="w-4 h-4 text-white/70" />;
+    case 'follow':
     case 'following':
     case 'follow_request':
     case 'followRequest':
@@ -503,9 +506,13 @@ function getNotificationContent(
 
   switch (notification.type) {
     case 'like':
+    case 'post_like':
       return tr('notifications.likedPost', { name: actorName });
     case 'comment':
+    case 'post_comment':
       return tr('notifications.commentedPost', { name: actorName });
+    case 'follow':
+      return tr('notifications.startedFollowing', { name: actorName });
     case 'comment_reply':
       return tr('notifications.repliedComment', { name: actorName });
     case 'mention':
@@ -559,23 +566,26 @@ function getNavigationLink(notification: DeHubNotification): string | null {
   }
 
   // Comment-type notifications should auto-open comments on the post
-  const isCommentType = ['comment', 'comment_reply', 'comment_like'].includes(notification.type);
+  const isCommentType = ['comment', 'post_comment', 'comment_reply', 'comment_like'].includes(notification.type);
   const commentSuffix = isCommentType ? '?comments=1' : '';
 
   switch (notification.type) {
     case 'like':
+    case 'post_like':
     case 'comment':
+    case 'post_comment':
     case 'comment_reply':
     case 'comment_like':
     case 'mention':
     case 'tip':
     case 'video_milestone':
       return notification.tokenId ? `/app/post/${notification.tokenId}${commentSuffix}` : null;
+    case 'follow':
     case 'following':
-      return notification.actorAddress 
-        ? `/${notification.actorAddress}` 
-        : notification.actorUsername 
-          ? `/${notification.actorUsername}` 
+      return notification.actorAddress
+        ? `/${notification.actorAddress}`
+        : notification.actorUsername
+          ? `/${notification.actorUsername}`
           : null;
     case 'follow_request':
       // Follow requests don't navigate — they have inline accept/reject buttons
@@ -789,7 +799,7 @@ function NotificationItem({
     const navLink = getNavigationLink(notification);
     if (navLink) {
       // Seed profile cache for profile-bound navigations
-      const isProfileNav = ['following', 'subscription', 'ppv_purchase'].includes(notification.type);
+      const isProfileNav = ['follow', 'following', 'subscription', 'ppv_purchase'].includes(notification.type);
       if (isProfileNav) {
         seedAndNavigateToProfile(notification);
       } else {
