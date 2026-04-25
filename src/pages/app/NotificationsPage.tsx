@@ -427,10 +427,11 @@ function getNotificationContent(
   t?: (key: string, opts?: any) => string,
   onOthersClick?: () => void,
   canonicalActors?: CanonicalActor[],
+  enrichedUsername?: string | null,
 ): React.ReactNode {
 
   const tr = t || ((key: string) => key);
-  const actorName = notification.actorUsername || 'Someone';
+  const actorName = notification.actorUsername || enrichedUsername || 'Someone';
   
   // Handle custom notification types outside the typed switch
   if ((notification.type as string) === 'feature_request_like') {
@@ -904,7 +905,7 @@ function NotificationItem({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <p className={`text-sm ${(notification.read || isClosing) ? 'text-zinc-400' : 'text-white'}`}>
-          {getNotificationContent(notification, bundle, t, () => setShowActorsDrawer(true), canonicalActors)}
+          {getNotificationContent(notification, bundle, t, () => setShowActorsDrawer(true), canonicalActors, enriched?.username || enriched?.displayName)}
         </p>
         
         {/* Post preview snippet — for replies/mentions show the comment text, otherwise the post title */}
