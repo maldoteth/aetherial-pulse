@@ -157,8 +157,10 @@ function getNotificationText(n: DeHubNotification): string {
   const actor = n.actorUsername || 'Someone';
   switch (n.type as string) {
     case 'like':
+    case 'post_like':
       return `${actor} liked your post`;
     case 'comment':
+    case 'post_comment':
       return `${actor} commented on your post`;
     case 'comment_reply':
       return `${actor} replied to your comment`;
@@ -174,6 +176,7 @@ function getNotificationText(n: DeHubNotification): string {
       return `${actor} subscribed to your plan`;
     case 'ppv_purchase':
       return `${actor} purchased your content`;
+    case 'follow':
     case 'following':
       return `${actor} started following you`;
     case 'follow_request':
