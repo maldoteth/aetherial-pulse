@@ -46,7 +46,6 @@ const AgentsPage = lazyWithRetry(() => import('@/pages/app/AgentsPage'));
 const FeaturesPage = lazyWithRetry(() => import('@/pages/app/FeaturesPage'));
 const GovernancePage = lazyWithRetry(() => import('@/pages/app/GovernancePage'));
 const FullWalletPage = lazyWithRetry(() => import('@/pages/app/FullWalletPage'));
-const CareersPage = lazyWithRetry(() => import('@/pages/app/CareersPage'));
 const GlossaryPage = lazyWithRetry(() => import('@/pages/app/GlossaryPage'));
 const StakingPage = lazyWithRetry(() => import('@/pages/app/StakingPage'));
 const BridgePage = lazyWithRetry(() => import('@/pages/app/BridgePage'));
@@ -80,7 +79,6 @@ const CACHED_PAGES: CachedPageConfig[] = [
   { key: 'agents', path: '/agents', component: AgentsPage, skeleton: GenericPageSkeleton },
   { key: 'features', path: '/features', component: FeaturesPage, skeleton: FeaturesSkeleton },
   { key: 'governance', path: '/governance', component: GovernancePage, skeleton: FeaturesSkeleton },
-  { key: 'careers', path: '/jobs', component: CareersPage, skeleton: GenericPageSkeleton },
   { key: 'glossary', path: '/glossary', component: GlossaryPage, skeleton: GenericPageSkeleton },
   { key: 'stake', path: '/stake', component: StakingPage, skeleton: GenericPageSkeleton },
   { key: 'bridge', path: '/bridge', component: BridgePage, skeleton: GenericPageSkeleton },
