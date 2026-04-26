@@ -50,7 +50,7 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: ShieldCheck, label: 'Governance', path: '/governance' },
   { icon: Scroll, label: 'Glossary', path: '/glossary' },
   { icon: Map, label: 'Guide', path: '/guide' },
-  { icon: BookOpen, label: 'Docs', path: 'https://fansite.app/docs', external: true },
+  { icon: BookOpen, label: 'Docs', path: '/docs' },
   { icon: FileText, label: 'Blog', path: '/docs/blog' },
   { icon: Home, label: 'Home', path: '/' },
 ];

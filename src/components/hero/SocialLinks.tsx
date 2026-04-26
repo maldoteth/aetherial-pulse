@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { SOCIAL_LINKS } from '@/config/hero-config';
 
 const fadeUpVariants = {
@@ -74,18 +75,27 @@ export const SocialLinks = () => {
       animate="visible"
       className="mt-[30px] md:mt-9 ml-[-5px] md:ml-0 flex items-center justify-center gap-6 md:gap-7 md:translate-y-0 text-white"
     >
-      {SOCIAL_LINKS.map((social, idx) => (
-        <a
-          key={idx}
-          href={social.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="transition-transform hover:scale-110 cursor-square-item"
-          aria-label={social.label}
-        >
-          <SocialIcon icon={social.icon} />
-        </a>
-      ))}
+      {SOCIAL_LINKS.map((social, idx) => {
+        const content = <SocialIcon icon={social.icon} />;
+        const className = "transition-transform hover:scale-110 cursor-square-item";
+
+        return social.internal ? (
+          <Link key={idx} to={social.url} className={className} aria-label={social.label}>
+            {content}
+          </Link>
+        ) : (
+          <a
+            key={idx}
+            href={social.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={className}
+            aria-label={social.label}
+          >
+            {content}
+          </a>
+        );
+      })}
     </motion.div>
   );
 };
