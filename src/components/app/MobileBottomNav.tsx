@@ -232,9 +232,10 @@ export function MobileBottomNav() {
 
             {/* Additional items - accessible via scroll */}
             {SCROLL_NAV_ITEMS.map((item) => {
-              const isActive = !item.external && !(item as any).action && location.pathname.startsWith(item.path);
+              const isExternal = (item as any).external;
+              const isActive = !isExternal && !(item as any).action && location.pathname.startsWith(item.path);
               
-              if (item.external) {
+              if (isExternal) {
                 return (
                   <a
                     key={item.label}
