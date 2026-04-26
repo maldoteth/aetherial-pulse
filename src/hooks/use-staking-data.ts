@@ -13,8 +13,6 @@ export interface UnstakeEvent {
   chain: 'BNB' | 'Base';
 }
 
-const erc20BalanceInterface = null;
-
 // NOTE: This is a brand-new token — no on-chain staking activity exists yet.
 // All staking stats, user balances, queues, and TVL are intentionally hardcoded
 // to zero until the token launches and real staking begins. Once live, restore
