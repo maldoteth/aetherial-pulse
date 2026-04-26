@@ -23,72 +23,36 @@ const erc20BalanceInterface = new Interface([
   'function balanceOf(address owner) view returns (uint256)',
 ]);
 
+// NOTE: This is a brand-new token — no on-chain staking activity exists yet.
+// All staking stats, user balances, queues, and TVL are intentionally hardcoded
+// to zero until the token launches and real staking begins. Once live, restore
+// the original on-chain + DB queries (see git history).
+
 async function fetchUnstakeQueue(): Promise<UnstakeEvent[]> {
-  try {
-    const { data, error } = await supabase
-      .from('staking_records')
-      .select('wallet_address, amount, tx_hash, created_at, chain')
-      .eq('action', 'unstake')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (error || !data) return [];
-
-    return data.map((r): UnstakeEvent => ({
-      wallet: r.wallet_address,
-      amount: String(r.amount),
-      txHash: r.tx_hash,
-      timestamp: new Date(r.created_at).getTime() / 1000,
-      chain: (r.chain === 'BNB' ? 'BNB' : 'Base') as 'BNB' | 'Base',
-    }));
-  } catch (err) {
-    console.error('[Staking] Failed to fetch unstake queue:', err);
-    return [];
-  }
+  return [];
 }
 
 export function useStakingStats() {
   return useQuery({
     queryKey: ['staking-stats'],
-    queryFn: async () => {
-      const stats = await fetchStakingStats();
-      return {
-        bnbStaked: fromWei(stats.bnbStaked),
-        baseStaked: fromWei(stats.baseStaked),
-        totalStaked: fromWei(stats.totalStaked),
-        bnbStakedRaw: stats.bnbStaked,
-        baseStakedRaw: stats.baseStaked,
-        totalStakedRaw: stats.totalStaked,
-      };
-    },
-    staleTime: 60_000,
-    refetchInterval: 120_000,
+    queryFn: async () => ({
+      bnbStaked: '0',
+      baseStaked: '0',
+      totalStaked: '0',
+      bnbStakedRaw: BigInt(0),
+      baseStakedRaw: BigInt(0),
+      totalStakedRaw: BigInt(0),
+    }),
+    staleTime: Infinity,
   });
 }
 
 /**
- * Get user's unstaked Coins balance on a specific chain
+ * Get user's unstaked Coins balance on a specific chain.
+ * Returns 0 — token not launched yet.
  */
-export async function getUserDHBBalance(userAddress: string, chainId: ChainId): Promise<bigint> {
-  const config = CHAIN_CONFIGS[chainId];
-  if (!config?.dhbToken) return BigInt(0);
-  
-  // For BNB staking, the Coins token address might differ
-  const tokenAddress = chainId === BNB_CHAIN_ID
-    ? '0x680d3113caf77b61b510f332d5ef4cf5b41a761d'
-    : config.dhbToken;
-
-  try {
-    return await readContract<bigint>(
-      tokenAddress,
-      erc20BalanceInterface,
-      'balanceOf',
-      [userAddress],
-      chainId
-    );
-  } catch {
-    return BigInt(0);
-  }
+export async function getUserDHBBalance(_userAddress: string, _chainId: ChainId): Promise<bigint> {
+  return BigInt(0);
 }
 
 export interface UserStakingData {
@@ -120,75 +84,27 @@ export function useUserStakingData() {
     queryKey: ['user-staking-data', walletAddress?.toLowerCase()],
     queryFn: async (): Promise<UserStakingData | null> => {
       if (!walletAddress) return null;
-
-      const addr = walletAddress.toLowerCase();
-
-      // Fetch on-chain balances + DB staking records in parallel
-      const [bnbBalanceRaw, baseBalanceRaw, bnbEarnedRaw, bnbAllowance, { data: stakingRecords }] = await Promise.all([
-        getUserDHBBalance(walletAddress, BNB_CHAIN_ID),
-        getUserDHBBalance(walletAddress, BASE_CHAIN_ID),
-        getUserEarnedBNB(walletAddress),
-        getStakingAllowance(walletAddress),
-        supabase
-          .from('staking_records')
-          .select('amount, action')
-          .eq('wallet_address', addr),
-      ]);
-
-      // Calculate net staked and total unstake-queued from DB records
-      let dbStaked = 0;
-      let dbUnstakeQueued = 0;
-      if (stakingRecords) {
-        for (const r of stakingRecords) {
-          if (r.action === 'stake') dbStaked += Number(r.amount);
-          else if (r.action === 'unstake') {
-            dbStaked -= Number(r.amount);
-            dbUnstakeQueued += Number(r.amount);
-          }
-        }
-      }
-      if (dbStaked < 0) dbStaked = 0;
-
-      // Also check legacy BNB contract staked balance
-      let legacyStaked = BigInt(0);
-      try {
-        legacyStaked = await getUserStakedBNB(walletAddress);
-      } catch {}
-
-      const legacyStakedNum = parseFloat(fromWei(legacyStaked));
-      const totalStakedNum = dbStaked + legacyStakedNum;
-
-      const bnbBalance = fromWei(bnbBalanceRaw);
-      const baseBalance = fromWei(baseBalanceRaw);
-      const bnbEarned = fromWei(bnbEarnedRaw);
-
-      const bnbBalNum = parseFloat(bnbBalance);
-      const baseBalNum = parseFloat(baseBalance);
-
       return {
-        bnbStaked: totalStakedNum.toString(),
-        bnbStakedRaw: legacyStaked,
-        bnbBalance,
-        bnbBalanceRaw,
-        bnbEarned,
-        bnbEarnedRaw,
-        bnbAllowance,
-        baseBalance,
-        baseBalanceRaw,
-        totalStaked: totalStakedNum,
-        totalUnstaked: bnbBalNum + baseBalNum,
-        totalUnstakeQueued: dbUnstakeQueued,
-        hasBNBBalance: bnbBalNum > 0,
-        hasBaseBalance: baseBalNum > 0,
-        hasBothChains: bnbBalNum > 0 && baseBalNum > 0,
+        bnbStaked: '0',
+        bnbStakedRaw: BigInt(0),
+        bnbBalance: '0',
+        bnbBalanceRaw: BigInt(0),
+        bnbEarned: '0',
+        bnbEarnedRaw: BigInt(0),
+        bnbAllowance: BigInt(0),
+        baseBalance: '0',
+        baseBalanceRaw: BigInt(0),
+        totalStaked: 0,
+        totalUnstaked: 0,
+        totalUnstakeQueued: 0,
+        hasBNBBalance: false,
+        hasBaseBalance: false,
+        hasBothChains: false,
         userAddress: walletAddress,
       };
     },
     enabled: !!walletAddress && isAuthenticated,
-    staleTime: 0,
-    refetchInterval: 15_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    staleTime: Infinity,
   });
 }
 
@@ -212,18 +128,10 @@ export function useUnstakeQueue() {
   return useQuery({
     queryKey: ['unstake-queue'],
     queryFn: fetchUnstakeQueue,
-    staleTime: 60_000,
-    refetchInterval: 120_000,
+    staleTime: Infinity,
   });
 }
 
 export function useStakingTVL() {
-  const { data: stats } = useStakingStats();
-  const { data: prices } = useTokenPrices();
-  
-  const dhbPrice = prices?.Coins ?? 0;
-  const totalStakedNum = stats ? parseFloat(stats.totalStaked) : 0;
-  const tvl = totalStakedNum * dhbPrice;
-
-  return { tvl, dhbPrice, totalStakedNum };
+  return { tvl: 0, dhbPrice: 0, totalStakedNum: 0 };
 }
