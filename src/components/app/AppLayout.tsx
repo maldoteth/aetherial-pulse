@@ -22,6 +22,7 @@ import { PersistentPageCache, isCachedPageRoute } from './PersistentPageCache';
 import { GlobalFeedNav } from './GlobalFeedNav';
 import { cn } from '@/lib/utils';
 import SinglePostPage from '@/pages/app/SinglePostPage';
+import PastelBlobsBackground from './PastelBlobsBackground';
 
 interface AppLayoutContentProps {
   children?: ReactNode;
@@ -173,14 +174,15 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
   const isDynamicRoute = !isCached && !showHomePagePersisted;
 
   return (
-    <div id="app-root" className="min-h-screen bg-black text-white overflow-x-clip" style={{ touchAction: 'manipulation', overscrollBehavior: 'none' }}>
+    <div id="app-root" className="min-h-screen text-white overflow-x-clip relative" style={{ touchAction: 'manipulation', overscrollBehavior: 'none' }}>
+      <PastelBlobsBackground />
       <div
         className="flex w-full relative min-h-screen mx-auto transition-[max-width] duration-500 ease-in-out motion-reduce:transition-none"
         style={{ maxWidth: isCollapsed ? '100%' : '80rem', willChange: 'max-width' }}
       >
         <AppSidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
         
-        <main className="flex-1 min-h-screen pt-11 pb-16 lg:pt-0 lg:pb-0 min-w-0 w-full bg-black">
+        <main className="flex-1 min-h-screen pt-11 pb-16 lg:pt-0 lg:pb-0 min-w-0 w-full">
           {/* Global feed nav — keep mounted and animate in/out to avoid rigid multi-step jumps */}
           <div
             className={cn(
@@ -198,7 +200,7 @@ function AppLayoutContent({ children }: AppLayoutContentProps) {
           
           {/* Post overlay — renders on top when viewing a post from home */}
           {showHomePagePersisted && (
-            <div className="w-full min-h-screen bg-black relative z-10">
+            <div className="w-full min-h-screen relative z-10">
               <SinglePostPage />
             </div>
           )}
