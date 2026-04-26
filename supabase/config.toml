@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.dehub-mcp]
 verify_jwt = false
+
+[functions.ella-docs-assistant]
+verify_jwt = false
