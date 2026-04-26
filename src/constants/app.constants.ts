@@ -24,7 +24,6 @@ import {
   BookOpen,
   Scroll,
   Lightbulb,
-  Briefcase,
   ShieldCheck,
   Vault,
   Map,
