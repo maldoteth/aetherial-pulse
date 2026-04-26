@@ -49,7 +49,6 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: Lightbulb, label: 'Feature Requests', path: '/features' },
   { icon: Vault, label: 'Staking', path: '/stake' },
   { icon: ShieldCheck, label: 'Governance', path: '/governance' },
-  { icon: Briefcase, label: 'Careers', path: '/jobs' },
   { icon: Scroll, label: 'Glossary', path: '/glossary' },
   { icon: Map, label: 'Guide', path: '/guide' },
   { icon: BookOpen, label: 'Docs', path: 'https://fansite.app/docs', external: true },

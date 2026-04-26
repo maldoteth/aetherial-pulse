@@ -241,7 +241,6 @@ const PAGE_CASES: { name: string; path: string; h1Substring: string }[] = [
   { name: 'Glossary', path: 'src/pages/app/GlossaryPage.tsx', h1Substring: 'Glossary' },
   { name: 'Top Assets', path: 'src/pages/app/Top100CryptosPage.tsx', h1Substring: 'Top Assets' },
   { name: 'Features', path: 'src/pages/app/FeaturesPage.tsx', h1Substring: 'Features' },
-  { name: 'Careers', path: 'src/pages/app/CareersPage.tsx', h1Substring: 'Careers' },
   { name: 'Bookmarks', path: 'src/pages/app/BookmarksPage.tsx', h1Substring: 'Bookmarks' },
   { name: 'Messages', path: 'src/pages/app/MessagesPage.tsx', h1Substring: 'Messages' },
   { name: 'Notifications', path: 'src/pages/app/NotificationsPage.tsx', h1Substring: 'Notifications' },
@@ -358,7 +357,6 @@ describe('SEO: JSON-LD structured data on key pages', () => {
     { name: 'Glossary', path: 'src/pages/app/GlossaryPage.tsx', schemaType: 'DefinedTermSet' },
     { name: 'Top 100', path: 'src/pages/app/Top100CryptosPage.tsx', schemaType: 'Table' },
     { name: 'Features', path: 'src/pages/app/FeaturesPage.tsx', schemaType: 'WebPage' },
-    { name: 'Careers', path: 'src/pages/app/CareersPage.tsx', schemaType: 'WebPage' },
     { name: 'Profile', path: 'src/pages/app/ProfilePage.tsx', schemaType: 'Person' },
     { name: 'SinglePost', path: 'src/pages/app/SinglePostPage.tsx', schemaType: 'Article' },
   ];

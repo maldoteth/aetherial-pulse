@@ -38,7 +38,6 @@ const SCROLL_NAV_ITEMS = [
   { icon: Map, label: 'Guide', path: '/guide' },
   { icon: BookOpen, label: 'Docs', path: 'https://docs.dhb.gg', external: true },
   { icon: FileText, label: 'Blog', path: '/docs/blog' },
-  { icon: Briefcase, label: 'Careers', path: '/jobs' },
   { icon: Scroll, label: 'Glossary', path: '/glossary' },
 ];
 
