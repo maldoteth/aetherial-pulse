@@ -1,15 +1,16 @@
 import { Suspense, lazy } from 'react';
-import { Link, Route, Routes, useNavigate } from 'react-router-dom';
+import { Link, Route, Routes } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DocsSidebar } from '@/components/docs/DocsSidebar';
 import { DocsMobileDrawer } from '@/components/docs/DocsMobileDrawer';
 import { DocsSearch } from '@/components/docs/DocsSearch';
 import { DocsContent } from '@/components/docs/docs-content';
-import { Home } from 'lucide-react';
+import { Home, BookOpen } from 'lucide-react';
 
 const EllaDocsChat = lazy(() => import('@/components/docs/EllaDocsChat'));
 const DocsBlogPage = lazy(() => import('./DocsBlogPage'));
+const DocsBlogPostPage = lazy(() => import('./DocsBlogPostPage'));
 
 const DocsHome = () => {
   const isMobile = useIsMobile();
@@ -29,17 +30,17 @@ const DocsHome = () => {
         {!isMobile && <DocsSidebar />}
 
         <main className="flex-1 w-full min-w-0 overflow-hidden">
-          {/* Header */}
           <div className="bg-black/60 backdrop-blur-[24px] border-b border-white/10 sticky top-0 z-40 w-full h-[60px] md:h-[73px]">
             <div className="w-full px-3 md:px-4 py-3 md:py-4 flex items-center justify-between h-full gap-3">
               <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                 {!isMobile && <SidebarTrigger className="mr-1" />}
-                <Link
-                  to="/"
-                  className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors text-sm"
-                >
+                <Link to="/" className="flex items-center gap-2 text-foreground/70 hover:text-foreground text-sm">
                   <Home className="h-4 w-4" />
                   <span className="hidden sm:inline">Home</span>
+                </Link>
+                <Link to="/docs/blog" className="flex items-center gap-2 text-foreground/70 hover:text-foreground text-sm">
+                  <BookOpen className="h-4 w-4" />
+                  <span className="hidden sm:inline">Blog</span>
                 </Link>
                 <div className="flex-1 max-w-md">
                   <DocsSearch onResultClick={handleSearchResultClick} />
@@ -70,6 +71,7 @@ const DocsHome = () => {
 
 const DocsPage = () => (
   <Routes>
+    <Route path="/blog/:id" element={<Suspense fallback={null}><DocsBlogPostPage /></Suspense>} />
     <Route path="/blog" element={<Suspense fallback={null}><DocsBlogPage /></Suspense>} />
     <Route path="*" element={<DocsHome />} />
   </Routes>

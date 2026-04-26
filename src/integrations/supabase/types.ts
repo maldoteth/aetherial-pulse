@@ -237,6 +237,63 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          category: string
+          comments_count: number
+          content: string
+          created_at: string
+          excerpt: string
+          featured: boolean
+          id: string
+          image_url: string | null
+          likes_count: number
+          post_number: number
+          published: boolean
+          read_time_minutes: number
+          tags: string[]
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          category?: string
+          comments_count?: number
+          content?: string
+          created_at?: string
+          excerpt?: string
+          featured?: boolean
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          post_number?: number
+          published?: boolean
+          read_time_minutes?: number
+          tags?: string[]
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          category?: string
+          comments_count?: number
+          content?: string
+          created_at?: string
+          excerpt?: string
+          featured?: boolean
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          post_number?: number
+          published?: boolean
+          read_time_minutes?: number
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -2792,7 +2849,38 @@ export type Database = {
         Args: { _community_id: string; _wallet_address: string }
         Returns: string
       }
+      get_post_by_number: {
+        Args: { p_post_number: number }
+        Returns: {
+          category: string
+          comments_count: number
+          content: string
+          created_at: string
+          excerpt: string
+          featured: boolean
+          id: string
+          image_url: string | null
+          likes_count: number
+          post_number: number
+          published: boolean
+          read_time_minutes: number
+          tags: string[]
+          title: string
+          updated_at: string
+          views_count: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "blog_posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_request_wallet_address: { Args: never; Returns: string }
+      increment_blog_post_views: {
+        Args: { post_id: string }
+        Returns: undefined
+      }
       increment_category_count: { Args: { p_name: string }; Returns: undefined }
       increment_post_views_batch: {
         Args: { p_token_ids: number[] }

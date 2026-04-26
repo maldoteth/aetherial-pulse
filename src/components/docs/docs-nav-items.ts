@@ -11,6 +11,7 @@ export const docsNavItems = [
   { title: 'Utility', icon: Target, href: '#utility' },
   { title: 'Ranking Badges', icon: Shield, href: '#ranking-badges' },
   { title: 'Technology Stack', icon: Code, href: '#technology-stack' },
+  { title: 'DePIN', icon: Code, href: '#depin' },
   { title: 'Governance', icon: Target, href: '#governance' },
   { title: 'Roadmap', icon: Map, href: '#roadmap' },
   { title: 'Risk Analysis', icon: Shield, href: '#risk-analysis' },
