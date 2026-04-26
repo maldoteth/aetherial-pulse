@@ -2,13 +2,7 @@
  * Hook for fetching staking page data
  */
 import { useQuery } from '@tanstack/react-query';
-import { fetchStakingStats, getUserStakedBNB, getUserEarnedBNB, getStakingAllowance } from '@/lib/contracts/staking';
-import { useTokenPrices } from './use-token-prices';
-import { supabase } from '@/integrations/supabase/client';
-import { fromWei, CHAIN_CONFIGS, BNB_CHAIN_ID, BASE_CHAIN_ID } from '@/lib/contracts/dhb-token';
-import { readContract } from '@/lib/contracts/aa-utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Interface } from 'ethers';
 import type { ChainId } from '@/components/app/ChainSelector';
 
 export interface UnstakeEvent {
@@ -19,9 +13,7 @@ export interface UnstakeEvent {
   chain: 'BNB' | 'Base';
 }
 
-const erc20BalanceInterface = new Interface([
-  'function balanceOf(address owner) view returns (uint256)',
-]);
+const erc20BalanceInterface = null;
 
 // NOTE: This is a brand-new token — no on-chain staking activity exists yet.
 // All staking stats, user balances, queues, and TVL are intentionally hardcoded
