@@ -35,9 +35,10 @@ const SCROLL_NAV_ITEMS = [
   { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
   { icon: Settings, label: 'Settings', path: '/settings' },
   { icon: Lightbulb, label: 'Features', path: '/features' },
-  { icon: Map, label: 'Guide', path: '/guide' },
-  { icon: BookOpen, label: 'Docs', path: '/docs' },
-  { icon: FileText, label: 'Blog', path: '/docs/blog' },
+  // Hidden for now: Guide, Docs, Blog
+  // { icon: Map, label: 'Guide', path: '/guide' },
+  // { icon: BookOpen, label: 'Docs', path: '/docs' },
+  // { icon: FileText, label: 'Blog', path: '/docs/blog' },
   { icon: Scroll, label: 'Glossary', path: '/glossary' },
 ];
 

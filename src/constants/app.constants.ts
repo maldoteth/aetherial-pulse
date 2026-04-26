@@ -49,9 +49,10 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: Vault, label: 'Staking', path: '/stake' },
   { icon: ShieldCheck, label: 'Governance', path: '/governance' },
   { icon: Scroll, label: 'Glossary', path: '/glossary' },
-  { icon: Map, label: 'Guide', path: '/guide' },
-  { icon: BookOpen, label: 'Docs', path: '/docs' },
-  { icon: FileText, label: 'Blog', path: '/docs/blog' },
+  // Hidden for now: Guide, Docs, Blog
+  // { icon: Map, label: 'Guide', path: '/guide' },
+  // { icon: BookOpen, label: 'Docs', path: '/docs' },
+  // { icon: FileText, label: 'Blog', path: '/docs/blog' },
   { icon: Home, label: 'Home', path: '/' },
 ];
 
