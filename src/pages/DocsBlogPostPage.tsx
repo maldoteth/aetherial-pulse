@@ -69,9 +69,10 @@ const DocsBlogPostPage = () => {
                 {post.tags.map((t) => <Badge key={t} variant="secondary" className="bg-white/10 text-foreground/80">#{t}</Badge>)}
               </div>
             )}
-            <div className="prose prose-invert max-w-none text-foreground/90 leading-relaxed whitespace-pre-line border-t border-white/10 pt-6">
-              {post.content}
-            </div>
+            <div
+              className="prose prose-invert max-w-none text-foreground/90 leading-relaxed border-t border-white/10 pt-6 prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary prose-li:marker:text-foreground/50"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
             <div className="flex items-center justify-center gap-8 pt-6 mt-6 border-t border-white/10 text-foreground/60">
               <span className="flex items-center gap-2"><Eye className="w-5 h-5" />{post.views_count}</span>
               <span className="flex items-center gap-2"><Heart className="w-5 h-5" />{post.likes_count}</span>
