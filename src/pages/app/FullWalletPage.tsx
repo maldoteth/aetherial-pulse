@@ -335,14 +335,6 @@ export default function FullWalletPage() {
             {withBalance.map(grouped => (
               <GroupedTokenRow key={grouped.symbol} grouped={grouped} onClick={() => handleGroupedTokenClick(grouped)} price={prices[grouped.symbol]} />
             ))}
-            {zeroBalance.length > 0 && withBalance.length > 0 && (
-              <div className="pt-3 pb-1">
-                <span className="text-xs text-zinc-600 uppercase tracking-wider font-medium">{t('wallet.zeroBalance')}</span>
-              </div>
-            )}
-            {zeroBalance.map(grouped => (
-              <GroupedTokenRow key={grouped.symbol} grouped={grouped} onClick={() => handleGroupedTokenClick(grouped)} price={prices[grouped.symbol]} />
-            ))}
           </>
         )}
       </div>
