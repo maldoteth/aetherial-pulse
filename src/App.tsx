@@ -36,6 +36,7 @@ const MobilePreview = React.lazy(() => import("./pages/MobilePreview"));
 const GuidePage = React.lazy(() => import("./pages/GuidePage"));
 const CommunityPage = React.lazy(() => import("./pages/app/CommunityPage"));
 const EventPage = React.lazy(() => import("./pages/EventPage"));
+const InvitePage = React.lazy(() => import("./pages/app/InvitePage"));
 
 const SKIP_LANDING_KEY = "dehub_skip_landing";
 
