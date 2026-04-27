@@ -13,6 +13,7 @@ import { I18nextProvider } from "react-i18next";
 import i18nInstance from "@/i18n";
 import { HelmetProvider } from "react-helmet-async";
 import { SEOHead } from "@/components/SEOHead";
+import { PasswordGate } from "@/components/app/PasswordGate";
 
 // Wallet/Auth providers — lazy loaded to keep them out of the main bundle.
 const WalletProviders = React.lazy(() =>
