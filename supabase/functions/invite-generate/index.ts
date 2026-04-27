@@ -44,6 +44,16 @@ Deno.serve(async (req) => {
       return json({ ok: false, reason: "rate_limited", limit: DAILY_LIMIT });
     }
 
+    // Parse optional rate from body (0.5–25, step 0.5)
+    let rate = 0.5;
+    try {
+      const body = await req.json().catch(() => null);
+      const r = Number(body?.rate);
+      if (Number.isFinite(r)) {
+        rate = Math.min(25, Math.max(0.5, Math.round(r * 2) / 2));
+      }
+    } catch { /* no body */ }
+
     // Insert with retries on collision
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = generateCode();
@@ -55,12 +65,13 @@ Deno.serve(async (req) => {
           max_uses: 1,
           use_count: 0,
           is_active: true,
+          rate,
         })
         .select()
         .maybeSingle();
 
       if (!error && data) {
-        return json({ ok: true, code });
+        return json({ ok: true, code, rate });
       }
       // Unique violation? retry
       if (error && (error as { code?: string }).code !== "23505") {

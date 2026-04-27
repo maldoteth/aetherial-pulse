@@ -32,6 +32,7 @@ interface JoinedWith {
   code: string;
   used_at: string;
   inviter?: string | null;
+  rate?: number;
 }
 
 interface StatsResponse {
@@ -93,7 +94,10 @@ export default function InvitePage() {
     try {
       const { data, error } = await supabase.functions.invoke<{ ok: boolean; code?: string; reason?: string; limit?: number }>(
         "invite-generate",
-        { headers: { "x-wallet-address": walletAddress.toLowerCase() } },
+        {
+          headers: { "x-wallet-address": walletAddress.toLowerCase() },
+          body: { rate },
+        },
       );
 
       if (error || !data?.ok || !data.code) {
@@ -188,7 +192,7 @@ export default function InvitePage() {
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="font-mono font-semibold tracking-widest text-white text-sm">{joinedWith.code}</span>
                 <span className="text-[11px] text-white/40">·</span>
-                <span className="text-[11px] text-white/60 tabular-nums">0.5%</span>
+                <span className="text-[11px] text-white/60 tabular-nums">{(joinedWith.rate ?? 0.5).toFixed(1)}%</span>
               </div>
             </div>
           </div>

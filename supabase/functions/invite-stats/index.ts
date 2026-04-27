@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const { data: codes, error: codesErr } = await supabase
       .from("invite_codes")
-      .select("code, created_at, max_uses, use_count, is_active")
+      .select("code, created_at, max_uses, use_count, is_active, rate")
       .ilike("created_by", wallet)
       .order("created_at", { ascending: false })
       .limit(500);
@@ -58,17 +58,18 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    let joinedWith: { code: string; used_at: string; inviter?: string | null } | null = null;
+    let joinedWith: { code: string; used_at: string; inviter?: string | null; rate?: number } | null = null;
     if (joinedRow) {
       const { data: inviterRow } = await supabase
         .from("invite_codes")
-        .select("created_by")
+        .select("created_by, rate")
         .eq("code", joinedRow.code)
         .maybeSingle();
       joinedWith = {
         code: joinedRow.code,
         used_at: joinedRow.used_at,
         inviter: inviterRow?.created_by ?? null,
+        rate: Number(inviterRow?.rate ?? 0.5),
       };
     }
 
