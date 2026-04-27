@@ -291,8 +291,9 @@ export function separateUserContent(items: UnifiedFeedItem[]): {
 
   items.forEach((item, index) => {
     // Determine content type - some older posts don't have postType set
-    let contentType: 'video' | 'image' | 'text' = 'image'; // default
-    
+    // Default to 'text' so text posts never accidentally render as media cards.
+    let contentType: 'video' | 'image' | 'text' = 'text';
+
     if (item.postType === 'video') {
       contentType = 'video';
     } else if (item.postType === 'audio' || item.postType === 'feed-audio') {
@@ -309,7 +310,7 @@ export function separateUserContent(items: UnifiedFeedItem[]): {
       // Fallback: if no postType but has images, it's an image post
       contentType = 'image';
     }
-    
+
     if (contentType === 'video') {
       videos.push(mapToVideoItem(item, index));
     } else if (contentType === 'image') {
