@@ -253,7 +253,7 @@ export default function InvitePage() {
         {/* Split breakdown */}
         <div className="rounded-lg bg-white/[0.04] border border-white/5 p-3 space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-white/60">From platform (base)</span>
+            <span className="text-white/60">From platform</span>
             <span className="text-white font-semibold tabular-nums">0.5%</span>
           </div>
           <div className="flex items-center justify-between text-xs">
