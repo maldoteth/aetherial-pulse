@@ -215,7 +215,7 @@ export function useProfilePage() {
       ALL_PROFILE_VIDEOS: separated.videos,
       ALL_CONTENT: unified,
     };
-  }, [userContentData, repostsData]);
+  }, [userContentData, repostsData, apiProfile?.walletAddress, apiProfile?.name, apiProfile?.handle, apiProfile?.avatarUrl]);
 
   // Comment count — lazy-loaded with a 2s delay to prioritize visible content
   const [commentCountEnabled, setCommentCountEnabled] = useState(false);
