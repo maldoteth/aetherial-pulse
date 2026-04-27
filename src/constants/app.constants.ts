@@ -45,7 +45,7 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: CalendarDays, label: 'Events', path: '/events' },
   { icon: Store, label: 'Store', path: '/store' },
   { icon: Mic, label: 'Stages', path: '#stages', action: 'open-stages' },
-  { icon: Lightbulb, label: 'Feature Requests', path: '/features' },
+  { icon: Lightbulb, label: 'Features and Bugs', path: '/features' },
   { icon: Vault, label: 'Staking', path: '/stake' },
   { icon: ShieldCheck, label: 'Governance', path: '/governance' },
   { icon: Scroll, label: 'Glossary', path: '/glossary' },
