@@ -197,21 +197,23 @@ const WalletLoader = () => <div className="min-h-screen bg-black" />;
 const App = () => (
   <HelmetProvider>
     <I18nextProvider i18n={i18nInstance}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <SEOHead />
-          <Sonner />
-          <Suspense fallback={<WalletLoader />}>
-            <WalletProviders>
-              <OptimisticPostsProvider>
-                <TooltipProvider>
-                  <AppContent />
-                </TooltipProvider>
-              </OptimisticPostsProvider>
-            </WalletProviders>
-          </Suspense>
-        </BrowserRouter>
-      </QueryClientProvider>
+      <PasswordGate>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <SEOHead />
+            <Sonner />
+            <Suspense fallback={<WalletLoader />}>
+              <WalletProviders>
+                <OptimisticPostsProvider>
+                  <TooltipProvider>
+                    <AppContent />
+                  </TooltipProvider>
+                </OptimisticPostsProvider>
+              </WalletProviders>
+            </Suspense>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </PasswordGate>
     </I18nextProvider>
   </HelmetProvider>
 );
