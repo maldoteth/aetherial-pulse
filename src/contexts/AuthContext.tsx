@@ -15,6 +15,8 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useAuthStore, type SocialProvider, type WalletChoice } from '@/stores/authStore';
 import { clearAuthSession } from '@/lib/api/dehub/core';
+import { supabase } from '@/integrations/supabase/client';
+import { getInviteSessionId, hasAttachedInvite, markInviteAttached } from '@/lib/invite-session';
 
 export type { SocialProvider, WalletChoice };
 
@@ -94,6 +96,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }
   }, [isConnected, address]);
+
+  // Silently attach the invite-code redemption to the user's wallet on first login.
+  // Runs once per (wallet) and is a no-op if there's no pending session redemption.
+  const walletAddress = useAuthStore((s) => s.walletAddress);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  useEffect(() => {
+    if (!isAuthenticated || !walletAddress) return;
+    const wallet = walletAddress.toLowerCase();
+    if (hasAttachedInvite(wallet)) return;
+    const sessionId = getInviteSessionId();
+    if (!sessionId) {
+      markInviteAttached(wallet);
+      return;
+    }
+    supabase.functions
+      .invoke('invite-attach-wallet', {
+        body: { sessionId },
+        headers: { 'x-wallet-address': wallet },
+      })
+      .then(({ error }) => {
+        if (!error) markInviteAttached(wallet);
+      })
+      .catch((err) => {
+        console.warn('[Auth] invite-attach-wallet failed', err);
+      });
+  }, [isAuthenticated, walletAddress]);
 
   return <>{children}</>;
 }
