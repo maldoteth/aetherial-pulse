@@ -85,6 +85,7 @@ import { WalletMenuContent } from '@/components/app/CoinBalanceMenu';
 import { FollowRequestsDrawer } from '@/components/app/profile/FollowRequestsDrawer';
 import dehubCoin from '@/assets/fansite-logo.png';
 import settingsIcon from '@/assets/icons/settings-icon.png';
+import dehubLogo from '@/assets/icons/dehub-logo.png';
 import { useUserLanguage } from '@/hooks/use-user-language';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useTranslation } from 'react-i18next';
@@ -269,6 +270,8 @@ function ProfileSettings() {
   const [youtubeLink, setYoutubeLink] = useState('');
   const [telegramLink, setTelegramLink] = useState('');
   const [facebookLink, setFacebookLink] = useState('');
+  const [dehubLink, setDehubLink] = useState('');
+  const existingCustomsRef = useRef<Record<string, unknown>>({});
   
   const [originalValues, setOriginalValues] = useState({
     displayName: '',
@@ -281,6 +284,7 @@ function ProfileSettings() {
     youtubeLink: '',
     telegramLink: '',
     facebookLink: '',
+    dehubLink: '',
   });
   
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>();
@@ -317,6 +321,8 @@ function ProfileSettings() {
         const loadedYoutube = (raw.youtubeLink as string) || customs?.youtubeLink || '';
         const loadedTelegram = (raw.telegramLink as string) || customs?.telegramLink || '';
         const loadedFacebook = (raw.facebookLink as string) || customs?.facebookLink || '';
+        const loadedDehub = (customs?.dehubLink as string) || '';
+        existingCustomsRef.current = (customs as Record<string, unknown>) || {};
         
         setDisplayName(loadedDisplayName);
         setUsername(loadedUsername);
@@ -328,6 +334,7 @@ function ProfileSettings() {
         setYoutubeLink(loadedYoutube);
         setTelegramLink(loadedTelegram);
         setFacebookLink(loadedFacebook);
+        setDehubLink(loadedDehub);
         
         setOriginalValues({
           displayName: loadedDisplayName,
@@ -340,6 +347,7 @@ function ProfileSettings() {
           youtubeLink: loadedYoutube,
           telegramLink: loadedTelegram,
           facebookLink: loadedFacebook,
+          dehubLink: loadedDehub,
         });
         
         const address = userData.address || userData.wallet_address || '';
@@ -399,6 +407,7 @@ function ProfileSettings() {
     youtubeLink !== originalValues.youtubeLink ||
     telegramLink !== originalValues.telegramLink ||
     facebookLink !== originalValues.facebookLink ||
+    dehubLink !== originalValues.dehubLink ||
     !!avatarFile ||
     !!coverFile;
 
@@ -462,6 +471,7 @@ function ProfileSettings() {
       if (authUser?.address) {
         const userData = await getAccountInfo(authUser.address);
         const refreshedCustoms = userData.customs as Record<string, string> | undefined;
+        existingCustomsRef.current = (refreshedCustoms as Record<string, unknown>) || {};
         const refreshedRaw = userData as Record<string, unknown>;
         const newOriginals = {
           displayName: userData.displayName || userData.display_name || '',
@@ -474,6 +484,7 @@ function ProfileSettings() {
           youtubeLink: (refreshedRaw.youtubeLink as string) || refreshedCustoms?.youtubeLink || '',
           telegramLink: (refreshedRaw.telegramLink as string) || refreshedCustoms?.telegramLink || '',
           facebookLink: (refreshedRaw.facebookLink as string) || refreshedCustoms?.facebookLink || '',
+          dehubLink: (refreshedCustoms?.dehubLink as string) || '',
         };
         setOriginalValues(newOriginals);
         setTwitterLink(newOriginals.twitterLink);
@@ -483,6 +494,7 @@ function ProfileSettings() {
         setYoutubeLink(newOriginals.youtubeLink);
         setTelegramLink(newOriginals.telegramLink);
         setFacebookLink(newOriginals.facebookLink);
+        setDehubLink(newOriginals.dehubLink);
       }
       queryClient.invalidateQueries({ queryKey: ['dehub-user-content'] });
 
@@ -559,6 +571,8 @@ function ProfileSettings() {
     data.telegramLink = telegramLink;
     data.youtubeLink = youtubeLink;
     data.facebookLink = facebookLink;
+    // DeHub link stored in customs (no dedicated backend column) — merge to preserve other custom fields
+    data.customs = { ...existingCustomsRef.current, dehubLink };
     if (avatarFile) data.avatarImg = avatarFile;
     if (coverFile) data.coverImg = coverFile;
     
@@ -805,6 +819,15 @@ function ProfileSettings() {
               <svg className="w-4 h-4 text-zinc-500" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
               </svg>
+            }
+          />
+          <SocialLinkInput 
+            label="DeHub" 
+            placeholder="https://dehub.io/username"
+            value={dehubLink}
+            onChange={setDehubLink}
+            icon={
+              <img src={dehubLogo} alt="" className="w-4 h-4 object-contain" />
             }
           />
         </div>
