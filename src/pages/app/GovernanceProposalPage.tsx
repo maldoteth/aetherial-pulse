@@ -108,7 +108,7 @@ export default function GovernanceProposalPage() {
   if (!proposal) {
     return (
       <div className="min-h-screen px-4 pt-6 text-center">
-        <ShieldCheck className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+        <img src={governanceShieldIcon} alt="" className="w-12 h-12 object-contain mx-auto mb-3 opacity-60" />
         <h2 className="text-white font-semibold text-lg mb-1">Proposal not found</h2>
         <button onClick={() => navigate('/governance')} className="text-zinc-400 text-sm underline">
           Back to Governance
