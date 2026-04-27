@@ -835,13 +835,14 @@ export default function AssistantPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Auto-scroll to bottom on messages change or loading state
+  // Auto-scroll to bottom on messages change, streamed content updates, or loading state
   // Skip scrolling on initial welcome message so header stays visible
+  const lastMessageContent = messages[messages.length - 1]?.content ?? '';
   useEffect(() => {
     if (messages.length > 1 || isLoading) {
       scrollToBottom();
     }
-  }, [messages, isLoading]);
+  }, [messages.length, lastMessageContent, isLoading]);
 
   // Focus input on mount - only on desktop to prevent mobile keyboard from pushing screen down
   useEffect(() => {
