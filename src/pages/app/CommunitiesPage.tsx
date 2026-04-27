@@ -118,7 +118,7 @@ export default function CommunitiesPage() {
             </div>
           ) : filteredMine.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+              <img src={communitiesIcon} alt="" className="w-10 h-10 object-contain mx-auto mb-3 opacity-50" />
               <p className="text-zinc-500 text-sm">{t('communities.noCommunities')}</p>
             </div>
           ) : null}
