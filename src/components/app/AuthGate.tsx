@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import assistantAvatar from '@/assets/assistant-avatar.png';
+import assistantAvatar from '@/assets/authgate-icon.png';
 
 interface AuthGateProps {
   /** @deprecated No longer displayed */
