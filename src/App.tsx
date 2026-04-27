@@ -36,6 +36,7 @@ const MobilePreview = React.lazy(() => import("./pages/MobilePreview"));
 const GuidePage = React.lazy(() => import("./pages/GuidePage"));
 const CommunityPage = React.lazy(() => import("./pages/app/CommunityPage"));
 const EventPage = React.lazy(() => import("./pages/EventPage"));
+const InvitePage = React.lazy(() => import("./pages/app/InvitePage"));
 
 const SKIP_LANDING_KEY = "dehub_skip_landing";
 
@@ -174,6 +175,7 @@ function AppContent() {
             <Route path="post/:postId" element={<Suspense fallback={<PageLoader />}><SinglePostPage /></Suspense>} />
             <Route path="video/:tokenId" element={<Suspense fallback={<PageLoader />}><SinglePostPage /></Suspense>} />
             <Route path="post/:postId/info" element={<Suspense fallback={<PageLoader />}><PostInfoPage /></Suspense>} />
+            <Route path="invite" element={<Suspense fallback={<PageLoader />}><InvitePage /></Suspense>} />
 
             {/* Stage invite links */}
             <Route path="stage/:id" element={<Suspense fallback={<PageLoader />}><StageDeepLinkPage /></Suspense>} />
