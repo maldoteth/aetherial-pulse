@@ -1,0 +1,1 @@
+ALTER TABLE public.invite_codes ADD COLUMN IF NOT EXISTS rate numeric NOT NULL DEFAULT 0.5;

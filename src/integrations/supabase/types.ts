@@ -1474,6 +1474,7 @@ export type Database = {
           created_by: string | null
           is_active: boolean
           max_uses: number
+          rate: number
           use_count: number
         }
         Insert: {
@@ -1482,6 +1483,7 @@ export type Database = {
           created_by?: string | null
           is_active?: boolean
           max_uses?: number
+          rate?: number
           use_count?: number
         }
         Update: {
@@ -1490,6 +1492,7 @@ export type Database = {
           created_by?: string | null
           is_active?: boolean
           max_uses?: number
+          rate?: number
           use_count?: number
         }
         Relationships: []
