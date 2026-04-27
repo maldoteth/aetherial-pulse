@@ -807,7 +807,7 @@
     "global": "Global"
   },
   "features": {
-    "title": "Feature Requests",
+    "title": "Features and Bugs",
     "ideasSubmitted": "{{count}} ideas submitted",
     "ideaSubmitted": "1 idea submitted",
     "submit": "Submit",
