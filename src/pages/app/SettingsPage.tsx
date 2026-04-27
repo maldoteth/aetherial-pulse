@@ -85,6 +85,7 @@ import { WalletMenuContent } from '@/components/app/CoinBalanceMenu';
 import { FollowRequestsDrawer } from '@/components/app/profile/FollowRequestsDrawer';
 import dehubCoin from '@/assets/fansite-logo.png';
 import settingsIcon from '@/assets/icons/settings-icon.png';
+import dehubLogo from '@/assets/icons/dehub-logo.png';
 import { useUserLanguage } from '@/hooks/use-user-language';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { useTranslation } from 'react-i18next';
