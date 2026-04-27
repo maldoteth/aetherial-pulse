@@ -36,6 +36,27 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
   const { data: customUnread } = useCustomUnreadCount();
   const totalNotifUnread = (unreadCount?.total ?? 0) + (customUnread ?? 0);
 
+  // Highlight the login button briefly after a fresh invite-code unlock so users notice it.
+  const [highlightLogin, setHighlightLogin] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('fansite_highlight_login') === '1';
+  });
+  useEffect(() => {
+    const trigger = () => {
+      localStorage.setItem('fansite_highlight_login', '1');
+      setHighlightLogin(true);
+    };
+    window.addEventListener('fansite:highlight-login', trigger);
+    return () => window.removeEventListener('fansite:highlight-login', trigger);
+  }, []);
+  // Auto-clear once user authenticates
+  useEffect(() => {
+    if (isAuthenticated && highlightLogin) {
+      localStorage.removeItem('fansite_highlight_login');
+      setHighlightLogin(false);
+    }
+  }, [isAuthenticated, highlightLogin]);
+
   // Get balance from user or default to 0
   const coinBalance = 0; // TODO: Get from user wallet
 
