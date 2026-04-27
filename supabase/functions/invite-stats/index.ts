@@ -36,11 +36,25 @@ Deno.serve(async (req) => {
 
     const totalInvites = (codes ?? []).reduce((sum, c) => sum + (c.use_count ?? 0), 0);
 
+    // Pull all redemptions for the caller's codes (used for the tracker timeline)
+    const codeList = (codes ?? []).map((c) => c.code);
+    let uses: { code: string; used_at: string }[] = [];
+    if (codeList.length > 0) {
+      const { data: usesData } = await supabase
+        .from("invite_code_uses")
+        .select("code, used_at")
+        .in("code", codeList)
+        .order("used_at", { ascending: false })
+        .limit(1000);
+      uses = usesData ?? [];
+    }
+
     return json({
       ok: true,
       codes: codes ?? [],
       totalInvites,
       activeCodes: (codes ?? []).filter((c) => c.is_active && c.use_count < c.max_uses).length,
+      uses,
     });
   } catch (err) {
     console.error("[invite-stats] exception", err);
