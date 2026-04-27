@@ -14,7 +14,7 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const R2_PUBLIC_URL = (Deno.env.get("R2_PUBLIC_URL") || "").replace(/\/$/, "");
 const IMAGE_PROXY_BASE = `${SUPABASE_URL}/functions/v1/ssr-seo`;
 const OG_IMAGE_BASE = `${SUPABASE_URL}/functions/v1/og-image`;
-const DEFAULT_BRAND_LOGO = "https://sukqmkvncogkfnthvfnv.supabase.co/storage/v1/object/public/logo//Screenshot%202026-04-27%20082812.png";
+const DEFAULT_BRAND_LOGO = "https://sukqmkvncogkfnthvfnv.supabase.co/storage/v1/object/public/logo/Screenshot%202026-04-27%20082812.png";
 const AUDIO_OG_IMAGE = "https://aigxuutjaqsywioxjefr.supabase.co/storage/v1/object/public/logo/audio-wave%20(1).png";
 
 interface DeHubUser {
