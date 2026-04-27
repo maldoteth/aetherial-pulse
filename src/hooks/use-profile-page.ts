@@ -160,6 +160,24 @@ export function useProfilePage() {
     const allNFTs = userContentData.pages.flatMap(page => page.data || []);
     const separated = separateUserContent(allNFTs);
 
+    // Backfill author info on the profile owner's own posts when API returns no minter fields
+    const ownerWallet = apiProfile?.walletAddress?.toLowerCase();
+    const ownerName = apiProfile?.name;
+    const ownerHandleRaw = apiProfile?.handle?.replace(/^@/, '');
+    const ownerAvatar = apiProfile?.avatarUrl;
+    const patchAuthor = <T extends { author: { id: string; name: string; handle: string; avatarSeed?: string } }>(item: T): T => {
+      if (!ownerWallet) return item;
+      if (item.author?.id?.toLowerCase() !== ownerWallet) return item;
+      const looksLikeWallet = !item.author.name || /^0x[a-f0-9]{6,}/i.test(item.author.name);
+      if (looksLikeWallet && ownerName) item.author.name = ownerName;
+      if ((!item.author.handle || /^0x[a-f0-9]{6,}/i.test(item.author.handle)) && ownerHandleRaw) item.author.handle = ownerHandleRaw;
+      if (ownerAvatar && (!item.author.avatarSeed || item.author.avatarSeed === item.author.id)) item.author.avatarSeed = ownerAvatar;
+      return item;
+    };
+    separated.posts = separated.posts.map(patchAuthor);
+    separated.images = separated.images.map(patchAuthor as any);
+    separated.videos = separated.videos.map(patchAuthor as any);
+
     const unified: Array<{ type: 'post' | 'image' | 'video'; data: TextPost | ImagePost | VideoItem; createdAt: string; isRepost?: boolean; repostedAt?: string }> = [
       ...separated.posts.map(p => ({ type: 'post' as const, data: p, createdAt: p.createdAt || '' })),
       ...separated.images.map(i => ({ type: 'image' as const, data: i, createdAt: i.createdAt || '' })),
