@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { getWalletDeepLink, isMobileDevice, isWalletInAppBrowser } from '@/lib/web3auth';
 import { WalletButton } from '@rainbow-me/rainbowkit';
-import dehubLogo from '@/assets/fansite-logo.png';
+import dehubLogo from '@/assets/site-logo-full.png';
 import phantomLogo from '@/assets/phantom-logo.png';
 
 // Social provider icons
