@@ -626,6 +626,21 @@ export default function PostInfoPage() {
   // Show processing state for posts that the API returns with signed/pending status
   const isProcessing = nftInfo?.status === 'signed' || nftInfo?.status === 'pending';
   
+  // Data for rendering
+  const chainInfo = getChainInfo(nftInfo?.chainId || 8453);
+  const creatorAvatar = buildAvatarUrl(nftInfo?.minter || '', nftInfo?.minterAvatarUrl || '');
+  const creatorName = nftInfo?.minterUsername || nftInfo?.minterName || truncateAddress(nftInfo?.minter || '');
+  
+  const likes = nftInfo?.likes ?? nftInfo?.totalVotes?.for ?? 0;
+  const dislikes = nftInfo?.dislikes ?? nftInfo?.totalVotes?.against ?? 0;
+  const views = nftInfo?.views ?? 0;
+  const comments = nftInfo?.commentCount ?? 0;
+  
+  const likeRatio = likes + dislikes > 0 ? Math.round((likes / (likes + dislikes)) * 100) : 100;
+  
+  // Placeholder for total tips (can be enriched further if API provides it)
+  const totalTips = postTipTotal;
+  
   if (isProcessing) {
     return (
       <div className="min-h-screen bg-black">
