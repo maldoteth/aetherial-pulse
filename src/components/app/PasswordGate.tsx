@@ -7,13 +7,12 @@
  * On first successful redemption: confetti + welcome toast + login/signup CTA.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import PastelBlobsBackground from "./PastelBlobsBackground";
 
 const STORAGE_KEY = "dehub_access_granted";
