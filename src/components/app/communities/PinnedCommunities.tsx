@@ -124,6 +124,7 @@ function PinPickerDrawer({ open, onOpenChange, walletAddress, pinnedIds, nextOrd
   pinnedIds: Set<string>;
   nextOrder: number;
 }) {
+  const navigate = useNavigate();
   const { data: userCommunities = [] } = useUserCommunities();
   const pinMutation = usePinCommunity();
   const unpinMutation = useUnpinCommunity();
@@ -141,7 +142,19 @@ function PinPickerDrawer({ open, onOpenChange, walletAddress, pinnedIds, nextOrd
         </div>
         <div className="px-4 pb-6 space-y-1 max-h-[50vh] overflow-y-auto">
           {communities.length === 0 ? (
-            <p className="text-zinc-500 text-sm py-4 text-center">{t('communities.joinFirst')}</p>
+            <div className="py-4 flex flex-col items-center gap-3">
+              <p className="text-zinc-500 text-sm text-center">{t('communities.joinFirst')}</p>
+              <button
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate('/app/communities');
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.08] border border-white/[0.1] hover:bg-white/[0.12] transition-colors text-sm text-white font-medium"
+              >
+                <Users className="w-4 h-4" />
+                {t('communities.browse', 'Browse communities')}
+              </button>
+            </div>
           ) : (
             communities.map(c => {
               const isPinned = pinnedIds.has(c.id);
