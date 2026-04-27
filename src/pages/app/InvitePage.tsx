@@ -44,11 +44,7 @@ export default function InvitePage() {
   const [generating, setGenerating] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [rate, setRate] = useState<number>(0.5); // 0.5–25%
-
-  // Template earnings data (UI-only for now)
-  const lifetimeEarned = 142.37;
-  const last30d = 28.91;
-  const pendingPayout = 12.4;
+  const [uses, setUses] = useState<InviteUse[]>([]);
 
   const loadStats = async () => {
     if (!walletAddress) return;
