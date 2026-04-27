@@ -13,7 +13,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PastelBlobsBackground } from "./PastelBlobsBackground";
+import PastelBlobsBackground from "./PastelBlobsBackground";
 
 const ACCESS_PASSWORD = "aetherial2026";
 const STORAGE_KEY = "dehub_access_granted";
