@@ -494,7 +494,7 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
           chainConfig, // Explicitly set the default chain to Base (0x2105)
           chains: [chainConfig], // Pass as array for v10 plural support
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
-          sessionTime: 86400,
+          sessionTime: 2592000, // 30 days (Web3Auth max) — avoid forcing users to re-enter verification code
           uiConfig: { 
             modalZIndex: "99999",
             uxMode: isMobileDevice() ? UX_MODE.REDIRECT : UX_MODE.POPUP,
