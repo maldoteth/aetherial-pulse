@@ -71,7 +71,7 @@ export function PasswordGate({ children }: PasswordGateProps) {
               setValue(e.target.value);
               if (error) setError(false);
             }}
-            placeholder="Password"
+            placeholder="code"
             autoFocus
             className="bg-white/5 border-white/10 text-white placeholder:text-white/40 rounded-xl h-11"
           />
