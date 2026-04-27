@@ -32,6 +32,26 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
   
   const { isCollapsed, toggleCollapse } = useSidebarCollapse();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [atBottom, setAtBottom] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setAtBottom(distanceFromBottom <= 4);
+    };
+    handleScroll();
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    const ro = new ResizeObserver(handleScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+      ro.disconnect();
+    };
+  }, [isCollapsed, isAuthenticated]);
+
   const { data: unreadCount } = useUnreadNotificationCount();
   const { data: customUnread } = useCustomUnreadCount();
   const totalNotifUnread = (unreadCount?.total ?? 0) + (customUnread ?? 0);
