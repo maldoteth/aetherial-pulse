@@ -255,7 +255,9 @@ export default function GlossaryPage() {
       <h1 className="sr-only">Fansite Glossary — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
-        <img src={glossaryIcon} alt="Glossary" className="w-10 h-10 object-contain brightness-75" />
+        <div className="w-10 h-10 rounded-xl border border-white/10 flex items-center justify-center flex-shrink-0 bg-white/0">
+          <img src={glossaryIcon} alt="Glossary" className="w-10 h-10 object-contain brightness-75" />
+        </div>
         <div>
           <h1 className="text-[1.1rem] sm:text-[1.32rem] font-bold text-white">{t('glossary.title', 'Glossary')}</h1>
           <p className="text-xs text-zinc-500">{t('glossary.subtitle', 'Learn what every icon and feature means')}</p>
