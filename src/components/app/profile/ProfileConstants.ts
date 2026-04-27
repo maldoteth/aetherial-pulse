@@ -2,11 +2,6 @@ import defaultBanner1 from '@/assets/banners/default-banner-1.png';
 import defaultBanner2 from '@/assets/banners/default-banner-2.png';
 import defaultBanner3 from '@/assets/banners/default-banner-3.png';
 import defaultBanner4 from '@/assets/banners/default-banner-4.png';
-import defaultBanner5 from '@/assets/banners/default-banner-5.png';
-import defaultBanner6 from '@/assets/banners/default-banner-6.png';
-import defaultBanner7 from '@/assets/banners/default-banner-7.png';
-import defaultBanner8 from '@/assets/banners/default-banner-8.png';
-import defaultBanner9 from '@/assets/banners/default-banner-9.png';
 
 // Cosmetic wallet overrides: show a different address on profile without changing backend logic
 export const DISPLAY_WALLET_OVERRIDES: Record<string, string> = {
@@ -18,11 +13,6 @@ const DEFAULT_BANNERS = [
   defaultBanner2,
   defaultBanner3,
   defaultBanner4,
-  defaultBanner5,
-  defaultBanner6,
-  defaultBanner7,
-  defaultBanner8,
-  defaultBanner9,
 ];
 
 /**
