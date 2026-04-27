@@ -105,6 +105,7 @@ export default function InvitePage() {
           max_uses: 1,
           use_count: 0,
           is_active: true,
+          rate,
         },
         ...prev,
       ]);
