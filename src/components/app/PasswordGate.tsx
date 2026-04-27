@@ -19,18 +19,74 @@ const STORAGE_KEY = "dehub_access_granted";
 const SESSION_KEY = "dehub_access_session";
 const CODE_KEY = "dehub_access_code";
 const WELCOMED_KEY = "dehub_access_welcomed";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 10; // 10 years — effectively one-time per device/browser
 
 interface PasswordGateProps {
   children: ReactNode;
 }
 
+function readStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage can be blocked in some browser modes; cookie fallback still applies.
+  }
+}
+
+function readCookie(key: string): string | null {
+  if (typeof document === "undefined") return null;
+  const encodedKey = encodeURIComponent(key);
+  const parts = document.cookie ? document.cookie.split("; ") : [];
+  for (const part of parts) {
+    const separator = part.indexOf("=");
+    const name = separator >= 0 ? part.slice(0, separator) : part;
+    if (name === encodedKey) {
+      return decodeURIComponent(separator >= 0 ? part.slice(separator + 1) : "");
+    }
+  }
+  return null;
+}
+
+function writeCookie(key: string, value: string) {
+  if (typeof document === "undefined") return;
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; Max-Age=${COOKIE_MAX_AGE}; Path=/; SameSite=Lax${secure}`;
+}
+
+function hasRememberedAccess(): boolean {
+  if (readStorage(STORAGE_KEY) === "true" || readCookie(STORAGE_KEY) === "true") {
+    writeStorage(STORAGE_KEY, "true");
+    writeCookie(STORAGE_KEY, "true");
+    return true;
+  }
+  return false;
+}
+
+function rememberAccess(code: string) {
+  writeStorage(STORAGE_KEY, "true");
+  writeStorage(CODE_KEY, code);
+  writeCookie(STORAGE_KEY, "true");
+  writeCookie(CODE_KEY, code);
+}
+
 function getOrCreateSessionId(): string {
   if (typeof window === "undefined") return "";
-  let id = localStorage.getItem(SESSION_KEY);
+  let id = readStorage(SESSION_KEY) || readCookie(SESSION_KEY);
   if (!id) {
     id = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(SESSION_KEY, id);
   }
+  writeStorage(SESSION_KEY, id);
+  writeCookie(SESSION_KEY, id);
   return id;
 }
 
@@ -85,7 +141,7 @@ function fireFireworks() {
 export function PasswordGate({ children }: PasswordGateProps) {
   const [unlocked, setUnlocked] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem(STORAGE_KEY) === "true";
+    return hasRememberedAccess();
   });
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -117,9 +173,8 @@ export function PasswordGate({ children }: PasswordGateProps) {
       }
 
       if (data?.ok) {
-        const isFirstTime = localStorage.getItem(WELCOMED_KEY) !== "true";
-        localStorage.setItem(STORAGE_KEY, "true");
-        localStorage.setItem(CODE_KEY, code);
+        const isFirstTime = readStorage(WELCOMED_KEY) !== "true" && readCookie(WELCOMED_KEY) !== "true";
+        rememberAccess(code);
 
         // Preload the heavy app chunks BEFORE unmounting the gate so the
         // first frame the user sees after unlock is the fully-rendered app
@@ -142,7 +197,8 @@ export function PasswordGate({ children }: PasswordGateProps) {
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
         if (isFirstTime) {
-          localStorage.setItem(WELCOMED_KEY, "true");
+          writeStorage(WELCOMED_KEY, "true");
+          writeCookie(WELCOMED_KEY, "true");
         }
         setUnlocked(true);
 
