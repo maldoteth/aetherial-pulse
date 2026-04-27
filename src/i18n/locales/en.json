@@ -21,7 +21,7 @@
     "careers": "Careers",
     "glossary": "Glossary",
     "create": "Create",
-    "login": "\n",
+    "login": "Log in / Sign up",
     "connecting": "Connecting...",
     "signMessage": "Sign message",
     "communities": "Communities",
@@ -1118,7 +1118,7 @@
     "comingSoon": "Coming soon — regional trends are on the way!",
     "post": "Post",
     "logOut": "Log out",
-    "logIn": "Log in"
+    "logIn": "Log in / Sign up"
   },
   "postInfo": {
     "title": "Post Info",
