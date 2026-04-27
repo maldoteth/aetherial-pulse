@@ -69,6 +69,7 @@ export default function InvitePage() {
       setCodes(data.codes ?? []);
       setTotalInvites(data.totalInvites ?? 0);
       setUses(data.uses ?? []);
+      setJoinedWith(data.joinedWith ?? null);
     } finally {
       setLoading(false);
     }
