@@ -1,64 +1,37 @@
-# Invite Code System
+## Goal
+Seamlessly link the invite code a user entered to their wallet the moment they log in — no second prompt, attribution works for inviter rewards/stats.
 
-Replace the demo "ends in 01–05" gate with a real invite-code system backed by the database. Every code is unique, single-use (or capped), tracks who created it and who used it, and lets any logged-in user generate codes from their profile.
+## Current state
+- `PasswordGate` stores the redeemed code in `localStorage` + cookie as `dehub_access_code` and a random `dehub_access_session` ID.
+- `invite-redeem` writes `{ code, used_by_session }` into `invite_code_uses` — **wallet is never recorded** because login happens after the gate.
+- `invite-stats` tries to look up the user's joining code via `used_by_wallet`, which is always empty → inviter attribution is silently broken.
 
-## What you get
+## Fix: attach wallet to the prior redemption on first login
 
-1. **100 random codes** seeded into the database, owned by "system" — these work out of the gate so existing users/testers can get in.
-2. **Real password gate** that checks the entered code against the database via an Edge Function.
-3. **Invite page** at `/invite` (and a "Invite friends" button on the profile page) where any logged-in user can:
-   - Generate new codes (one click → new code added to their list)
-   - See all codes they've created
-   - See how many were used + who used them
-4. **Inviter leaderboard** — count of successful invites per user, surfaced on the invite page.
+### 1. New edge function `invite-attach-wallet`
+- Input: `{ sessionId, wallet }` (wallet validated via `x-wallet-address` header, same pattern as `invite-stats`).
+- Looks up the most recent `invite_code_uses` row for that `sessionId` where `used_by_wallet IS NULL`.
+- Updates it with `used_by_wallet = lower(wallet)`.
+- Idempotent: if already set or no row found, returns `{ ok: true, attached: false }`.
+- Uses service role so it can update regardless of RLS.
 
-## Database (new tables)
+### 2. Client hook: call it once after auth
+- In the auth flow (where the wallet address becomes available after Web3Auth/external wallet login — likely `AuthContext` or `WalletProviders`), add a one-shot effect:
+  - Read `dehub_access_session` from localStorage/cookie (helpers already exist in `PasswordGate`).
+  - If a session ID exists and we haven't already attached for this wallet (track via `dehub_access_attached_<wallet>` flag), call `invite-attach-wallet`.
+  - On success, set the flag so we never call again.
 
-```text
-invite_codes
-  code              text PK         -- e.g. "AETH-7K9P-2X4M"
-  created_by        text NULL       -- wallet address of inviter (NULL = system seed)
-  created_at        timestamptz
-  max_uses          int default 1   -- system codes can be higher
-  use_count         int default 0
-  is_active         bool default true
+### 3. No UI changes
+- The gate already remembers the user permanently (10-year cookie + localStorage), so they never see the code prompt again.
+- Login flow stays untouched from the user's perspective — attribution happens silently in the background.
 
-invite_code_uses
-  id                uuid PK
-  code              text → invite_codes.code
-  used_by_wallet    text NULL       -- filled in once user connects wallet (optional)
-  used_by_session   text            -- anonymous browser session id
-  used_at           timestamptz
-```
+## Result
+- User enters code once → cookie remembers forever (already working).
+- First login after redemption → wallet silently attached to that redemption row.
+- `invite-stats` `joinedWith` lookup now actually returns the inviter, enabling rewards/tracking.
 
-RLS:
-- `invite_codes`: anyone can SELECT their own codes (`created_by = wallet header`); INSERT only via Edge Function.
-- `invite_code_uses`: read-only for the code's owner; writes only via Edge Function.
-
-## Edge functions
-
-1. **`invite-redeem`** (public, no JWT) — input: `{ code, sessionId }`. Validates code is active and `use_count < max_uses`, increments `use_count`, inserts row in `invite_code_uses`, returns `{ ok: true }` or `{ ok: false, reason }`.
-2. **`invite-generate`** (requires wallet header) — generates a new unique code owned by the caller, returns `{ code }`. Rate-limited to e.g. 20 codes per user per day.
-3. **`invite-stats`** (requires wallet header) — returns `{ codes: [...], totalInvites: N }` for the calling user.
-
-## Frontend
-
-- **`PasswordGate.tsx`** — replace local string check with a `fetch` to `invite-redeem`. On success, store `{ unlocked: true, sessionId, codeUsed }` in localStorage so we don't re-prompt and can attribute later sign-ups.
-- **`/invite` page** — new page, gated behind login, lists user's codes with copy buttons, "Generate new code" button, and a "You've invited X people" stat.
-- **Profile page** — small "Invite friends" link/button that routes to `/invite`.
-- **Optional**: when a user signs up after redeeming a code, attach their wallet to `invite_code_uses.used_by_wallet` so the inviter sees who they brought in.
-
-## Code format
-
-`XXXX-XXXX` (8 chars, A–Z + 2–9, no ambiguous chars like 0/O/1/I). ~1.6 trillion combinations — collisions handled by DB unique constraint + retry.
-
-## 100 seed codes
-
-Generated server-side and inserted via migration with `created_by = NULL` and `max_uses = 1`. I'll include the full list in the migration so they're visible/auditable, and surface them to you in the chat after the migration runs so you can share them.
-
-## Out of scope (ask if you want them)
-
-- Tiered codes (e.g. premium-tier invite codes)
-- Expiry dates
-- Invite rewards / payouts
-- Admin dashboard to mass-manage codes
+## Technical notes
+- `invite_code_uses.used_by_wallet` column already exists (per `types.ts`).
+- Edge function needs CORS + the same `x-wallet-address` header pattern used by `invite-stats`.
+- Add `verify_jwt = false` is default for Lovable-managed functions; no config.toml change needed.
+- Helper to expose session ID read from `PasswordGate` (extract `getSessionId()` to a small shared util like `src/lib/invite-session.ts` so both gate and auth hook share it without circular imports).
