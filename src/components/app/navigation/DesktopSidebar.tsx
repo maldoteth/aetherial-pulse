@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -32,6 +32,26 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
   
   const { isCollapsed, toggleCollapse } = useSidebarCollapse();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [atBottom, setAtBottom] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setAtBottom(distanceFromBottom <= 4);
+    };
+    handleScroll();
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    const ro = new ResizeObserver(handleScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+      ro.disconnect();
+    };
+  }, [isCollapsed, isAuthenticated]);
+
   const { data: unreadCount } = useUnreadNotificationCount();
   const { data: customUnread } = useCustomUnreadCount();
   const totalNotifUnread = (unreadCount?.total ?? 0) + (customUnread ?? 0);
@@ -156,7 +176,7 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
 
         {/* Navigation Bento - scrollable */}
         <motion.div layoutRoot className="relative -mt-[8.5px] bg-zinc-900 rounded-2xl flex-1 min-h-0">
-          <div className={cn(
+          <div ref={scrollRef} className={cn(
             "p-1 space-y-2 flex flex-col items-center overflow-y-auto overflow-x-hidden scrollbar-invisible h-full",
             !isCollapsed && "lg:p-2.5 lg:space-y-[2px] lg:items-stretch"
           )}>
@@ -213,8 +233,11 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
             );
           })}
           </div>
-          {/* Bottom fade overlay */}
-          <div className={cn("pointer-events-none absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-zinc-900 via-zinc-900/60 to-transparent rounded-b-2xl z-10")} />
+          {/* Bottom fade overlay - hides when scrolled to bottom */}
+          <div className={cn(
+            "pointer-events-none absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-zinc-900 via-zinc-900/60 to-transparent rounded-b-2xl z-10 transition-opacity duration-300",
+            atBottom ? "opacity-0" : "opacity-100"
+          )} />
         </motion.div>
 
         {/* Post / Login Button */}
