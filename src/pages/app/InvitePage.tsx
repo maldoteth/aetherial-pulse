@@ -176,6 +176,31 @@ export default function InvitePage() {
         </p>
       </header>
 
+      {/* Joined-with banner */}
+      {joinedWith && (
+        <div className="rounded-xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <Ticket className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-wider text-white/50">You joined with</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="font-mono font-semibold tracking-widest text-white text-sm">{joinedWith.code}</span>
+                <span className="text-[11px] text-white/40">·</span>
+                <span className="text-[11px] text-white/60 tabular-nums">0.5%</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => handleCopy(joinedWith.code)}
+            className="rounded-lg text-white/70 hover:text-white text-xs px-2 py-1 shrink-0 flex items-center gap-1"
+          >
+            {copiedCode === joinedWith.code ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <StatTile
