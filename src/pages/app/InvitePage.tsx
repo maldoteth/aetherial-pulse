@@ -139,6 +139,23 @@ export default function InvitePage() {
 
   const usedCodes = codes.filter((c) => c.use_count >= c.max_uses).length;
 
+  // Real tracker metrics derived from redemption events
+  const now = Date.now();
+  const DAY = 86_400_000;
+  const last7d = uses.filter((u) => now - new Date(u.used_at).getTime() < 7 * DAY).length;
+  const last30dInvites = uses.filter((u) => now - new Date(u.used_at).getTime() < 30 * DAY).length;
+  const lastInvite = uses[0]?.used_at;
+  // 7-day sparkline (count per day, oldest -> newest)
+  const sparkline: number[] = Array.from({ length: 7 }, (_, i) => {
+    const dayStart = now - (6 - i) * DAY;
+    const dayEnd = dayStart + DAY;
+    return uses.filter((u) => {
+      const t = new Date(u.used_at).getTime();
+      return t >= dayStart && t < dayEnd;
+    }).length;
+  });
+  const sparkMax = Math.max(1, ...sparkline);
+
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
       <header className="space-y-1">
@@ -167,38 +184,47 @@ export default function InvitePage() {
         />
       </div>
 
-      {/* Revenue tracker */}
+      {/* Tracker */}
       <div className="rounded-xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-white/70 text-xs uppercase tracking-wider">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Revenue earned</span>
+            <span>Referral activity</span>
           </div>
-          <span className="text-[10px] text-white/40">DHB</span>
+          <span className="text-[10px] text-white/40">
+            {lastInvite
+              ? `Last: ${new Date(lastInvite).toLocaleDateString()}`
+              : "No redemptions yet"}
+          </span>
         </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-0.5">
-            <div className="text-[11px] text-white/40">Lifetime</div>
-            <div className="text-xl font-bold text-white flex items-baseline gap-1">
-              {lifetimeEarned.toFixed(2)}
-              <Coins className="w-3.5 h-3.5 text-white/50" />
-            </div>
+            <div className="text-[11px] text-white/40">All-time</div>
+            <div className="text-xl font-bold text-white tabular-nums">{totalInvites}</div>
           </div>
           <div className="space-y-0.5">
             <div className="text-[11px] text-white/40">Last 30d</div>
-            <div className="text-xl font-bold text-white">{last30d.toFixed(2)}</div>
+            <div className="text-xl font-bold text-white tabular-nums">{last30dInvites}</div>
           </div>
           <div className="space-y-0.5">
-            <div className="text-[11px] text-white/40">Pending</div>
-            <div className="text-xl font-bold text-white">{pendingPayout.toFixed(2)}</div>
+            <div className="text-[11px] text-white/40">Last 7d</div>
+            <div className="text-xl font-bold text-white tabular-nums">{last7d}</div>
           </div>
         </div>
-        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
-          <div
-            className="h-full bg-white/60 rounded-full transition-all"
-            style={{ width: `${Math.min(100, (last30d / 50) * 100)}%` }}
-          />
+
+        {/* 7-day sparkline */}
+        <div className="flex items-end gap-1 h-10">
+          {sparkline.map((v, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-sm bg-white/60 min-h-[2px] transition-all"
+              style={{ height: `${(v / sparkMax) * 100}%`, opacity: v === 0 ? 0.15 : 1 }}
+              title={`${v} on day ${i - 6 === 0 ? "today" : `${6 - i}d ago`}`}
+            />
+          ))}
         </div>
+
         <p className="text-[11px] text-white/40">
           Earn 0.5% of every invitee's spend & earnings — automatically.
         </p>
