@@ -186,16 +186,7 @@ export async function getAllTokenBalances(walletAddress: string, chainId: ChainI
   // Known ERC20 tokens
   tokens.push(...otherErc20);
 
-  // Discover additional tokens via Alchemy if requested
-  if (discoverAll) {
-    try {
-      const { discoverAlchemyTokens } = await import('@/lib/wallet/alchemy-tokens');
-      const discovered = await discoverAlchemyTokens(walletAddress, chainId);
-      tokens.push(...discovered);
-    } catch (err) {
-      console.warn('[tokens] Alchemy discovery failed, continuing with known tokens:', err);
-    }
-  }
+  // Alchemy discovery skipped — balance tracking disabled.
 
   return tokens;
 }
