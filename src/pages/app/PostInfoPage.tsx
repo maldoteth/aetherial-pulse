@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Copy, ExternalLink, ThumbsUp, ThumbsDown, Eye, MessageSquare, User, Loader2, Users, Tag, Hash, HandCoins, Plus, Globe, Lock, EyeOff, Pencil, Radio, Ticket, Coins } from 'lucide-react';
+import { ArrowLeft, Copy, ExternalLink, ThumbsUp, ThumbsDown, Eye, MessageSquare, User, Loader2, Users, Tag, Hash, HandCoins, Plus, Globe, Lock, EyeOff, Pencil, Radio, Ticket, Coins, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -626,6 +626,21 @@ export default function PostInfoPage() {
   // Show processing state for posts that the API returns with signed/pending status
   const isProcessing = nftInfo?.status === 'signed' || nftInfo?.status === 'pending';
   
+  // Data for rendering
+  const chainInfo = getChainInfo(nftInfo?.chainId || 8453);
+  const creatorAvatar = buildAvatarUrl(nftInfo?.minter || '', nftInfo?.minterAvatarUrl || '');
+  const creatorName = nftInfo?.minterUsername || nftInfo?.mintername || truncateAddress(nftInfo?.minter || '');
+  
+  const likes = nftInfo?.likes ?? nftInfo?.totalVotes?.for ?? 0;
+  const dislikes = nftInfo?.dislikes ?? nftInfo?.totalVotes?.against ?? 0;
+  const views = nftInfo?.views ?? 0;
+  const comments = nftInfo?.commentCount ?? 0;
+  
+  const likeRatio = likes + dislikes > 0 ? Math.round((likes / (likes + dislikes)) * 100) : 100;
+  
+  // Placeholder for total tips (can be enriched further if API provides it)
+  const totalTips = postTipTotal;
+  
   if (isProcessing) {
     return (
       <div className="min-h-screen bg-black">
@@ -638,7 +653,7 @@ export default function PostInfoPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-lg font-semibold text-white">{t('postInfo.title')}</h1>
+            <h1 className="text-xl font-semibold text-white">{t('postInfo.title')}</h1>
           </div>
         </div>
         
@@ -696,41 +711,27 @@ export default function PostInfoPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-lg font-semibold text-white">{t('postInfo.title')}</h1>
+            <h1 className="text-xl font-semibold text-white">{t('postInfo.title')}</h1>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center p-8 text-center">
-          <p className="text-white/60 mb-4">{error?.message || 'Post not found'}</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="text-white hover:underline"
-          >
-            {t('postInfo.goBack')}
-          </button>
+        
+        <div className="flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto mt-16">
+          <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4">
+            <Info className="w-8 h-8 text-white/40" />
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">
+            {t('postInfo.notFound', 'Post Not Found')}
+          </h2>
+          <p className="text-white/40 text-sm">
+            {t('postInfo.notFoundDesc', 'The post you are looking for does not exist or has been removed.')}
+          </p>
         </div>
       </div>
     );
   }
-  
-  // Get chain info
-  const chainId = nftInfo.chainId || 8453;
-  const chainInfo = getChainInfo(chainId);
-  
-  // Get stats with fallbacks
-  const likes = nftInfo.totalVotes?.for ?? nftInfo.like_count ?? 0;
-  const dislikes = nftInfo.totalVotes?.against ?? nftInfo.dislike_count ?? 0;
-  const views = nftInfo.views ?? nftInfo.view_count ?? 0;
-  const comments = nftInfo.commentCount ?? nftInfo.comment_count ?? 0;
-  const totalTips = nftInfo.minterUser?.receivedTips ?? 0;
-  const likeRatio = likes + dislikes > 0 ? Math.round((likes / (likes + dislikes)) * 100) : 100;
-  
-  // Get creator info
-  const creatorName = nftInfo.minterDisplayName || nftInfo.mintername || truncateAddress(nftInfo.minter);
-  const creatorAvatar = buildAvatarUrl(nftInfo.minter, nftInfo.minterAvatarUrl);
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header */}
       <div className="sticky top-0 z-50 bg-black border-b border-white/10">
         <div className="flex items-center gap-4 p-4">
           <button
@@ -740,7 +741,7 @@ export default function PostInfoPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold text-white">{t('postInfo.title')}</h1>
+          <h1 className="text-xl font-semibold text-white">{t('postInfo.title')}</h1>
           {isOwner && (
             <button
               onClick={() => setShowEditModal(true)}

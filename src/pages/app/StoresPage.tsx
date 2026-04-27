@@ -31,7 +31,7 @@ export default function StoresPage() {
       <div className="w-full max-w-4xl mx-auto px-4 py-4 space-y-4">
         <div className="flex items-center gap-3">
           <img src={storesIcon} alt="" className="w-6 h-6 object-contain" />
-          <h1 className="text-xl font-bold text-muted">Stores</h1>
+          <h1 className="text-xl font-bold text-white">Stores</h1>
         </div>
 
         {/* Tab buttons + create menu */}

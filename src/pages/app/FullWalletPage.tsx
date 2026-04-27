@@ -214,7 +214,7 @@ export default function FullWalletPage() {
           <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white h-8 w-8" onClick={() => navigate('/command-centre')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-bold text-white">{t('wallet.title')}</h1>
+          <h1 className="text-xl font-bold text-white">{t('wallet.title')}</h1>
         </div>
       )}
 

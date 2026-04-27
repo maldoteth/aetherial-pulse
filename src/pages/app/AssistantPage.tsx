@@ -1741,7 +1741,7 @@ export default function AssistantPage() {
           className="flex items-center gap-3 group"
         >
           <img src={aiSparkleIcon} alt="Assistant" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform" />
-          <h1 className="text-lg font-semibold text-white leading-none mt-0.5">{t('assistant.title')}</h1>
+          <h1 className="text-xl font-semibold text-white leading-none mt-0.5">{t('assistant.title')}</h1>
         </button>
 
         <div className="flex items-center gap-4">
