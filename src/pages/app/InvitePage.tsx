@@ -20,6 +20,7 @@ interface InviteCode {
   max_uses: number;
   use_count: number;
   is_active: boolean;
+  rate?: number;
 }
 
 interface InviteUse {
@@ -104,6 +105,7 @@ export default function InvitePage() {
           max_uses: 1,
           use_count: 0,
           is_active: true,
+          rate,
         },
         ...prev,
       ]);
@@ -314,7 +316,7 @@ export default function InvitePage() {
                       {c.code}
                     </span>
                     <span className="text-[11px] text-white/40 mt-0.5">
-                      {used ? "Used" : "Unused"} · {rate.toFixed(1)}% · {new Date(c.created_at).toLocaleDateString()}
+                      {used ? "Used" : "Unused"} · {(c.rate ?? 0.5).toFixed(1)}% · {new Date(c.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <Button
