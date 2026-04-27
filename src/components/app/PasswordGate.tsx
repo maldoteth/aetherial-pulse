@@ -193,7 +193,6 @@ export function PasswordGate({ children }: PasswordGateProps) {
           {loading ? "Checking…" : "Unlock"}
         </Button>
       </form>
-      {welcomeOverlay}
     </div>
   );
 }
