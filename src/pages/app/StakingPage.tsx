@@ -24,7 +24,7 @@ import { LiquidGlassBubble2 } from '@/components/ui/liquid-glass-bubble-2';
 import { useTranslation } from 'react-i18next';
 import { SEOHead } from '@/components/SEOHead';
 
-import dehubCoin from '@/assets/fansite-logo.png';
+import dehubCoin from '@/assets/staking-icon.png';
 
 const UNSTAKE_COOLDOWN_DAYS = 12;
 const UNSTAKE_COOLDOWN_MS = UNSTAKE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
@@ -545,7 +545,7 @@ export default function StakingPage() {
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center flex-shrink-0">
-            <img src={dehubCoin} alt="Coins" className="w-6 h-6" />
+            <img src={dehubCoin} alt="Staking" className="w-7 h-7 object-contain" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">{t('staking.title')}</h1>
