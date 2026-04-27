@@ -1642,7 +1642,7 @@ export default function NotificationsPage() {
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-8 flex flex-col items-center justify-center text-center">
-              <Bell className="w-12 h-12 text-zinc-600 mb-4" />
+              <img src={notificationsIcon} alt="" className="w-12 h-12 object-contain mb-3 opacity-60" />
               <h3 className="text-white font-semibold text-lg mb-2">{t('notifications.noNotificationsYet')}</h3>
             </div>
           ) : (

@@ -370,7 +370,7 @@ export default function MessagesPage() {
             {/* Error State */}
             {isError && (
               <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                <MessageCircle className="w-12 h-12 text-zinc-600 mb-4" />
+                <img src={messagesBubbleIcon} alt="" className="w-12 h-12 object-contain mb-3 opacity-60" />
                 <p className="text-zinc-400 mb-4">{t('messages.failedToLoad')}</p>
                 <Button 
                   variant="outline" 
