@@ -176,7 +176,7 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
 
         {/* Navigation Bento - scrollable */}
         <motion.div layoutRoot className="relative -mt-[8.5px] bg-zinc-900 rounded-2xl flex-1 min-h-0">
-          <div className={cn(
+          <div ref={scrollRef} className={cn(
             "p-1 space-y-2 flex flex-col items-center overflow-y-auto overflow-x-hidden scrollbar-invisible h-full",
             !isCollapsed && "lg:p-2.5 lg:space-y-[2px] lg:items-stretch"
           )}>
