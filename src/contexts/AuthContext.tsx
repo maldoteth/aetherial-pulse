@@ -15,6 +15,8 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useAuthStore, type SocialProvider, type WalletChoice } from '@/stores/authStore';
 import { clearAuthSession } from '@/lib/api/dehub/core';
+import { supabase } from '@/integrations/supabase/client';
+import { getInviteSessionId, hasAttachedInvite, markInviteAttached } from '@/lib/invite-session';
 
 export type { SocialProvider, WalletChoice };
 
