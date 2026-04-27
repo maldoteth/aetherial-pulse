@@ -1,0 +1,1 @@
+TRUNCATE TABLE public.ticker_searches; TRUNCATE TABLE public.ticker_search_log;
