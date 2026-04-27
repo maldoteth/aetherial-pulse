@@ -220,52 +220,6 @@ export default function InvitePage() {
         />
       </div>
 
-      {/* Tracker */}
-      <div className="rounded-xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-white/70 text-xs uppercase tracking-wider">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Referral activity</span>
-          </div>
-          <span className="text-[10px] text-white/40">
-            {lastInvite
-              ? `Last: ${new Date(lastInvite).toLocaleDateString()}`
-              : "No redemptions yet"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-0.5">
-            <div className="text-[11px] text-white/40">All-time</div>
-            <div className="text-xl font-bold text-white tabular-nums">{totalInvites}</div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-[11px] text-white/40">Last 30d</div>
-            <div className="text-xl font-bold text-white tabular-nums">{last30dInvites}</div>
-          </div>
-          <div className="space-y-0.5">
-            <div className="text-[11px] text-white/40">Last 7d</div>
-            <div className="text-xl font-bold text-white tabular-nums">{last7d}</div>
-          </div>
-        </div>
-
-        {/* 7-day sparkline */}
-        <div className="flex items-end gap-1 h-10">
-          {sparkline.map((v, i) => (
-            <div
-              key={i}
-              className="flex-1 rounded-sm bg-white/60 min-h-[2px] transition-all"
-              style={{ height: `${(v / sparkMax) * 100}%`, opacity: v === 0 ? 0.15 : 1 }}
-              title={`${v} on day ${i - 6 === 0 ? "today" : `${6 - i}d ago`}`}
-            />
-          ))}
-        </div>
-
-        <p className="text-[11px] text-white/40">
-          Earn 0.5% of every invitee's spend & earnings — automatically.
-        </p>
-      </div>
-
       {/* Rate chooser */}
       <div className="rounded-xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-4 space-y-4">
         <div className="flex items-end justify-between">
