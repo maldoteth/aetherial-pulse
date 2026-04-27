@@ -696,51 +696,9 @@ export default function PostInfoPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-lg font-semibold text-white">{t('postInfo.title')}</h1>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center p-8 text-center">
-          <p className="text-white/60 mb-4">{error?.message || 'Post not found'}</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="text-white hover:underline"
-          >
-            {t('postInfo.goBack')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  // Get chain info
-  const chainId = nftInfo.chainId || 8453;
-  const chainInfo = getChainInfo(chainId);
-  
-  // Get stats with fallbacks
-  const likes = nftInfo.totalVotes?.for ?? nftInfo.like_count ?? 0;
-  const dislikes = nftInfo.totalVotes?.against ?? nftInfo.dislike_count ?? 0;
-  const views = nftInfo.views ?? nftInfo.view_count ?? 0;
-  const comments = nftInfo.commentCount ?? nftInfo.comment_count ?? 0;
-  const totalTips = nftInfo.minterUser?.receivedTips ?? 0;
-  const likeRatio = likes + dislikes > 0 ? Math.round((likes / (likes + dislikes)) * 100) : 100;
-  
-  // Get creator info
-  const creatorName = nftInfo.minterDisplayName || nftInfo.mintername || truncateAddress(nftInfo.minter);
-  const creatorAvatar = buildAvatarUrl(nftInfo.minter, nftInfo.minterAvatarUrl);
-
-  return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-black border-b border-white/10">
-        <div className="flex items-center gap-4 p-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 text-white hover:text-white/70 transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold text-white">{t('postInfo.title')}</h1>
+            <h1 className="text-xl font-semibold text-white">{t('postInfo.title')}</h1>
+...
+          <h1 className="text-xl font-semibold text-white">{t('postInfo.title')}</h1>
           {isOwner && (
             <button
               onClick={() => setShowEditModal(true)}
