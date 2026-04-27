@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
@@ -35,6 +35,27 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
   const { data: unreadCount } = useUnreadNotificationCount();
   const { data: customUnread } = useCustomUnreadCount();
   const totalNotifUnread = (unreadCount?.total ?? 0) + (customUnread ?? 0);
+
+  // Highlight the login button briefly after a fresh invite-code unlock so users notice it.
+  const [highlightLogin, setHighlightLogin] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('fansite_highlight_login') === '1';
+  });
+  useEffect(() => {
+    const trigger = () => {
+      localStorage.setItem('fansite_highlight_login', '1');
+      setHighlightLogin(true);
+    };
+    window.addEventListener('fansite:highlight-login', trigger);
+    return () => window.removeEventListener('fansite:highlight-login', trigger);
+  }, []);
+  // Auto-clear once user authenticates
+  useEffect(() => {
+    if (isAuthenticated && highlightLogin) {
+      localStorage.removeItem('fansite_highlight_login');
+      setHighlightLogin(false);
+    }
+  }, [isAuthenticated, highlightLogin]);
 
   // Get balance from user or default to 0
   const coinBalance = 0; // TODO: Get from user wallet
@@ -201,7 +222,11 @@ export function DesktopSidebar({ onPostClick }: DesktopSidebarProps) {
           <LiquidGlassBubble 
             shimmer
             noBorder
-            className={cn("cursor-pointer w-full [&>div]:from-zinc-900/90 [&>div]:to-white/5 [&>div]:before:from-transparent [&>div]:after:from-transparent", isConnecting && "opacity-70 pointer-events-none")}
+            className={cn(
+              "cursor-pointer w-full [&>div]:from-zinc-900/90 [&>div]:to-white/5 [&>div]:before:from-transparent [&>div]:after:from-transparent",
+              isConnecting && "opacity-70 pointer-events-none",
+              !isAuthenticated && highlightLogin && "fansite-login-glow"
+            )}
             onClick={handlePostClick}
           >
             <div className={cn(
