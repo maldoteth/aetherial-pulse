@@ -855,13 +855,13 @@ export default function FeaturesPage() {
 
   return (
     <div className="min-h-screen px-2 pt-1 pb-2 sm:px-3 sm:pt-1 sm:pb-3 lg:pt-2">
-      <SEOHead title="Features — Submit & Vote on Ideas" description="Submit feature requests, vote on community ideas, and help shape Fansite's roadmap. Your voice drives the platform's development." url="https://fansite.app/features" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Fansite Features', url: 'https://fansite.app/features', description: 'Submit and vote on feature requests to shape Fansite.', isPartOf: { '@type': 'WebSite', name: 'Fansite', url: 'https://fansite.app' } }} />
-      <h1 className="sr-only">Fansite Features — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
+      <SEOHead title="Requests — Submit & Vote on Ideas" description="Submit feature requests, vote on community ideas, and help shape Fansite's roadmap. Your voice drives the platform's development." url="https://fansite.app/features" jsonLd={{ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Fansite Requests', url: 'https://fansite.app/features', description: 'Submit and vote on feature requests to shape Fansite.', isPartOf: { '@type': 'WebSite', name: 'Fansite', url: 'https://fansite.app' } }} />
+      <h1 className="sr-only">Fansite Requests — Decentralised Social Media, Censorship Resistant & Freedom of Speech</h1>
       {/* Header */}
       <div className="bg-zinc-900 rounded-2xl p-4 sm:p-6 mb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <img src={featuresLightbulb} alt="Features" className="w-12 h-12 object-contain" />
+            <img src={featuresLightbulb} alt="Requests" className="w-12 h-12 object-contain" />
             <div>
               <h1 className="text-xl font-bold text-white">{t('features.title')}</h1>
               <p className="text-zinc-500 text-sm">{totalCount === 1 ? t('features.ideaSubmitted') : t('features.ideasSubmitted', { count: totalCount })}</p>
