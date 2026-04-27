@@ -32,9 +32,9 @@ export function AuthGate({ description }: AuthGateProps) {
   };
 
   const getButtonText = () => {
-    if (isConnecting) return t('nav.connecting');
-    if (needsSignature) return t('nav.signMessage');
-    return t('nav.login');
+    if (isConnecting) return t('nav.connecting', 'Connecting...');
+    if (needsSignature) return t('nav.signMessage', 'Sign message');
+    return t('nav.login', 'Log in / Sign up');
   };
 
   return (
