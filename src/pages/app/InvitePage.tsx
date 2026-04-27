@@ -20,6 +20,7 @@ interface InviteCode {
   max_uses: number;
   use_count: number;
   is_active: boolean;
+  rate?: number;
 }
 
 interface InviteUse {
