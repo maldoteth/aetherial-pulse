@@ -134,7 +134,7 @@ function mapNFTToVideoItem(nft: DeHubNFT, index: number): VideoItem {
 function EmptyState({ type }: { type: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Music className="w-12 h-12 text-zinc-600 mb-4" />
+      <img src={stagesMicIcon} alt="" className="w-12 h-12 object-contain mb-3 opacity-60" />
       <h3 className="text-white font-semibold mb-2">No {type} yet</h3>
       <p className="text-zinc-500 text-sm max-w-[280px]">
         Music content will appear here once creators start uploading.
