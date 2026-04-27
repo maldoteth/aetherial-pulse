@@ -852,9 +852,7 @@ export default function GovernancePage() {
             </div>
           ) : (
             <div className="bg-zinc-900 rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto mb-4">
-                <ShieldCheck className="w-8 h-8 text-zinc-600" />
-              </div>
+              <img src={governanceShieldIcon} alt="" className="w-12 h-12 object-contain mx-auto mb-3 opacity-60" />
               <h3 className="text-white font-semibold mb-1">{t('governance.noProposalsYet')}</h3>
               <p className="text-zinc-500 text-sm mb-4">{t('governance.beFirstToSubmit')}</p>
               <Button
