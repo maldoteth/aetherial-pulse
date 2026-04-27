@@ -196,7 +196,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
       </div>
       <button
         onClick={() => setMenuView('buy')}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Plus className="w-4 h-4 text-white" />
@@ -207,7 +207,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
         onClick={() => {
           toast.info('Cash out coming soon!');
         }}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Minus className="w-4 h-4 text-white" />
@@ -216,7 +216,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
       </button>
       <button
         onClick={handleCopyAddress}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           {copied ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4 text-white" />}
@@ -228,7 +228,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
       </button>
       <button
         onClick={() => setMenuView('send')}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Send className="w-4 h-4 text-white" />
@@ -237,7 +237,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
       </button>
       <button
         onClick={() => setMenuView('history')}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <History className="w-4 h-4 text-white" />
@@ -246,7 +246,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
       </button>
       <button
         onClick={() => { setIsOpen(false); navigate('/stake'); }}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Lock className="w-4 h-4 text-white" />
@@ -268,7 +268,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
       </button>
       <button
         onClick={handleBuyWithCard}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <CreditCard className="w-4 h-4 text-white" />
@@ -277,7 +277,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
       </button>
       <button
         onClick={handleBuyWithCrypto}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Bitcoin className="w-4 h-4 text-white" />
@@ -313,7 +313,7 @@ export function CoinBalanceMenu({ balance, variant, onAuthRequired }: CoinBalanc
               <button
                 key={user.id}
                 onClick={() => setSelectedUser(user)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-left py-[10px]"
               >
                 <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white text-sm font-medium">
                   {user.username[0].toUpperCase()}
@@ -586,7 +586,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
         </button>
         <button
           onClick={handleBuyWithCard}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+          className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
         >
           <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
             <CreditCard className="w-4 h-4 text-white" />
@@ -595,7 +595,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
         </button>
         <button
           onClick={handleBuyWithCrypto}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+          className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
         >
           <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
             <Bitcoin className="w-4 h-4 text-white" />
@@ -633,7 +633,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
                 <button
                   key={user.id}
                   onClick={() => setSelectedUser(user)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-left py-[10px]"
                 >
                   <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white text-sm font-medium">
                     {user.username[0].toUpperCase()}
@@ -808,7 +808,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
       </div>
       <button
         onClick={() => setMenuView('buy')}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Plus className="w-4 h-4 text-white" />
@@ -819,7 +819,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
         onClick={() => {
           toast.info('Cash out coming soon!');
         }}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Minus className="w-4 h-4 text-white" />
@@ -828,7 +828,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
       </button>
       <button
         onClick={handleCopyAddress}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           {copied ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4 text-white" />}
@@ -840,7 +840,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
       </button>
       <button
         onClick={() => setMenuView('send')}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Send className="w-4 h-4 text-white" />
@@ -849,7 +849,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
       </button>
       <button
         onClick={() => setMenuView('history')}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <History className="w-4 h-4 text-white" />
@@ -858,7 +858,7 @@ export function WalletMenuContent({ balance, onClose }: WalletMenuContentProps) 
       </button>
       <button
         onClick={() => setMenuView('stake')}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
       >
         <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
           <Lock className="w-4 h-4 text-white" />

@@ -1300,7 +1300,7 @@ function BlockedUsersSection() {
           {items.map((user) => (
             <div
               key={user.blockId || user.address}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10"
+              className="flex items-center justify-between px-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Avatar className="w-8 h-8">
