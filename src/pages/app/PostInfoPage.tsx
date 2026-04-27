@@ -629,7 +629,7 @@ export default function PostInfoPage() {
   // Data for rendering
   const chainInfo = getChainInfo(nftInfo?.chainId || 8453);
   const creatorAvatar = buildAvatarUrl(nftInfo?.minter || '', nftInfo?.minterAvatarUrl || '');
-  const creatorName = nftInfo?.minterUsername || nftInfo?.minterName || truncateAddress(nftInfo?.minter || '');
+  const creatorName = nftInfo?.minterUsername || nftInfo?.mintername || truncateAddress(nftInfo?.minter || '');
   
   const likes = nftInfo?.likes ?? nftInfo?.totalVotes?.for ?? 0;
   const dislikes = nftInfo?.dislikes ?? nftInfo?.totalVotes?.against ?? 0;
