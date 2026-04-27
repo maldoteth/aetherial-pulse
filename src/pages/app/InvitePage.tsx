@@ -32,6 +32,7 @@ interface JoinedWith {
   code: string;
   used_at: string;
   inviter?: string | null;
+  rate?: number;
 }
 
 interface StatsResponse {
