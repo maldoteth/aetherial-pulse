@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const { data: codes, error: codesErr } = await supabase
       .from("invite_codes")
-      .select("code, created_at, max_uses, use_count, is_active")
+      .select("code, created_at, max_uses, use_count, is_active, rate")
       .ilike("created_by", wallet)
       .order("created_at", { ascending: false })
       .limit(500);
