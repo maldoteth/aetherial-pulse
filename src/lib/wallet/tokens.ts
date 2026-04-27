@@ -139,17 +139,14 @@ export function formatBalance(balance: bigint, decimals: number, maxDecimals: nu
  * When discoverAll is true, also discovers unknown ERC20 tokens via Alchemy.
  */
 export async function getAllTokenBalances(walletAddress: string, chainId: ChainId, discoverAll?: boolean): Promise<WalletToken[]> {
-  await initChainRpcUrls();
-  
+  // Balance tracking is currently disabled — show all tokens at 0 without hitting RPCs.
   const nativeInfo = NATIVE_TOKEN[chainId] || NATIVE_TOKEN[BASE_CHAIN_ID];
   const defaultTokens = DEFAULT_TOKENS[chainId] || [];
   const customTokens = getCustomTokens(chainId);
   const allErc20 = [...defaultTokens, ...customTokens];
 
-  const [nativeBalance, ...erc20Balances] = await Promise.all([
-    getNativeBalance(walletAddress, chainId),
-    ...allErc20.map(t => getERC20TokenBalance(t.address, walletAddress, chainId)),
-  ]);
+  const erc20Balances: bigint[] = allErc20.map(() => 0n);
+  const nativeBalance: bigint = 0n;
 
   const tokens: WalletToken[] = [];
 
@@ -189,16 +186,7 @@ export async function getAllTokenBalances(walletAddress: string, chainId: ChainI
   // Known ERC20 tokens
   tokens.push(...otherErc20);
 
-  // Discover additional tokens via Alchemy if requested
-  if (discoverAll) {
-    try {
-      const { discoverAlchemyTokens } = await import('@/lib/wallet/alchemy-tokens');
-      const discovered = await discoverAlchemyTokens(walletAddress, chainId);
-      tokens.push(...discovered);
-    } catch (err) {
-      console.warn('[tokens] Alchemy discovery failed, continuing with known tokens:', err);
-    }
-  }
+  // Alchemy discovery skipped — balance tracking disabled.
 
   return tokens;
 }
