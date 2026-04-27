@@ -13,6 +13,7 @@ import { LiquidGlassBubble2 } from '@/components/ui/liquid-glass-bubble-2';
 import { useMyStores } from '@/hooks/use-stores';
 import { useAuth } from '@/contexts/AuthContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import storesIcon from '@/assets/icons/stores-3d-icon.png';
 
 export default function StoresPage() {
   const [tab, setTab] = useState('browse');
@@ -29,7 +30,7 @@ export default function StoresPage() {
       <SEOHead title="Stores | Fansite" description="Browse and sell items on the Fansite peer-to-peer marketplace. Trade digital goods, merch, art, and services using Coins." />
       <div className="w-full max-w-4xl mx-auto px-4 py-4 space-y-4">
         <div className="flex items-center gap-3">
-          <Store className="w-6 h-6 text-primary-foreground" />
+          <img src={storesIcon} alt="" className="w-6 h-6 object-contain" />
           <h1 className="text-xl font-bold text-muted">Stores</h1>
         </div>
 
