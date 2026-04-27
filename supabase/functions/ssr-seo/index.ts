@@ -323,6 +323,10 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
+    const userAgentLogger = req.headers.get("user-agent") || "No-UA";
+    const xIsBotLogger = req.headers.get("x-is-bot") || "null";
+    console.log(`[SSR] Incoming Request: ${req.method} ${url.pathname}${url.search} | UA: ${userAgentLogger} | X-Is-Bot: ${xIsBotLogger}`);
+
     const brandLogo = ensureAbsoluteUrl(url.searchParams.get("brand_logo") || DEFAULT_BRAND_LOGO);
 
     // Facebook/Twitter scrapers need proper MIME types to display images
