@@ -121,17 +121,41 @@ export function PasswordGate({ children }: PasswordGateProps) {
         localStorage.setItem(STORAGE_KEY, "true");
         localStorage.setItem(CODE_KEY, code);
 
+        // Preload the heavy app chunks BEFORE unmounting the gate so the
+        // first frame the user sees after unlock is the fully-rendered app
+        // (background, layout, etc.) — not a black screen behind confetti.
+        try {
+          await Promise.race([
+            Promise.all([
+              import("./WalletProviders"),
+              import("./AppLayout"),
+              import("../../pages/app/HomePage").catch(() => null),
+            ]),
+            new Promise((resolve) => setTimeout(resolve, 2500)),
+          ]);
+        } catch {
+          // Non-fatal — proceed even if preload fails.
+        }
+
+        // Give the browser one paint tick so the newly-mounted app can render
+        // its background before confetti fires.
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
         if (isFirstTime) {
           localStorage.setItem(WELCOMED_KEY, "true");
-          // Fire confetti before unmounting the gate
-          fireFireworks();
-          toast.success("Welcome to Fansite!");
-          // Tell the sidebar login button to glow so the user notices it
-          try {
-            window.dispatchEvent(new CustomEvent("fansite:highlight-login"));
-          } catch {}
         }
         setUnlocked(true);
+
+        if (isFirstTime) {
+          // Fire confetti AFTER unlock, on the next frame, so the app is on screen.
+          requestAnimationFrame(() => {
+            fireFireworks();
+            toast.success("Welcome to Fansite!");
+            try {
+              window.dispatchEvent(new CustomEvent("fansite:highlight-login"));
+            } catch {}
+          });
+        }
         return;
       }
 
