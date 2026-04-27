@@ -147,7 +147,7 @@ export default function InvitePage() {
         />
         <StatTile
           icon={<Ticket className="w-4 h-4" />}
-          label="Active codes"
+          label="Active"
           value={codes.filter((c) => c.is_active && c.use_count < c.max_uses).length}
         />
         <StatTile
