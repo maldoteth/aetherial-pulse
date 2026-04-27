@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Plus, Users, Ticket, Check, TrendingUp, Coins } from "lucide-react";
+import { Copy, Plus, Users, Ticket, Check, TrendingUp } from "lucide-react";
 
 interface InviteCode {
   code: string;
@@ -22,11 +22,17 @@ interface InviteCode {
   is_active: boolean;
 }
 
+interface InviteUse {
+  code: string;
+  used_at: string;
+}
+
 interface StatsResponse {
   ok: boolean;
   codes: InviteCode[];
   totalInvites: number;
   activeCodes: number;
+  uses?: InviteUse[];
   reason?: string;
 }
 
