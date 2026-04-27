@@ -139,17 +139,14 @@ export function formatBalance(balance: bigint, decimals: number, maxDecimals: nu
  * When discoverAll is true, also discovers unknown ERC20 tokens via Alchemy.
  */
 export async function getAllTokenBalances(walletAddress: string, chainId: ChainId, discoverAll?: boolean): Promise<WalletToken[]> {
-  await initChainRpcUrls();
-  
+  // Balance tracking is currently disabled — show all tokens at 0 without hitting RPCs.
   const nativeInfo = NATIVE_TOKEN[chainId] || NATIVE_TOKEN[BASE_CHAIN_ID];
   const defaultTokens = DEFAULT_TOKENS[chainId] || [];
   const customTokens = getCustomTokens(chainId);
   const allErc20 = [...defaultTokens, ...customTokens];
 
-  const [nativeBalance, ...erc20Balances] = await Promise.all([
-    getNativeBalance(walletAddress, chainId),
-    ...allErc20.map(t => getERC20TokenBalance(t.address, walletAddress, chainId)),
-  ]);
+  const erc20Balances: bigint[] = allErc20.map(() => 0n);
+  const nativeBalance: bigint = 0n;
 
   const tokens: WalletToken[] = [];
 
