@@ -321,6 +321,7 @@ function ProfileSettings() {
         const loadedTelegram = (raw.telegramLink as string) || customs?.telegramLink || '';
         const loadedFacebook = (raw.facebookLink as string) || customs?.facebookLink || '';
         const loadedDehub = (customs?.dehubLink as string) || '';
+        existingCustomsRef.current = (customs as Record<string, unknown>) || {};
         
         setDisplayName(loadedDisplayName);
         setUsername(loadedUsername);
@@ -568,8 +569,8 @@ function ProfileSettings() {
     data.telegramLink = telegramLink;
     data.youtubeLink = youtubeLink;
     data.facebookLink = facebookLink;
-    // DeHub link stored in customs (no dedicated backend column)
-    data.customs = { dehubLink };
+    // DeHub link stored in customs (no dedicated backend column) — merge to preserve other custom fields
+    data.customs = { ...existingCustomsRef.current, dehubLink };
     if (avatarFile) data.avatarImg = avatarFile;
     if (coverFile) data.coverImg = coverFile;
     
