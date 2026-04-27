@@ -20,7 +20,7 @@
     "careers": "Kerjaya",
     "glossary": "Glosari",
     "create": "Cipta",
-    "login": "Log masuk",
+    "login": "\n",
     "connecting": "Menyambung...",
     "signMessage": "Tandatangan mesej",
     "guide": "Panduan"
@@ -84,7 +84,7 @@
     "view": "Lihat",
     "editProfile": "Sunting Profil",
     "logout": "Log keluar",
-    "login": "Log masuk",
+    "login": "\n",
     "register": "Daftar",
     "forgotPassword": "Lupa Kata Laluan",
     "resetPassword": "Tetapkan Semula Kata Laluan",

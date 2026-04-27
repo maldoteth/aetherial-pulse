@@ -20,7 +20,7 @@
     "careers": "Vacatures",
     "glossary": "Woordenlijst",
     "create": "Maken",
-    "login": "Inloggen",
+    "login": "\n",
     "connecting": "Verbinden...",
     "signMessage": "Bericht ondertekenen",
     "guide": "Gids"
@@ -384,7 +384,7 @@
     "api": "API",
     "status": "Status",
     "logout": "Uitloggen",
-    "login": "Inloggen",
+    "login": "\n",
     "register": "Registreren",
     "forgotPassword": "Wachtwoord vergeten?",
     "resetPassword": "Wachtwoord resetten",
