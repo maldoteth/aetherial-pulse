@@ -7,7 +7,8 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Plus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
+import communitiesIcon from '@/assets/icons/communities-icon.png';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserCommunities, useDiscoverCommunities } from '@/hooks/use-communities';
@@ -51,7 +52,7 @@ export default function CommunitiesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Users className="w-6 h-6 text-white" />
+          <img src={communitiesIcon} alt="" className="w-7 h-7 object-contain" />
           <h1 className="text-xl font-bold text-white">{t('communities.title')}</h1>
         </div>
         <Button
