@@ -269,6 +269,7 @@ function ProfileSettings() {
   const [youtubeLink, setYoutubeLink] = useState('');
   const [telegramLink, setTelegramLink] = useState('');
   const [facebookLink, setFacebookLink] = useState('');
+  const [dehubLink, setDehubLink] = useState('');
   
   const [originalValues, setOriginalValues] = useState({
     displayName: '',
@@ -281,6 +282,7 @@ function ProfileSettings() {
     youtubeLink: '',
     telegramLink: '',
     facebookLink: '',
+    dehubLink: '',
   });
   
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>();
@@ -317,6 +319,7 @@ function ProfileSettings() {
         const loadedYoutube = (raw.youtubeLink as string) || customs?.youtubeLink || '';
         const loadedTelegram = (raw.telegramLink as string) || customs?.telegramLink || '';
         const loadedFacebook = (raw.facebookLink as string) || customs?.facebookLink || '';
+        const loadedDehub = (customs?.dehubLink as string) || '';
         
         setDisplayName(loadedDisplayName);
         setUsername(loadedUsername);
@@ -328,6 +331,7 @@ function ProfileSettings() {
         setYoutubeLink(loadedYoutube);
         setTelegramLink(loadedTelegram);
         setFacebookLink(loadedFacebook);
+        setDehubLink(loadedDehub);
         
         setOriginalValues({
           displayName: loadedDisplayName,
@@ -340,6 +344,7 @@ function ProfileSettings() {
           youtubeLink: loadedYoutube,
           telegramLink: loadedTelegram,
           facebookLink: loadedFacebook,
+          dehubLink: loadedDehub,
         });
         
         const address = userData.address || userData.wallet_address || '';
@@ -399,6 +404,7 @@ function ProfileSettings() {
     youtubeLink !== originalValues.youtubeLink ||
     telegramLink !== originalValues.telegramLink ||
     facebookLink !== originalValues.facebookLink ||
+    dehubLink !== originalValues.dehubLink ||
     !!avatarFile ||
     !!coverFile;
 
@@ -474,6 +480,7 @@ function ProfileSettings() {
           youtubeLink: (refreshedRaw.youtubeLink as string) || refreshedCustoms?.youtubeLink || '',
           telegramLink: (refreshedRaw.telegramLink as string) || refreshedCustoms?.telegramLink || '',
           facebookLink: (refreshedRaw.facebookLink as string) || refreshedCustoms?.facebookLink || '',
+          dehubLink: (refreshedCustoms?.dehubLink as string) || '',
         };
         setOriginalValues(newOriginals);
         setTwitterLink(newOriginals.twitterLink);
@@ -483,6 +490,7 @@ function ProfileSettings() {
         setYoutubeLink(newOriginals.youtubeLink);
         setTelegramLink(newOriginals.telegramLink);
         setFacebookLink(newOriginals.facebookLink);
+        setDehubLink(newOriginals.dehubLink);
       }
       queryClient.invalidateQueries({ queryKey: ['dehub-user-content'] });
 
@@ -559,6 +567,8 @@ function ProfileSettings() {
     data.telegramLink = telegramLink;
     data.youtubeLink = youtubeLink;
     data.facebookLink = facebookLink;
+    // DeHub link stored in customs (no dedicated backend column)
+    data.customs = { dehubLink };
     if (avatarFile) data.avatarImg = avatarFile;
     if (coverFile) data.coverImg = coverFile;
     
