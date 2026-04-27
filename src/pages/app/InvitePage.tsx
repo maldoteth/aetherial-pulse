@@ -8,10 +8,11 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Plus, Users, Ticket, Check } from "lucide-react";
+import { Copy, Plus, Users, Ticket, Check, TrendingUp, Coins } from "lucide-react";
 
 interface InviteCode {
   code: string;
@@ -36,6 +37,12 @@ export default function InvitePage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [rate, setRate] = useState<number>(0.5); // 0.5–25%
+
+  // Template earnings data (UI-only for now)
+  const lifetimeEarned = 142.37;
+  const last30d = 28.91;
+  const pendingPayout = 12.4;
 
   const loadStats = async () => {
     if (!walletAddress) return;
