@@ -8,10 +8,11 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Plus, Users, Ticket, Check } from "lucide-react";
+import { Copy, Plus, Users, Ticket, Check, TrendingUp, Coins } from "lucide-react";
 
 interface InviteCode {
   code: string;
@@ -36,6 +37,12 @@ export default function InvitePage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [rate, setRate] = useState<number>(0.5); // 0.5–25%
+
+  // Template earnings data (UI-only for now)
+  const lifetimeEarned = 142.37;
+  const last30d = 28.91;
+  const pendingPayout = 12.4;
 
   const loadStats = async () => {
     if (!walletAddress) return;
@@ -157,6 +164,89 @@ export default function InvitePage() {
         />
       </div>
 
+      {/* Revenue tracker */}
+      <div className="rounded-xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-white/70 text-xs uppercase tracking-wider">
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Revenue earned</span>
+          </div>
+          <span className="text-[10px] text-white/40">DHB</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-white/40">Lifetime</div>
+            <div className="text-xl font-bold text-white flex items-baseline gap-1">
+              {lifetimeEarned.toFixed(2)}
+              <Coins className="w-3.5 h-3.5 text-white/50" />
+            </div>
+          </div>
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-white/40">Last 30d</div>
+            <div className="text-xl font-bold text-white">{last30d.toFixed(2)}</div>
+          </div>
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-white/40">Pending</div>
+            <div className="text-xl font-bold text-white">{pendingPayout.toFixed(2)}</div>
+          </div>
+        </div>
+        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+          <div
+            className="h-full bg-white/60 rounded-full transition-all"
+            style={{ width: `${Math.min(100, (last30d / 50) * 100)}%` }}
+          />
+        </div>
+        <p className="text-[11px] text-white/40">
+          Earn 0.5% of every invitee's spend & earnings — automatically.
+        </p>
+      </div>
+
+      {/* Rate chooser */}
+      <div className="rounded-xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-4 space-y-4">
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="text-white/70 text-xs uppercase tracking-wider">Referral rate</div>
+            <div className="text-[11px] text-white/40 mt-0.5">Applied to codes you generate below</div>
+          </div>
+          <div className="text-3xl font-bold text-white tabular-nums">
+            {rate.toFixed(1)}<span className="text-white/40 text-lg">%</span>
+          </div>
+        </div>
+
+        <Slider
+          value={[rate]}
+          min={0.5}
+          max={25}
+          step={0.5}
+          onValueChange={(v) => setRate(v[0] ?? 0.5)}
+          variant="lava"
+        />
+
+        <div className="flex items-center justify-between text-[10px] text-white/40">
+          <span>0.5%</span>
+          <span>25%</span>
+        </div>
+
+        {/* Split breakdown */}
+        <div className="rounded-lg bg-white/[0.04] border border-white/5 p-3 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/60">From platform (base)</span>
+            <span className="text-white font-semibold tabular-nums">0.5%</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/60">From invitee's revenue</span>
+            <span className="text-white font-semibold tabular-nums">
+              {Math.max(0, rate - 0.5).toFixed(1)}%
+            </span>
+          </div>
+          {rate > 0.5 && (
+            <p className="text-[10px] text-white/40 pt-1 border-t border-white/5">
+              Anything above 0.5% is deducted from the invited user's earnings & spend.
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Generate */}
       <Button
         onClick={handleGenerate}
@@ -165,7 +255,7 @@ export default function InvitePage() {
         className="w-full rounded-xl h-12 font-semibold"
       >
         <Plus className="w-4 h-4 mr-2" />
-        {generating ? "Generating…" : "Generate new code"}
+        {generating ? "Generating…" : `Generate code at ${rate.toFixed(1)}%`}
       </Button>
 
       {/* Codes list */}
