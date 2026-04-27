@@ -28,12 +28,19 @@ interface InviteUse {
   used_at: string;
 }
 
+interface JoinedWith {
+  code: string;
+  used_at: string;
+  inviter?: string | null;
+}
+
 interface StatsResponse {
   ok: boolean;
   codes: InviteCode[];
   totalInvites: number;
   activeCodes: number;
   uses?: InviteUse[];
+  joinedWith?: JoinedWith | null;
   reason?: string;
 }
 
