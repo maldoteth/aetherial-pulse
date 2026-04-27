@@ -1435,6 +1435,65 @@ export type Database = {
           },
         ]
       }
+      invite_code_uses: {
+        Row: {
+          code: string
+          id: string
+          used_at: string
+          used_by_session: string
+          used_by_wallet: string | null
+        }
+        Insert: {
+          code: string
+          id?: string
+          used_at?: string
+          used_by_session: string
+          used_by_wallet?: string | null
+        }
+        Update: {
+          code?: string
+          id?: string
+          used_at?: string
+          used_by_session?: string
+          used_by_wallet?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_code_uses_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "invite_codes"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          is_active: boolean
+          max_uses: number
+          use_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          is_active?: boolean
+          max_uses?: number
+          use_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          is_active?: boolean
+          max_uses?: number
+          use_count?: number
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           created_at: string
