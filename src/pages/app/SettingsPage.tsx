@@ -821,6 +821,15 @@ function ProfileSettings() {
               </svg>
             }
           />
+          <SocialLinkInput 
+            label="DeHub" 
+            placeholder="https://dehub.io/username"
+            value={dehubLink}
+            onChange={setDehubLink}
+            icon={
+              <img src={dehubLogo} alt="" className="w-4 h-4 object-contain" />
+            }
+          />
         </div>
       </div>
     </div>
