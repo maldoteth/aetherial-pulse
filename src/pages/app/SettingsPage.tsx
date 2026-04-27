@@ -470,6 +470,7 @@ function ProfileSettings() {
       if (authUser?.address) {
         const userData = await getAccountInfo(authUser.address);
         const refreshedCustoms = userData.customs as Record<string, string> | undefined;
+        existingCustomsRef.current = (refreshedCustoms as Record<string, unknown>) || {};
         const refreshedRaw = userData as Record<string, unknown>;
         const newOriginals = {
           displayName: userData.displayName || userData.display_name || '',
