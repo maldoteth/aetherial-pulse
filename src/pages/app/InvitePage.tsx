@@ -94,7 +94,10 @@ export default function InvitePage() {
     try {
       const { data, error } = await supabase.functions.invoke<{ ok: boolean; code?: string; reason?: string; limit?: number }>(
         "invite-generate",
-        { headers: { "x-wallet-address": walletAddress.toLowerCase() } },
+        {
+          headers: { "x-wallet-address": walletAddress.toLowerCase() },
+          body: { rate },
+        },
       );
 
       if (error || !data?.ok || !data.code) {
