@@ -20,7 +20,7 @@
     "careers": "Trabaho",
     "glossary": "Talasalitaan",
     "create": "Gumawa",
-    "login": "Mag-log in",
+    "login": "\n",
     "connecting": "Kumokonekta...",
     "signMessage": "Pirmahan ang mensahe",
     "guide": "Gabay"
@@ -246,7 +246,7 @@
     "careers": "Mga Trabaho",
     "glossary": "Glossary",
     "create": "Lumikha",
-    "login": "Mag-login"
+    "login": "\n"
   },
   "notification": {
     "noNotifications": "Walang mga abiso",
