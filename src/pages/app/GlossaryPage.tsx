@@ -193,7 +193,7 @@ export default function GlossaryPage() {
       title: t('glossary.sections.governance', 'Governance & Community'),
       entries: [
         { icon: <ShieldCheck size={iconSize} />, title: t('glossary.governance', 'Governance'), description: t('glossary.governanceDesc', 'Submit and vote on proposals that shape the platform. Your voting power is weighted by your Coins holdings.') },
-        { icon: <Lightbulb size={iconSize} />, title: t('glossary.featureRequests', 'Feature Requests'), description: t('glossary.featureRequestsDesc', 'Suggest new features and vote on community ideas. Popular requests get prioritized for development.') },
+        { icon: <Lightbulb size={iconSize} />, title: t('glossary.featureRequests', 'Features and Bugs'), description: t('glossary.featureRequestsDesc', 'Suggest new features and vote on community ideas. Popular requests get prioritized for development.') },
         { icon: <ChevronUp size={iconSize} />, title: t('glossary.upvote', 'Upvote'), description: t('glossary.upvoteDesc', 'Vote in favor of a governance proposal or feature request. Helps signal community support.') },
         { icon: <ChevronDown size={iconSize} />, title: t('glossary.downvote', 'Downvote'), description: t('glossary.downvoteDesc', 'Vote against a governance proposal or feature request. Helps signal community opposition.') },
       ],
