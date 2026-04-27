@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { CalendarDays } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import eventsIcon from '@/assets/icons/events-3d-icon.png';
 import { useEvents } from '@/hooks/use-events';
 import type { CommunityEvent } from '@/hooks/use-events';
 import { EventCard } from '@/components/app/events/EventCard';
@@ -29,7 +29,7 @@ export default function EventsPage() {
       <SEOHead title="Events - Fansite" description="Discover and create events on Fansite" />
 
       <h1 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-        <CalendarDays className="w-5 h-5" />
+        <img src={eventsIcon} alt="" className="w-6 h-6 object-contain" />
         Events
       </h1>
 
