@@ -90,23 +90,11 @@ export function PasswordGate({ children }: PasswordGateProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const welcomedRef = useRef(false);
-
-  const { isAuthenticated, openLoginModal } = useAuth();
 
   useEffect(() => {
     if (unlocked) return;
     document.title = "Enter invite code";
   }, [unlocked]);
-
-  // If already welcomed and unlocked from a previous session, never show overlay again.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (localStorage.getItem(WELCOMED_KEY) === "true") {
-      welcomedRef.current = true;
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,19 +123,15 @@ export function PasswordGate({ children }: PasswordGateProps) {
 
         if (isFirstTime) {
           localStorage.setItem(WELCOMED_KEY, "true");
-          // Fire confetti before unmounting the gate so it appears over the form
+          // Fire confetti before unmounting the gate
           fireFireworks();
-          toast.success("Welcome to Fansite!", {
-            description: "You're in. Let's get you set up.",
-            duration: 4500,
-          });
-          // Show the welcome overlay with login CTA, then unlock when dismissed
-          setShowWelcome(true);
-          // Keep gate visible briefly so the overlay can render on top
-          setTimeout(() => setUnlocked(true), 50);
-        } else {
-          setUnlocked(true);
+          toast.success("Welcome to Fansite!");
+          // Tell the sidebar login button to glow so the user notices it
+          try {
+            window.dispatchEvent(new CustomEvent("fansite:highlight-login"));
+          } catch {}
         }
+        setUnlocked(true);
         return;
       }
 
@@ -162,68 +146,8 @@ export function PasswordGate({ children }: PasswordGateProps) {
     }
   };
 
-  const handleSignIn = () => {
-    setShowWelcome(false);
-    openLoginModal();
-  };
-
-  const handleSkip = () => {
-    setShowWelcome(false);
-  };
-
-  // Welcome overlay — shown after first successful unlock, on top of the app
-  const welcomeOverlay = showWelcome && !isAuthenticated ? (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-sm rounded-2xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-8 flex flex-col items-center gap-6 shadow-2xl animate-scale-in welcome-glow">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-semibold text-white">Welcome to Fansite</h2>
-          <p className="text-sm text-white/60">
-            Sign in or create an account to start posting, following creators, and unlocking everything.
-          </p>
-        </div>
-        <div className="w-full flex flex-col gap-3">
-          <Button
-            type="button"
-            onClick={handleSignIn}
-            className="w-full rounded-xl font-semibold h-11 bg-white text-black hover:bg-white/90 welcome-glow-btn"
-          >
-            Log in / Sign up
-          </Button>
-          <button
-            type="button"
-            onClick={handleSkip}
-            className="w-full text-xs text-white/40 hover:text-white/70 transition-colors"
-          >
-            Maybe later
-          </button>
-        </div>
-      </div>
-      <style>{`
-        .welcome-glow {
-          box-shadow:
-            0 0 60px -10px rgba(255, 255, 255, 0.25),
-            0 0 120px -20px rgba(168, 85, 247, 0.2);
-        }
-        .welcome-glow-btn {
-          position: relative;
-          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
-          animation: welcome-glow-pulse 2.4s ease-in-out infinite;
-        }
-        @keyframes welcome-glow-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45), 0 0 24px -4px rgba(255, 255, 255, 0.4); }
-          50%      { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0), 0 0 36px -2px rgba(255, 255, 255, 0.7); }
-        }
-      `}</style>
-    </div>
-  ) : null;
-
   if (unlocked) {
-    return (
-      <>
-        {children}
-        {welcomeOverlay}
-      </>
-    );
+    return <>{children}</>;
   }
 
   return (
