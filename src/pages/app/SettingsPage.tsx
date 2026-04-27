@@ -270,6 +270,7 @@ function ProfileSettings() {
   const [telegramLink, setTelegramLink] = useState('');
   const [facebookLink, setFacebookLink] = useState('');
   const [dehubLink, setDehubLink] = useState('');
+  const existingCustomsRef = useRef<Record<string, unknown>>({});
   
   const [originalValues, setOriginalValues] = useState({
     displayName: '',
