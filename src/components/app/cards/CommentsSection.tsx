@@ -1063,7 +1063,7 @@ export function CommentsSection({ tokenId, onClose, initialTab, embedded = false
                           navigate(`/app/profile?id=${user.address}`);
                         }
                       }}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left"
+                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors text-left py-[10px]"
                     >
                       <Avatar className="w-10 h-10 rounded-lg">
                         {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
