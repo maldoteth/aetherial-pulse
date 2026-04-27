@@ -124,6 +124,7 @@ function PinPickerDrawer({ open, onOpenChange, walletAddress, pinnedIds, nextOrd
   pinnedIds: Set<string>;
   nextOrder: number;
 }) {
+  const navigate = useNavigate();
   const { data: userCommunities = [] } = useUserCommunities();
   const pinMutation = usePinCommunity();
   const unpinMutation = useUnpinCommunity();
