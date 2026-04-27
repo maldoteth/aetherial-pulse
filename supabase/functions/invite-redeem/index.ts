@@ -28,21 +28,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Atomic increment: only succeeds if active and use_count < max_uses
-    const { data: updated, error: updateErr } = await supabase
-      .from("invite_codes")
-      .update({ use_count: 1 } as never) // placeholder; we'll use rpc-style below
-      .eq("code", rawCode)
-      .select()
-      .maybeSingle();
-
-    // The above isn't atomic — use a raw filter approach:
-    // Re-fetch and conditionally update.
-    if (updateErr) {
-      // Fall through to manual flow
-    }
-
-    // Manual flow: fetch + conditional update
+    // Fetch the code
     const { data: codeRow, error: fetchErr } = await supabase
       .from("invite_codes")
       .select("code, max_uses, use_count, is_active")
@@ -59,9 +45,6 @@ Deno.serve(async (req) => {
     if (!codeRow.is_active) {
       return json({ ok: false, reason: "inactive" });
     }
-    if (codeRow.use_count >= codeRow.max_uses) {
-      return json({ ok: false, reason: "exhausted" });
-    }
 
     // Check if this session has already redeemed this code (idempotency)
     const { data: existingUse } = await supabase
@@ -75,16 +58,21 @@ Deno.serve(async (req) => {
       return json({ ok: true, alreadyRedeemed: true });
     }
 
-    // Conditionally bump use_count (won't go over max_uses)
+    if (codeRow.use_count >= codeRow.max_uses) {
+      return json({ ok: false, reason: "exhausted" });
+    }
+
+    // Conditionally bump use_count using optimistic concurrency
     const { data: bumped, error: bumpErr } = await supabase
       .from("invite_codes")
       .update({ use_count: codeRow.use_count + 1 })
       .eq("code", rawCode)
-      .eq("use_count", codeRow.use_count) // optimistic concurrency
+      .eq("use_count", codeRow.use_count)
       .select()
       .maybeSingle();
 
     if (bumpErr || !bumped) {
+      console.error("[invite-redeem] bump error", bumpErr);
       return json({ ok: false, reason: "race_retry" });
     }
 
