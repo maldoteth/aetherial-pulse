@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, AtSign, Wallet, MessageCircle, Gift, Bell, Handshake, UserMinus, Ban, LayoutDashboard, Loader2, ShieldCheck, Flag } from 'lucide-react';
+import { Copy, AtSign, Wallet, MessageCircle, Gift, Bell, Handshake, UserMinus, Ban, LayoutDashboard, Loader2, ShieldCheck, Flag, Ticket } from 'lucide-react';
 import { ReportModal } from '@/components/app/modals/ReportModal';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
