@@ -53,6 +53,7 @@ export default function InvitePage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [rate, setRate] = useState<number>(0.5); // 0.5–25%
   const [uses, setUses] = useState<InviteUse[]>([]);
+  const [joinedWith, setJoinedWith] = useState<JoinedWith | null>(null);
 
   const loadStats = async () => {
     if (!walletAddress) return;
