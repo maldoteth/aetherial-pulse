@@ -2473,6 +2473,26 @@ export default function AssistantPage() {
               {isImageLoading && (
                 <ImageGenerationLoader startTime={imageLoadStartTime} />
               )}
+              {/* Instant feedback bubble shown the moment user sends — disappears when streamed text starts arriving */}
+              {isLoading && !isImageLoading && !isVideoLoading && messages[messages.length - 1]?.role === 'user' && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex justify-start gap-2"
+                >
+                  <img
+                    src={assistantAvatar}
+                    alt=""
+                    className="w-7 h-7 rounded-full shrink-0"
+                  />
+                  <div className="flex items-center gap-1 px-1 py-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse [animation-delay:300ms]" />
+                  </div>
+                </motion.div>
+              )}
               {/* Scroll anchor */}
               <div ref={messagesEndRef} />
             </div>
