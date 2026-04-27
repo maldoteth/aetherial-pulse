@@ -49,12 +49,36 @@ Deno.serve(async (req) => {
       uses = usesData ?? [];
     }
 
+    // Find the code the caller used to sign up (if any)
+    const { data: joinedRow } = await supabase
+      .from("invite_code_uses")
+      .select("code, used_at")
+      .ilike("used_by_wallet", wallet)
+      .order("used_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    let joinedWith: { code: string; used_at: string; inviter?: string | null } | null = null;
+    if (joinedRow) {
+      const { data: inviterRow } = await supabase
+        .from("invite_codes")
+        .select("created_by")
+        .eq("code", joinedRow.code)
+        .maybeSingle();
+      joinedWith = {
+        code: joinedRow.code,
+        used_at: joinedRow.used_at,
+        inviter: inviterRow?.created_by ?? null,
+      };
+    }
+
     return json({
       ok: true,
       codes: codes ?? [],
       totalInvites,
       activeCodes: (codes ?? []).filter((c) => c.is_active && c.use_count < c.max_uses).length,
       uses,
+      joinedWith,
     });
   } catch (err) {
     console.error("[invite-stats] exception", err);

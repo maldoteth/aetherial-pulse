@@ -28,12 +28,19 @@ interface InviteUse {
   used_at: string;
 }
 
+interface JoinedWith {
+  code: string;
+  used_at: string;
+  inviter?: string | null;
+}
+
 interface StatsResponse {
   ok: boolean;
   codes: InviteCode[];
   totalInvites: number;
   activeCodes: number;
   uses?: InviteUse[];
+  joinedWith?: JoinedWith | null;
   reason?: string;
 }
 
@@ -46,6 +53,7 @@ export default function InvitePage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [rate, setRate] = useState<number>(0.5); // 0.5–25%
   const [uses, setUses] = useState<InviteUse[]>([]);
+  const [joinedWith, setJoinedWith] = useState<JoinedWith | null>(null);
 
   const loadStats = async () => {
     if (!walletAddress) return;
@@ -61,6 +69,7 @@ export default function InvitePage() {
       setCodes(data.codes ?? []);
       setTotalInvites(data.totalInvites ?? 0);
       setUses(data.uses ?? []);
+      setJoinedWith(data.joinedWith ?? null);
     } finally {
       setLoading(false);
     }
@@ -166,6 +175,31 @@ export default function InvitePage() {
           Generate single-use codes and share them. Track who you've invited.
         </p>
       </header>
+
+      {/* Joined-with banner */}
+      {joinedWith && (
+        <div className="rounded-xl bg-black/60 backdrop-blur-[24px] border border-white/10 p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <Ticket className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-wider text-white/50">You joined with</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="font-mono font-semibold tracking-widest text-white text-sm">{joinedWith.code}</span>
+                <span className="text-[11px] text-white/40">·</span>
+                <span className="text-[11px] text-white/60 tabular-nums">0.5%</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => handleCopy(joinedWith.code)}
+            className="rounded-lg text-white/70 hover:text-white text-xs px-2 py-1 shrink-0 flex items-center gap-1"
+          >
+            {copiedCode === joinedWith.code ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
