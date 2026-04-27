@@ -2472,23 +2472,6 @@ export default function AssistantPage() {
               {isImageLoading && (
                 <ImageGenerationLoader startTime={imageLoadStartTime} />
               )}
-              {isLoading && !isImageLoading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-start gap-2"
-                >
-                  <img 
-                    src={assistantAvatar} 
-                    alt="" 
-                    className="w-7 h-7 rounded-full shrink-0"
-                  />
-                  <div className="bg-white/10 rounded-2xl px-4 py-3 flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-white/60" />
-                    <span className="text-sm text-white/60">{t('assistant.thinking')}</span>
-                  </div>
-                </motion.div>
-              )}
               {/* Scroll anchor */}
               <div ref={messagesEndRef} />
             </div>
