@@ -56,12 +56,6 @@ export const CONFIRMATION_STRATEGY = {
  * many hosts) blocks that and breaks social login. Full-page redirect is reliable
  * in production; keep popup only on local dev where COOP is typically open.
  */
-function allowSocialLoginPopupFlow(): boolean {
-  if (typeof window === 'undefined') return false;
-  // Always permit popups; connectToSocialProviderInternal handles the fallback
-  // to REDIRECT if a popup is explicitly blocked or if UA is mobile.
-  return true;
-}
 
 /**
  * Detect if running on a mobile device based on user agent + touch support.
@@ -87,6 +81,16 @@ export function isMobileDevice(): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * OAuth popup flow uses window.closed; strict Cross-Origin-Opener-Policy (Lovable,
+ * many hosts) blocks that and breaks social login. Mobile/redirect is reliable
+ * in production; popup is only used on desktop where COOP is typically open.
+ */
+function allowSocialLoginPopupFlow(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !isMobileDevice();
 }
 
 /**
@@ -213,12 +217,8 @@ let lastConnectedConnector: string | null = null;
 // Track if we've detected that popups are blocked and should use redirect
 let forceRedirectMode = false;
 
-/** Serialize social/email/SMS Web3Auth connectTo — duplicate calls cause "Already connecting". */
-let socialConnectInFlight: Promise<unknown> | null = null;
-
 // Cached configs from edge functions
 let cachedClientId: string | null = null;
-let cachedPimlicoConfig: { bundlerUrl: string; paymasterUrl: string } | null = null;
 
 /**
  * Clear Web3Auth/Torus persisted session from storage to prevent stale "connected" state.
@@ -286,7 +286,6 @@ export function resetWeb3AuthState(): void {
   web3authInstance = null;
   isInitializing = false;
   initPromise = null;
-  socialConnectInFlight = null;
   lastConnectedConnector = null;
   clearWeb3AuthStorage();
   // Don't reset cached configs or forceRedirectMode - persist across resets
@@ -306,55 +305,22 @@ if (import.meta.hot) {
 /**
  * Pre-fetch configurations as soon as the module is loaded.
  */
-let pendingPimlicoFetch: Promise<{ bundlerUrl: string; paymasterUrl: string }> | null = null;
 function getClientIdCacheKey(): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'server';
   return `dehub_web3auth_client_id:${origin}`;
 }
 
-async function getPimlicoConfig(): Promise<{ bundlerUrl: string; paymasterUrl: string }> {
-  if (cachedPimlicoConfig) return cachedPimlicoConfig;
-  
-  // Check sessionStorage first to survive HMR/reloads without re-fetching
-  const stored = sessionStorage.getItem('dehub_pimlico_config');
-  if (stored) {
-    try {
-      cachedPimlicoConfig = JSON.parse(stored);
-      return cachedPimlicoConfig;
-    } catch {}
-  }
-
-  // Deduplicate in-flight requests
-  if (pendingPimlicoFetch) return pendingPimlicoFetch;
-  
-  pendingPimlicoFetch = fetchWithRetry(async () => {
-    const { data, error } = await supabase.functions.invoke("get-pimlico-config");
-    if (!error && data?.bundlerUrl && data?.paymasterUrl) {
-      cachedPimlicoConfig = data;
-      sessionStorage.setItem('dehub_pimlico_config', JSON.stringify(data));
-      return cachedPimlicoConfig;
-    }
-    throw new Error(error?.message || "Pimlico config not configured");
-  }, "get-pimlico-config").finally(() => { pendingPimlicoFetch = null; });
-
-  return pendingPimlicoFetch;
-}
-
 function prewarmConfig() {
   if (typeof window === 'undefined') return;
-  // Skip if both configs are already in sessionStorage
-  if (sessionStorage.getItem(getClientIdCacheKey()) && sessionStorage.getItem('dehub_pimlico_config')) {
-    console.log("[Web3Auth] Configs already cached in sessionStorage, skipping prewarm");
-    // Still populate in-memory caches from sessionStorage
-    cachedClientId = sessionStorage.getItem(getClientIdCacheKey())!;
-    try { cachedPimlicoConfig = JSON.parse(sessionStorage.getItem('dehub_pimlico_config')!); } catch {}
+  const cacheKey = getClientIdCacheKey();
+  // Skip if config is already in sessionStorage
+  if (sessionStorage.getItem(cacheKey)) {
+    console.log("[Web3Auth] Client ID already cached in sessionStorage, skipping prewarm");
+    cachedClientId = sessionStorage.getItem(cacheKey)!;
     return;
   }
-  console.log("[Web3Auth] Pre-warming configurations...");
-  Promise.all([
-    getWeb3AuthClientId().catch(() => {}),
-    getPimlicoConfig().catch(() => {}),
-  ]);
+  console.log("[Web3Auth] Pre-warming Web3Auth client ID...");
+  getWeb3AuthClientId().catch(() => {});
 }
 
 // Start pre-warming immediately
@@ -484,53 +450,17 @@ export async function initWeb3Auth(): Promise<Web3Auth> {
           await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt - 1]));
         }
 
-        const [clientId, pimlicoConfig] = await Promise.all([
-          getWeb3AuthClientId(),
-          getPimlicoConfig().catch(() => ({ bundlerUrl: '', paymasterUrl: '' })),
-        ]);
+        const clientId = await getWeb3AuthClientId();
 
         const initOptions: any = {
           clientId,
-          chainConfig, // Explicitly set the default chain to Base (0x2105)
-          chains: [chainConfig], // Pass as array for v10 plural support
+          chains: [chainConfig],
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
-          sessionTime: 2592000, // 30 days (Web3Auth max) — avoid forcing users to re-enter verification code
-          uiConfig: { 
-            modalZIndex: "99999",
-            uxMode: isMobileDevice() ? UX_MODE.REDIRECT : UX_MODE.POPUP,
-          } as any,
-          walletServicesConfig: {
-            confirmationStrategy: CONFIRMATION_STRATEGY.AUTO_APPROVE,
-            modalZIndex: "99999",
-            whiteLabel: { showWidgetButton: false },
-          } as any,
+          sessionTime: 86400,
+          uiConfig: { modalZIndex: "99999" } as any,
         };
 
-        // NOTE: accountAbstractionConfig is intentionally omitted from the constructor.
-        // It causes the internal SDK initialization to crash or get stuck in 'not_ready'
-        // when the default chain is Ethereum (0x1) while AA is only configured for Base.
-        // Removing it ensures successful init() for standard social login.
-        // AA address can be derived post-login if needed.
-
         web3authInstance = new Web3Auth(initOptions);
-
-        // If we're returning from a login redirect, tell the auth connector BEFORE init()
-        const hasPendingRedirect =
-          hasRedirectResult() || !!sessionStorage.getItem('dehub_pre_login_path');
-        if (hasPendingRedirect) {
-          try {
-            const authConnector = (web3authInstance as any).getConnector?.(WALLET_CONNECTORS.AUTH);
-            if (authConnector?.authOptions) {
-              authConnector.authOptions.uxMode = UX_MODE.REDIRECT;
-              if (authConnector.authInstance?.options) {
-                authConnector.authInstance.options.uxMode = UX_MODE.REDIRECT;
-              }
-              console.log('[Web3Auth] Pre-init: connector uxMode set to redirect (pending redirect detected)');
-            }
-          } catch (connectorErr) {
-            console.warn('[Web3Auth] Could not set pre-init connector uxMode (non-fatal):', connectorErr);
-          }
-        }
 
         await Promise.race([
           web3authInstance.init(),
@@ -587,20 +517,6 @@ function isPopupBlockedError(err: unknown): boolean {
  * Returns OAuth provider-specific options to force account selection / re-login.
  * Without these, cached OAuth cookies cause silent auto-login with the last used account.
  */
-/**
- * Wait until the Modal SDK is idle enough for connectTo (avoids WalletInitializationError:
- * "Wallet is not ready yet, Already connecting" when init/analytics races with login).
- */
-async function waitUntilWeb3AuthConnectable(auth: Web3Auth): Promise<void> {
-  const deadline = Date.now() + 25_000;
-  while (Date.now() < deadline) {
-    const status = auth.status;
-    if (status === "ready" || status === "connected") return;
-    await new Promise((r) => setTimeout(r, 150));
-  }
-  throw new Error("Web3Auth did not become ready in time for connect");
-}
-
 function getProviderForceLoginOptions(authConnection: AuthConnectionType): Record<string, string> {
   switch (authConnection) {
     case AUTH_CONNECTION.GOOGLE:
@@ -620,145 +536,29 @@ function getProviderForceLoginOptions(authConnection: AuthConnectionType): Recor
   }
 }
 
-async function connectToSocialProviderInternal(
-  authConnection: AuthConnectionType,
-  loginHint?: string,
-  skipConnectedCheck = false
-): Promise<ReturnType<Web3Auth['connectTo']>> {
-  console.log(`[Web3Auth] connectToSocialProvider: ${authConnection}`);
-
-  const web3auth = await getOrInitWeb3Auth();
-  await waitUntilWeb3AuthConnectable(web3auth);
-
-  // If a previous failed session left Web3Auth in "connected" state, logout first.
-  // Otherwise connectTo throws "Already connected".
-  // skipConnectedCheck: set on retry after reset to avoid infinite loop (new instance may restore stale session)
-  if (!skipConnectedCheck && web3auth.connected) {
-    console.log('[Web3Auth] Already connected - logging out before new auth attempt...');
-    try {
-      await web3auth.logout();
-      await new Promise(r => setTimeout(r, 500));
-    } catch (e) {
-      console.warn('[Web3Auth] Pre-connect logout failed - forcing full reset:', e);
-      resetWeb3AuthState();
-      await new Promise(r => setTimeout(r, 1000));
-      return connectToSocialProviderInternal(authConnection, loginHint, true);
-    }
-  }
-
-  const mobile = isMobileDevice();
-  const useRedirect =
-    mobile || forceRedirectMode || !allowSocialLoginPopupFlow();
-  const uxMode = useRedirect ? UX_MODE.REDIRECT : UX_MODE.POPUP;
-  if (useRedirect) {
-    console.log('[Web3Auth] Social login using full-page redirect (avoids COOP / popup issues)');
-  }
-
-  // Web3Auth v10: uxMode in connectTo() params is IGNORED by the auth connector —
-  // it only reads uxMode from its own authOptions (set at init time, defaulting to POPUP).
-  // We must mutate authOptions.uxMode on the live connector before each connectTo call
-  // so the correct redirect/popup behaviour is used.
-  try {
-    const authConnector = (web3auth as any).getConnector?.(WALLET_CONNECTORS.AUTH);
-    if (authConnector?.authOptions) {
-      authConnector.authOptions.uxMode = uxMode;
-      // authInstance.options.uxMode controls what uxMode is sent to Web3Auth's servers
-      if (authConnector.authInstance?.options) {
-        authConnector.authInstance.options.uxMode = uxMode;
-      }
-      console.log(`[Web3Auth] Auth connector uxMode set to: ${uxMode}`);
-    }
-  } catch (connectorErr) {
-    console.warn('[Web3Auth] Could not set connector uxMode (non-fatal):', connectorErr);
-  }
-
-  // v10 API: `authConnection` replaced `loginProvider`; uxMode/redirectUrl are top-level.
-  // email/phone hint goes in extraLoginOptions.login_hint (underscore), not top-level loginHint.
-  const params: any = {
-    authConnection: authConnection,
-    uxMode,
-    // Use origin + pathname to ensure better compatibility with dashboard whitelists
-    redirectUrl: window.location.origin + window.location.pathname,
-  };
-
-  // Always pass provider-specific options to force the account picker / re-login screen.
-  // This prevents silent auto-login with a cached OAuth session from a previous login.
-  const forceLoginOptions = getProviderForceLoginOptions(authConnection);
-  params.extraLoginOptions = {
-    ...forceLoginOptions,
-    ...(loginHint ? { login_hint: loginHint } : {}),
-  };
-
-  // Pre-flight: clear any stale openlogin/Auth session before starting a new OAuth flow.
-  if (!skipConnectedCheck) {
-    const authConnector = (web3auth as any).getConnector?.(WALLET_CONNECTORS.AUTH);
-    if (authConnector) {
-      try {
-        await authConnector.disconnect?.();
-      } catch (connErr) {
-        console.warn('[Web3Auth] Pre-flight: auth connector disconnect failed (non-blocking):', String(connErr).slice(0, 80));
-      }
-      if (authConnector.authInstance) {
-        await clearAuthInstance(authConnector.authInstance);
-      }
-    }
-    clearWeb3AuthStorage();
-  }
-
-  try {
-    const provider = await web3auth.connectTo(WALLET_CONNECTORS.AUTH, params);
-    lastConnectedConnector = WALLET_CONNECTORS.AUTH;
-    return provider;
-  } catch (err: any) {
-    const errText = String(err).toLowerCase();
-    if (errText.includes("already connecting")) {
-      console.warn("[Web3Auth] connectTo raced with internal connect — waiting and retrying once");
-      await new Promise((r) => setTimeout(r, 500));
-      await waitUntilWeb3AuthConnectable(web3auth);
-      const provider = await web3auth.connectTo(WALLET_CONNECTORS.AUTH, params);
-      lastConnectedConnector = WALLET_CONNECTORS.AUTH;
-      return provider;
-    }
-
-    if (isPopupBlockedError(err) && !forceRedirectMode) {
-      console.warn('[Web3Auth] Popup blocked! Switching to REDIRECT mode...');
-      forceRedirectMode = true;
-      resetWeb3AuthState();
-      const retryAuth = await initWeb3Auth();
-      await waitUntilWeb3AuthConnectable(retryAuth);
-      params.uxMode = UX_MODE.REDIRECT;
-      return await retryAuth.connectTo(WALLET_CONNECTORS.AUTH, params);
-    }
-
-    // Fallback: If DKG completed but WsEmbed verify failed, recover via private key.
-    // This handles cases where Web3Auth's server rejects internal signatures (Safe smart account issue).
-    const privKey = extractPrivKeyFromConnector(web3auth);
-    if (privKey) {
-      console.log('[Web3Auth] Connection failed but key recovered — constructing fallback provider...');
-      const authConnector = (web3auth as any).getConnector?.(WALLET_CONNECTORS.AUTH);
-      if (authConnector?.authInstance) {
-        await clearAuthInstance(authConnector.authInstance);
-      }
-      web3authInstance = null;
-      isInitializing = false;
-      initPromise = null;
-      clearWeb3AuthStorage();
-      const eoaProvider = await buildProviderFromPrivKey(privKey);
-      lastConnectedConnector = WALLET_CONNECTORS.AUTH;
-      return eoaProvider;
-    }
-
-    throw err;
-  }
-}
-
 /**
  * Extract the reconstructed private key from the auth connector's authInstance.
+ * This is available after OAuth + Sapphire DKG completes even if WsEmbed loginWithSessionId fails.
  */
 function extractPrivKeyFromConnector(w3a: Web3Auth): string | null {
   try {
-    const connector = (w3a as any).getConnector?.(WALLET_CONNECTORS.AUTH);
+    const connector = (w3a as any).connectedConnector
+      || (w3a as any).connectors?.find((c: any) => c.name === WALLET_CONNECTORS.AUTH);
     const authInstance = connector?.authInstance;
+
+    // DIAGNOSTIC: log verifier info to detect same-email vs actual session bleeding
+    // If typeOfLogin + verifierId are the same across two different providers,
+    // the user is logging in with the same identity (e.g. same email for Google + email_passwordless).
+    // That gives the same private key by design — it's NOT a bug.
+    const typeOfLogin = authInstance?.metaData?.typeOfLogin ?? authInstance?.typeOfLogin ?? 'unknown';
+    const verifierId = authInstance?.metaData?.verifierId ?? authInstance?.verifierId ?? 'unknown';
+    const verifier = authInstance?.aggregateVerifier ?? authInstance?.verifier ?? 'unknown';
+    console.log(
+      '[Web3Auth] extractPrivKey: typeOfLogin=', typeOfLogin,
+      'verifier=', verifier,
+      'verifierId (last 12)=', typeof verifierId === 'string' ? `...${verifierId.slice(-12)}` : verifierId,
+    );
+
     const privKey = authInstance?.privKey || authInstance?.coreKitKey;
     return privKey && privKey.length >= 32 ? privKey : null;
   } catch {
@@ -792,18 +592,129 @@ export async function connectToSocialProvider(
   loginHint?: string,
   skipConnectedCheck = false
 ): Promise<ReturnType<Web3Auth['connectTo']>> {
-  if (socialConnectInFlight) {
-    console.log('[Web3Auth] Social connect already in progress — joining existing attempt (prevents duplicate connectTo)');
-    return socialConnectInFlight as Promise<ReturnType<Web3Auth['connectTo']>>;
+  // Log partial hint (last 10 chars) so we can verify same-vs-different account in console
+  const hintDebug = loginHint ? `hint=...${loginHint.slice(-10)}` : 'no-hint';
+  console.log(`[Web3Auth] connectToSocialProvider: ${authConnection} (${hintDebug})`);
+
+  const web3auth = await getOrInitWeb3Auth();
+
+  // If a previous failed session left Web3Auth in "connected" state, logout first.
+  // Otherwise connectTo throws "Already connected".
+  // skipConnectedCheck: set on retry after reset to avoid infinite loop (new instance may restore stale session)
+  if (!skipConnectedCheck && web3auth.connected) {
+    console.log('[Web3Auth] Already connected - logging out before new auth attempt...');
+    try {
+      await web3auth.logout();
+      await new Promise(r => setTimeout(r, 500));
+    } catch (e) {
+      console.warn('[Web3Auth] Pre-connect logout failed - forcing full reset:', e);
+      resetWeb3AuthState();
+      await new Promise(r => setTimeout(r, 1000));
+      return connectToSocialProvider(authConnection, loginHint, true);
+    }
   }
-  socialConnectInFlight = connectToSocialProviderInternal(
-    authConnection,
-    loginHint,
-    skipConnectedCheck
-  ).finally(() => {
-    socialConnectInFlight = null;
-  });
-  return socialConnectInFlight as Promise<ReturnType<Web3Auth['connectTo']>>;
+
+  const mobile = isMobileDevice();
+  const useRedirect = mobile || forceRedirectMode;
+  const uxMode = useRedirect ? UX_MODE.REDIRECT : UX_MODE.POPUP;
+
+  // v10 API: `authConnection` replaced `loginProvider`; uxMode/redirectUrl are top-level.
+  // email/phone hint goes in extraLoginOptions.login_hint (underscore), not top-level loginHint.
+  const params: any = {
+    authConnection: authConnection,
+    uxMode,
+    redirectUrl: window.location.origin + window.location.pathname,
+  };
+
+  // Always pass provider-specific options to force the account picker / re-login screen.
+  // This prevents silent auto-login with a cached OAuth session from a previous login.
+  const forceLoginOptions = getProviderForceLoginOptions(authConnection);
+  params.extraLoginOptions = {
+    ...forceLoginOptions,
+    ...(loginHint ? { login_hint: loginHint } : {}),
+  };
+
+  savePreLoginPath();
+
+  // Pre-flight: clear any stale openlogin/Auth session before starting a new OAuth flow.
+  // Does NOT clear our custom dehub_* keys (pimlico config, client ID, wallet address).
+  if (!skipConnectedCheck) {
+    const authConnector = (web3auth as any).connectors?.find((c: any) => c.name === WALLET_CONNECTORS.AUTH);
+    if (authConnector) {
+      // 1. Try connector-level disconnect (may fail if connector is "not connected")
+      try {
+        await authConnector.disconnect?.();
+        console.log('[Web3Auth] Pre-flight: auth connector disconnected');
+      } catch (connErr) {
+        console.warn('[Web3Auth] Pre-flight: auth connector disconnect failed (non-blocking):', String(connErr).slice(0, 80));
+      }
+      // 2. Directly call authInstance.logout() to invalidate the Sapphire session.
+      //    This bypasses the connector's status check which rejects "not connected" instances.
+      //    Auth.logout() only requires sessionManager.sessionId to be set — which it is
+      //    after a successful DKG even when the overall connectTo() threw.
+      if (authConnector.authInstance) {
+        await clearAuthInstance(authConnector.authInstance);
+      }
+    }
+    // 3. Clear localStorage — includes 'auth_store' (the @web3auth/auth session key)
+    clearWeb3AuthStorage();
+  }
+
+  try {
+    const provider = await web3auth.connectTo(WALLET_CONNECTORS.AUTH, params);
+    lastConnectedConnector = WALLET_CONNECTORS.AUTH;
+    return provider;
+  } catch (err) {
+    if (isPopupBlockedError(err) && !forceRedirectMode) {
+      console.warn('[Web3Auth] Popup blocked! Switching to REDIRECT mode...');
+      forceRedirectMode = true;
+      resetWeb3AuthState();
+      const retryAuth = await initWeb3Auth();
+      params.uxMode = UX_MODE.REDIRECT;
+      return await retryAuth.connectTo(WALLET_CONNECTORS.AUTH, params);
+    }
+
+    // Web3Auth Modal v10 bundles WsEmbed (Torus wallet) for EIP155 chains.
+    // WsEmbed calls api-wallet.web3auth.io/auth/verify which rejects signatures > 500 chars.
+    // BUT key reconstruction via Sapphire DKG completes BEFORE loginWithSessionId is called.
+    // So even when connectTo() throws, authInstance.privKey has the reconstructed private key.
+    // We recover it here to build our own EIP1193 provider, bypassing WsEmbed entirely.
+    const privKey = extractPrivKeyFromConnector(web3auth);
+    if (privKey) {
+      console.log('[Web3Auth] WsEmbed auth/verify failed — recovering via private key (privKey length:', privKey.length, ')');
+
+      // CRITICAL: Properly clear the Auth session BEFORE nulling web3authInstance.
+      //
+      // Root cause of session bleeding:
+      // - Auth.login() stores the sessionId in localStorage under key "auth_store"
+      //   (via BrowserStorage with _storageBaseKey = "auth_store")
+      // - Auth.login() also stores privKey/userInfo in authInstance.state (in-memory)
+      // - BrowserStorage uses a static instanceMap (module-level Map) that caches
+      //   instances across Auth object recreations
+      //
+      // Without proper cleanup:
+      // - The next Auth.init() reads "auth_store" from localStorage → finds old sessionId
+      // - Contacts Sapphire server → restores old session (Google's privKey)
+      // - connectTo('twitter') silently reuses Google's session → same address every time
+      //
+      // Fix: call authInstance.logout() directly (bypasses connector status check) +
+      //      clear BrowserStorage.instanceMap + clear localStorage 'auth_store' key.
+      const authConnector = (web3auth as any).connectors?.find((c: any) => c.name === WALLET_CONNECTORS.AUTH);
+      if (authConnector?.authInstance) {
+        await clearAuthInstance(authConnector.authInstance);
+      }
+
+      web3authInstance = null;
+      isInitializing = false;
+      initPromise = null;
+      clearWeb3AuthStorage();
+      const eoaProvider = await buildProviderFromPrivKey(privKey);
+      lastConnectedConnector = WALLET_CONNECTORS.AUTH;
+      return eoaProvider;
+    }
+
+    throw err;
+  }
 }
 
 export function getWeb3Auth(): Web3Auth {
@@ -825,16 +736,8 @@ export function getWeb3AuthInstance(): Web3Auth | null {
 }
 
 export function getWeb3AuthProvider() {
-  if (web3authInstance?.provider) {
-    // If we're already connected, return the provider
-    if (web3authInstance.connected) return web3authInstance.provider;
-    
-    // If we're in 'ready' state and this is a known web3auth session, return provider anyway.
-    // Sometimes the 'connected' flag lags behind 'ready' during session restoration.
-    const storedSource = typeof window !== 'undefined' ? localStorage.getItem('dehub_connection_source') : null;
-    if (web3authInstance.status === "ready" && storedSource === 'web3auth') {
-      return web3authInstance.provider;
-    }
+  if (web3authInstance?.connected && web3authInstance.provider) {
+    return web3authInstance.provider;
   }
   return null;
 }
@@ -843,6 +746,11 @@ export async function disconnectWeb3Auth(): Promise<void> {
   if (web3authInstance?.connected) {
     await web3authInstance.logout();
   }
+  // Always clear storage on disconnect — our WsEmbed recovery path leaves
+  // web3authInstance.connected === false even after a successful social login,
+  // so the connected check above would skip cleanup and leave the openlogin
+  // session cached, causing the next login to silently reuse the old session.
+  clearWeb3AuthStorage();
 }
 
 export async function forceCleanupWeb3Auth(): Promise<void> {
@@ -914,14 +822,7 @@ export function setLastConnectedConnector(connector: string | null): void {
  * Requires an active Web3Auth session (social login). Throws if not connected.
  */
 export async function showWeb3AuthCheckout(): Promise<void> {
-  const { EVM_PLUGINS } = await import("@web3auth/no-modal");
-  const instance = await getOrInitWeb3Auth();
-  if (!instance.connected) {
-    throw new Error("Web3Auth not connected — user must be logged in via social login");
-  }
-  const plugin = instance.getPlugin(EVM_PLUGINS.WALLET_SERVICES);
-  if (!plugin) {
-    throw new Error("Wallet Services plugin not available");
-  }
-  await (plugin as any).showCheckout({ show: true });
+  // Wallet Services plugin is disabled (Web3Auth /auth/verify server-side regression).
+  // Re-enable once Web3Auth fixes their 500-char signature validation limit.
+  throw new Error("Fiat on-ramp is temporarily unavailable. Please try again later.");
 }

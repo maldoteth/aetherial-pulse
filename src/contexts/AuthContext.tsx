@@ -15,8 +15,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useAuthStore, type SocialProvider, type WalletChoice } from '@/stores/authStore';
 import { clearAuthSession } from '@/lib/api/dehub/core';
-import { supabase } from '@/integrations/supabase/client';
-import { getInviteSessionId, hasAttachedInvite, markInviteAttached } from '@/lib/invite-session';
+import { initWeb3Auth, isMobileDevice } from '@/lib/web3auth';
 
 export type { SocialProvider, WalletChoice };
 
@@ -31,6 +30,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (booted.current) return;
     booted.current = true;
     useAuthStore.getState().boot();
+
+    // Pre-warm Web3Auth in the background after the page is idle so it's
+    // ready before the user opens the login modal. Skipped on mobile to
+    // avoid Chrome's Abusive Ads blocker which flags background iframes.
+    if (!isMobileDevice()) {
+      const schedule = (cb: () => void) => {
+        if (typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(cb, { timeout: 5000 });
+        } else {
+          setTimeout(cb, 3000);
+        }
+      };
+      schedule(() => {
+        initWeb3Auth().catch(() => {});
+      });
+    }
   }, []);
 
   // Track whether a wallet connect was initiated from our UI
@@ -96,32 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }
   }, [isConnected, address]);
-
-  // Silently attach the invite-code redemption to the user's wallet on first login.
-  // Runs once per (wallet) and is a no-op if there's no pending session redemption.
-  const walletAddress = useAuthStore((s) => s.walletAddress);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  useEffect(() => {
-    if (!isAuthenticated || !walletAddress) return;
-    const wallet = walletAddress.toLowerCase();
-    if (hasAttachedInvite(wallet)) return;
-    const sessionId = getInviteSessionId();
-    if (!sessionId) {
-      markInviteAttached(wallet);
-      return;
-    }
-    supabase.functions
-      .invoke('invite-attach-wallet', {
-        body: { sessionId },
-        headers: { 'x-wallet-address': wallet },
-      })
-      .then(({ error }) => {
-        if (!error) markInviteAttached(wallet);
-      })
-      .catch((err) => {
-        console.warn('[Auth] invite-attach-wallet failed', err);
-      });
-  }, [isAuthenticated, walletAddress]);
 
   return <>{children}</>;
 }
