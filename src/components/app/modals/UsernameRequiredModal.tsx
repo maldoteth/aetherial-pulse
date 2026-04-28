@@ -214,7 +214,7 @@ export function UsernameRequiredModal() {
           />
           <DialogTitle className="text-xl text-white text-center">Complete Your Profile</DialogTitle>
           <DialogDescription className="text-zinc-400 text-center">
-            Choose a username and display name to get started on DeHub.
+            Get set up on Fansite!
           </DialogDescription>
         </DialogHeader>
 
