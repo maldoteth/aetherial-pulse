@@ -66,7 +66,7 @@ const rainbowKitConnectors = connectorsForWallets(
     },
   ],
   {
-    appName: 'DeHub',
+    appName: 'Fansite',
     projectId,
   }
 )
