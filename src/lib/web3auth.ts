@@ -766,7 +766,7 @@ export async function forceCleanupWeb3Auth(): Promise<void> {
   web3authInstance = null;
   isInitializing = false;
   initPromise = null;
-  socialConnectInFlight = null;
+  
   clearWeb3AuthStorage();
 
   // Delayed re-init to avoid rate limiting (don't hammer api.web3auth.io)
