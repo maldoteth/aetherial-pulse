@@ -85,7 +85,7 @@ export async function buildPostShareImage(opts: PostShareImageOptions): Promise<
   } else {
     ctx.fillStyle = '#ffffff';
     ctx.font = `700 24px ${FONT}`;
-    ctx.fillText('DeHub', PAD, PAD + 20);
+    ctx.fillText('Fansite', PAD, PAD + 20);
   }
 
   // ── "dehub.app" label (top-right) ────────────────────────────────────────────

@@ -903,7 +903,7 @@ export default function SinglePostPage() {
 
   // Build SEO title/description from post data
   const seoTitle = post?.title || post?.name || 'Post';
-  const seoDesc = post?.description || `View this post on DeHub`;
+  const seoDesc = post?.description || `View this post on Fansite`;
 
   // Standard layout for other content types
   const isLivePost = contentType === 'live';
@@ -923,7 +923,7 @@ export default function SinglePostPage() {
           url: `https://fansite.app/post/${id}`,
           ...(post?.minterDisplayName && { author: { '@type': 'Person', name: post.minterDisplayName } }),
           ...(post?.createdAt && { datePublished: post.createdAt }),
-          publisher: { '@type': 'Organization', name: 'DeHub', url: 'https://fansite.app' },
+          publisher: { '@type': 'Organization', name: 'Fansite', url: 'https://fansiteapp.com' },
         }}
       />
       <PageHeader showBack={hasHistory} />

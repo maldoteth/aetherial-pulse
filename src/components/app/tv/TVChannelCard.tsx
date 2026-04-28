@@ -236,14 +236,14 @@ export function TVChannelCard({ channel }: TVChannelCardProps) {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: `${channel.name} ${isMutedRef.current ? '🔇' : '🔊'}`,
-          artist: 'DeHub TV',
+          artist: 'Fansite TV',
         });
         const muteHandler = () => {
           toggleMuteProgrammatic();
           // Update metadata to reflect mute state
           navigator.mediaSession.metadata = new MediaMetadata({
             title: `${channel.name} ${isMutedRef.current ? '🔇' : '🔊'}`,
-            artist: 'DeHub TV',
+            artist: 'Fansite TV',
           });
         };
         navigator.mediaSession.setActionHandler('nexttrack', muteHandler);

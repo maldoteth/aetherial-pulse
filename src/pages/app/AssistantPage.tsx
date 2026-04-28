@@ -1371,7 +1371,7 @@ export default function AssistantPage() {
         setIsLoading(false);
         
         if (alwaysSpeakReplies) {
-          setTimeout(() => elevenLabsSpeak("Here's the official DeHub logo!"), 300);
+          setTimeout(() => elevenLabsSpeak("Here's the official Fansite logo!"), 300);
         }
         return;
       }
@@ -1753,7 +1753,7 @@ export default function AssistantPage() {
                 setMessages([{
                   id: 'initial',
                   role: 'assistant' as const,
-                  content: "Hey! I'm your DeHub AI assistant. How can I help you today?",
+                  content: "Hey! I'm your Fansite AI assistant. How can I help you today?",
                 }]);
                 setInput('');
                 setAttachedImage(null);
