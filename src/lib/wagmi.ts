@@ -20,7 +20,7 @@ import {
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || ''
 
 /**
- * Prevent wagmi auto-reconnect on page load when there's no valid DeHub session.
+ * Prevent wagmi auto-reconnect on page load when there's no valid Fansite session.
  */
 function clearStaleWagmiState() {
   if (typeof window === 'undefined') return;
