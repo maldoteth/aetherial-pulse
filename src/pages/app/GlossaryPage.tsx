@@ -152,7 +152,7 @@ export default function GlossaryPage() {
       id: 'fractions',
       title: t('glossary.sections.fractions', 'Fractions & Ownership'),
       entries: [
-        { icon: <PieChart size={iconSize} />, title: t('glossary.fractions', 'Fractions'), description: t('glossary.fractionsDesc', 'Every post on DeHub is minted as an NFT split into 100 fractions. The creator starts with all 100 fractions, representing 100% ownership of the content.') },
+        { icon: <PieChart size={iconSize} />, title: t('glossary.fractions', 'Fractions'), description: t('glossary.fractionsDesc', 'Every post on Fansite is minted as an NFT split into 100 fractions. The creator starts with all 100 fractions, representing 100% ownership of the content.') },
         { icon: <Users size={iconSize} />, title: t('glossary.holders', 'Holders'), description: t('glossary.holdersDesc', 'The list of wallet addresses that own fractions of a post. Shown on the Post Info page with each holder\'s balance and ownership percentage.') },
         { icon: <BarChart3 size={iconSize} />, title: t('glossary.ownershipBar', 'Ownership Bar'), description: t('glossary.ownershipBarDesc', 'A progress bar on the Post Info page showing how many of the 100 fractions the creator still holds vs. how many have been distributed or sold.') },
         { icon: <Tag size={iconSize} />, title: t('glossary.listFractions', 'List Fractions'), description: t('glossary.listFractionsDesc', 'If you own fractions of a post, you can list them for sale at a price you set (in Coins per fraction). Other users can then purchase your listed fractions.') },
@@ -163,7 +163,7 @@ export default function GlossaryPage() {
     {
       title: t('glossary.sections.wallet', 'Wallet & Tokens'),
       entries: [
-        { icon: <img src={dhbCoinIcon} alt="Coins" className="w-6 h-6" />, title: t('glossary.dhbToken', 'Coins Token'), description: t('glossary.dhbTokenDesc', 'The native utility token of DeHub. Used for tipping, pay-per-view content, governance voting, and staking.') },
+        { icon: <img src={dhbCoinIcon} alt="Coins" className="w-6 h-6" />, title: t('glossary.dhbToken', 'Coins Token'), description: t('glossary.dhbTokenDesc', 'The native utility token of Fansite. Used for tipping, pay-per-view content, governance voting, and staking.') },
         { icon: <Wallet size={iconSize} />, title: t('glossary.wallet', 'Wallet'), description: t('glossary.walletDesc', 'Your on-chain wallet that holds your Coins tokens and other crypto assets. Connected via Web3Auth for easy access.') },
         { icon: <ArrowUpDown size={iconSize} />, title: t('glossary.swap', 'Swap'), description: t('glossary.swapDesc', 'Exchange one token for another directly within the app. Swaps happen on-chain using decentralized exchanges.') },
         { icon: <TrendingUp size={iconSize} />, title: t('glossary.staking', 'Staking'), description: t('glossary.stakingDesc', 'Lock your Coins tokens to earn rewards over time. Staked tokens also give you increased voting power in governance.') },

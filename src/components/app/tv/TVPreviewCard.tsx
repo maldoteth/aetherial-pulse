@@ -190,13 +190,13 @@ export function TVPreviewCard({ channel }: TVPreviewCardProps) {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: `${channel.name} ${isMutedRef.current ? '🔇' : '🔊'}`,
-          artist: 'DeHub TV',
+          artist: 'Fansite TV',
         });
         const muteHandler = () => {
           toggleMuteProgrammatic();
           navigator.mediaSession.metadata = new MediaMetadata({
             title: `${channel.name} ${isMutedRef.current ? '🔇' : '🔊'}`,
-            artist: 'DeHub TV',
+            artist: 'Fansite TV',
           });
         };
         navigator.mediaSession.setActionHandler('nexttrack', muteHandler);

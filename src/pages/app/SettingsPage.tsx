@@ -822,7 +822,7 @@ function ProfileSettings() {
             }
           />
           <SocialLinkInput 
-            label="DeHub" 
+            label="Fansite" 
             placeholder="https://dehub.io/username"
             value={dehubLink}
             onChange={setDehubLink}

@@ -5,7 +5,7 @@ import { MockAvatar } from '../MockAvatar';
 import { Search, TrendingUp, Image } from 'lucide-react';
 
 const TRENDING = [
-  { tag: '#DeHubDAO', posts: '2.4K posts' },
+  { tag: '#FansiteDAO', posts: '2.4K posts' },
   { tag: '#Web3Social', posts: '1.8K posts' },
   { tag: '#DHBStaking', posts: '956 posts' },
   { tag: '#CreatorEconomy', posts: '743 posts' },
