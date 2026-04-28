@@ -279,7 +279,7 @@ export default function ProfilePage() {
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Person',
-          name: data.profile?.name || data.profile?.handle || 'DeHub User',
+          name: data.profile?.name || data.profile?.handle || 'Fansite User',
           url: `https://fansite.app/${data.profile?.handle || ''}`,
           ...(data.profile?.bio && { description: data.profile.bio }),
           ...(data.profile?.avatarUrl && { image: data.profile.avatarUrl }),
